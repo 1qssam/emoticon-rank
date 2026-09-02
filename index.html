@@ -153,9 +153,24 @@
   .leg svg,.tiprow svg,.dashkey svg{display:inline-block;vertical-align:middle;flex:none}
   button:focus-visible,select:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible{
     outline:2px solid var(--ink);outline-offset:2px}
+  /* 위아래 이동 버튼 */
+  .scrollbtns{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:6px;z-index:50}
+  .scrollbtns button{width:38px;height:38px;border:1px solid var(--line);background:#fff;border-radius:10px;
+    cursor:pointer;font-size:15px;color:#5c6064;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .scrollbtns button:hover{border-color:var(--ink);color:var(--ink)}
+  .sheettoggle{display:none;border:0;background:none;cursor:pointer;color:var(--muted);
+    font-size:13px;padding:3px 6px;border-radius:6px;line-height:1;font-family:inherit}
+  .sheettoggle:hover{background:#e9e7e1;color:var(--ink)}
+
   @media (max-width:1000px){
     .main.split{grid-template-columns:1fr}
-    .panel{position:static}
+    .panel{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:40;
+      max-height:62vh;overflow-y:auto;border-radius:14px 14px 0 0;border-bottom:0;
+      padding:12px 14px 18px;box-shadow:0 -6px 24px rgba(0,0,0,.13)}
+    .panel .panelhead{position:sticky;top:0;background:var(--panel);z-index:1;padding:2px 0 6px;margin:0}
+    .panel.collapsed{max-height:none;overflow:visible}
+    .panel.collapsed > *:not(.panelhead){display:none}
+    .sheettoggle{display:inline-flex}
   }
   @media (max-width:640px){
     .row{grid-template-columns:20px 30px 38px 1fr auto;gap:8px}
@@ -210,6 +225,8 @@
     <div class="panel" id="panel" hidden>
       <div class="panelhead">
         <h2>기간별 순위 변동</h2>
+        <span style="margin-left:auto"></span>
+        <button class="sheettoggle" id="sheettoggle" aria-label="펼치기/접기">▾ 접기</button>
         <button class="panelx" id="panelx" aria-label="순위 변동 닫기">✕</button>
       </div>
       <div class="note">비교는 한 번에 5개까지 표시할 수 있습니다.</div>
@@ -238,6 +255,11 @@
       <div class="dashkey" id="dashkey"></div>
       <div class="legend" id="legend"></div>
     </div>
+  </div>
+
+  <div class="scrollbtns" id="scrollbtns">
+    <button id="toTop" aria-label="맨 위로">↑</button>
+    <button id="toBottom" aria-label="맨 아래로">↓</button>
   </div>
 
   <footer class="foot">
@@ -438,6 +460,31 @@ function render(){
 
 $("panelx").onclick = () => { picked = []; render(); };
 
+/* 위아래 이동 */
+$("toTop").onclick = () => window.scrollTo({ top: 0, behavior: "smooth" });
+$("toBottom").onclick = () => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+
+/* 좁은 화면에서는 순위 변동이 아래쪽 시트로 뜹니다 */
+$("sheettoggle").onclick = () => {
+  const p = $("panel");
+  p.classList.toggle("collapsed");
+  $("sheettoggle").textContent = p.classList.contains("collapsed") ? "▴ 펼치기" : "▾ 접기";
+  layoutSheet();
+};
+function layoutSheet(){
+  const p = $("panel"), b = $("scrollbtns");
+  const narrow = window.innerWidth <= 1000;
+  if (!narrow || p.hidden){
+    b.style.bottom = "16px";
+    document.body.style.paddingBottom = "";
+    return;
+  }
+  const h = p.offsetHeight;
+  b.style.bottom = (h + 12) + "px";
+  document.body.style.paddingBottom = (h + 20) + "px";
+}
+window.addEventListener("resize", layoutSheet);
+
 function marker(x, y, shape, color, r){
   r = r || 3;
   switch (shape){
@@ -454,7 +501,7 @@ function drawPanel(){
   const on = picked.length > 0;
   $("panel").hidden = !on;
   $("main").classList.toggle("split", on);
-  if (!on) return;
+  if (!on){ layoutSheet(); return; }
 
   fillPeriod();
   $("agecount").textContent = chartAges.length > 1 ? `${chartAges.length}개 선택` : chartAges[0];
@@ -579,6 +626,7 @@ function drawPanel(){
     tip.style.top = Math.min(Math.max(top - tip.offsetHeight / 2, 0), box.height - tip.offsetHeight) + "px";
   };
   svgEl.onmouseleave = () => { tip.hidden = true; guide.setAttribute("visibility", "hidden"); };
+  layoutSheet();
 }
 
 render();
