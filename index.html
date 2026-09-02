@@ -402,7 +402,7 @@ function toggle(i){
 
 function rowEl(i, rank, move, isNew, found){
   const [slug, title, creator, cid, flags, thumb] = meta(i);
-  const link = `https://e.kakao.com/app/t/${slug}`;
+  const link = `https://e.kakao.com/t/${slug}`;
   const el = document.createElement("div");
   el.className = "row" + (found ? " found" : "");
   const r = D.release[i];

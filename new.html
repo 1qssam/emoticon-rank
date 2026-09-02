@@ -178,7 +178,7 @@ function render(){
   }
   list.innerHTML = items.map((i, n) => {
     const [slug, title, creator, cid, flags, thumb] = D.items[i];
-    const link = `https://e.kakao.com/app/t/${slug}`;
+    const link = `https://e.kakao.com/t/${slug}`;
     const b = best[i];
     const bestText = b
       ? `최고 ${b[0]}위 · ${D.dates[b[1]].slice(5).replace("-", "/")}`
