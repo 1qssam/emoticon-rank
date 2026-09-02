@@ -329,8 +329,10 @@ D.ages.forEach(a => {
   const l = document.createElement("label");
   l.innerHTML = `<input type="checkbox" value="${a}" ${chartAges.includes(a)?"checked":""}>${a}`;
   l.querySelector("input").onchange = e => {
-    if (e.target.checked) chartAges.push(a);
-    else chartAges = chartAges.filter(v => v !== a);
+    if (e.target.checked){
+      chartAges.push(a);
+      chartAges.sort((x, y) => D.ages.indexOf(x) - D.ages.indexOf(y));   // 체크 순서와 무관하게 정렬
+    } else chartAges = chartAges.filter(v => v !== a);
     if (!chartAges.length){ chartAges = [a]; e.target.checked = true; }
     render();
   };
@@ -639,10 +641,19 @@ function drawPanel(){
     tip.innerHTML = `<b>${D.dates[k].slice(5).replace("-", "/")}</b>${body}`;
     tip.hidden = false;
 
-    const left = x(j) / W * box.width;
-    const top = e.clientY - box.top;
-    tip.style.left = Math.min(Math.max(left + 12, 0), box.width - tip.offsetWidth - 4) + "px";
-    tip.style.top = Math.min(Math.max(top - tip.offsetHeight / 2, 0), box.height - tip.offsetHeight) + "px";
+    const anchorX = x(j) / W * box.width;
+    const cursorY = e.clientY - box.top;
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+
+    // 오른쪽에 자리가 없으면 커서 왼쪽으로 넘깁니다
+    let left = anchorX + 14;
+    if (left + tw > box.width - 4) left = anchorX - tw - 14;
+    tip.style.left = Math.max(0, Math.min(left, box.width - tw - 2)) + "px";
+
+    // 말풍선 아래쪽 끝이 커서에 붙습니다 (커서가 내용을 가리지 않도록)
+    let top = cursorY - th - 12;
+    if (top < 0) top = cursorY + 16;
+    tip.style.top = Math.max(0, Math.min(top, box.height - th)) + "px";
   };
   svgEl.onmouseleave = () => { tip.hidden = true; guide.setAttribute("visibility", "hidden"); };
   layoutSheet();
