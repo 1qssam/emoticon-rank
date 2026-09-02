@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>키워드 · 이모티콘 순위</title>
+<link rel="icon" type="image/png" sizes="32x32" href="1qssam-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="1qssam-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="1qssam-180.png">
+<meta name="description" content="블루오션 키워드와 어제 많이 찾은 키워드를 날짜별로 기록합니다.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="이모티콘 순위">
+<meta property="og:title" content="키워드 · 이모티콘 순위">
+<meta property="og:description" content="블루오션 키워드와 어제 많이 찾은 키워드를 날짜별로 기록합니다.">
+<meta property="og:image" content="https://1qssam.github.io/emoticon-rank/1qssam-share.png">
+<meta property="og:url" content="https://1qssam.github.io/emoticon-rank/keywords.html">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  :root{--paper:#fcfcfb;--ink:#17181a;--muted:#83878c;--line:#e7e6e1;--mark:#fee500;--panel:#f5f4f0}
+  *{box-sizing:border-box}
+  html{overflow-y:scroll}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1320px;margin:0 auto;padding:24px 20px 80px}
+  header{display:flex;align-items:baseline;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+  h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
+  .since{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .nav{margin-left:auto;display:flex;gap:14px}
+  .nav a{font-size:13px;color:var(--muted);text-decoration:none}
+  .nav a:hover{color:var(--ink);text-decoration:underline}
+  .nav a[aria-current]{color:var(--ink);font-weight:600}
+
+  .topbar{display:flex;align-items:center;gap:14px;margin-bottom:8px;flex-wrap:wrap}
+  .datebar{display:flex;align-items:center;gap:8px;position:relative}
+  .daynav{width:30px;height:30px;border:1px solid var(--line);background:#fff;border-radius:7px;
+    cursor:pointer;font-size:14px;color:var(--ink);line-height:1}
+  .daynav:disabled{color:#cfcdc7;cursor:default}
+  .todaybtn{border:0;background:none;font-family:inherit;cursor:pointer;padding:2px 6px;border-radius:6px;
+    font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em;color:var(--ink)}
+  .todaybtn:hover{background:#f0efea}
+  .dow{font-size:13px;color:var(--muted);font-weight:400;margin-left:4px}
+  #picker{position:absolute;top:38px;left:34px;z-index:30;background:#fff;border:1px solid var(--line);
+    border-radius:10px;padding:12px;box-shadow:0 8px 26px rgba(0,0,0,.1);width:266px}
+  #picker input[type=date]{font-family:inherit;font-size:14px;border:1px solid var(--line);
+    border-radius:7px;padding:6px 8px;width:100%;margin-bottom:10px}
+  .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .calhead b{font-size:13.5px;font-variant-numeric:tabular-nums}
+  .calnav{width:26px;height:26px;border:1px solid var(--line);background:#fff;border-radius:6px;
+    cursor:pointer;font-size:12px;line-height:1;color:var(--ink)}
+  .calnav:disabled{color:#d5d3cd;cursor:default}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .cal span.h{font-size:11px;color:var(--muted);text-align:center;padding:3px 0}
+  .cal button{border:0;background:none;font-family:inherit;font-size:12.5px;padding:6px 0;border-radius:6px;
+    cursor:pointer;color:var(--ink);font-variant-numeric:tabular-nums}
+  .cal button:disabled{color:#d5d3cd;cursor:default}
+  .cal button.sel{background:var(--ink);color:#fff;font-weight:600}
+  .cal button:not(:disabled):not(.sel):hover{background:#f0efea}
+
+  .search{position:relative;flex:1;min-width:200px;max-width:320px}
+  .search input{width:100%;font-family:inherit;font-size:13.5px;padding:7px 28px 7px 11px;
+    border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+  .search .x{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;
+    cursor:pointer;color:var(--muted);font-size:13px;padding:2px 4px;border-radius:4px}
+  .hint{font-size:12.5px;color:var(--muted);margin:0 0 16px}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+  .col h2{font-size:14px;margin:0 0 3px;font-weight:600}
+  .col p.desc{font-size:12.5px;color:var(--muted);margin:0 0 10px}
+  ol{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+  ol li{display:flex;align-items:center;gap:10px;padding:7px 4px;border-bottom:1px solid var(--line)}
+  ol li:hover{background:#faf9f6}
+  .n{font-size:13px;color:#adaba5;width:16px;text-align:right;font-variant-numeric:tabular-nums}
+  .kw{border:0;background:none;font-family:inherit;font-size:14.5px;color:var(--ink);
+    cursor:pointer;padding:0;text-align:left;flex:1;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .kw:hover{text-decoration:underline}
+  .both{font-size:11px;background:var(--mark);color:#3a3400;border-radius:4px;padding:1px 6px;font-weight:600}
+  .streak{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+  .detail{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:20px}
+  .detailhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+  .detailhead h2{font-size:15px;margin:0;font-weight:600}
+  .panelx{border:0;background:none;cursor:pointer;color:var(--muted);font-size:14px;
+    padding:3px 6px;border-radius:6px;line-height:1}
+  .panelx:hover{background:#e9e7e1;color:var(--ink)}
+  .stat{font-size:13px;color:var(--muted);margin-bottom:10px}
+  .days{display:flex;flex-wrap:wrap;gap:5px}
+  .day{font-size:12.5px;border:1px solid var(--line);background:#fff;border-radius:6px;
+    padding:3px 8px;font-variant-numeric:tabular-nums;cursor:pointer;font-family:inherit;color:var(--ink)}
+  .day:hover{border-color:var(--ink)}
+  .day i{font-style:normal;color:var(--muted);margin-left:5px;font-size:11px}
+  .empty{padding:36px 0;text-align:center;color:var(--muted);font-size:13.5px}
+
+  .foot{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--muted);line-height:1.7}
+  .foot p{margin:0 0 4px}
+  .foot .slot{margin-top:8px}
+  .foot .slot a{color:var(--ink);text-decoration:none;font-weight:500;border-bottom:1px solid var(--line)}
+  .foot .slot a:hover{border-color:var(--ink)}
+  a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  @media (max-width:720px){ .cols{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>키워드</h1>
+    <span class="since" id="since"></span>
+    <nav class="nav">
+      <a href="index.html">인기 순위</a>
+      <a href="new.html">신규 이모티콘</a>
+      <a href="keywords.html" aria-current="page">키워드</a>
+    </nav>
+  </header>
+
+  <div class="topbar">
+    <div class="datebar">
+      <button class="daynav" id="prev" aria-label="이전 날짜">‹</button>
+      <button class="todaybtn" id="todaybtn" aria-haspopup="dialog"></button>
+      <button class="daynav" id="next" aria-label="다음 날짜">›</button>
+      <div id="picker" hidden>
+        <input type="date" aria-label="날짜 직접 입력">
+        <div class="calhead">
+          <button class="calnav calprev" aria-label="이전 달">‹</button>
+          <b class="calmonth"></b>
+          <button class="calnav calnext" aria-label="다음 달">›</button>
+        </div>
+        <div class="cal"></div>
+      </div>
+    </div>
+    <div class="search">
+      <input id="q" type="search" placeholder="키워드 검색" autocomplete="off">
+      <button class="x" id="qx" hidden aria-label="검색어 지우기">✕</button>
+    </div>
+  </div>
+  <p class="hint">키워드를 누르면 언제 몇 번 올라왔는지 볼 수 있습니다.</p>
+
+  <div id="detail"></div>
+
+  <div class="cols">
+    <div class="col">
+      <h2>블루오션 키워드</h2>
+      <p class="desc">사용량에 비해 이모티콘 수가 적은 키워드</p>
+      <ol id="blue"></ol>
+    </div>
+    <div class="col">
+      <h2>어제 많이 찾은 키워드</h2>
+      <p class="desc">평소보다 어제 사용량이 크게 늘어난 키워드</p>
+      <ol id="yest"></ol>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <p>카카오 이모티콘 스튜디오에서 창작자에게 공개하는 자료를 날마다 기록합니다.</p>
+    <p class="slot"><a href="https://litt.ly/1qssam" target="_blank" rel="noopener">원큐클래스 박원규(원큐쌤)</a></p>
+  </footer>
+</div>
+
+<script src="keywords.js"></script>
+<script src="common.js"></script>
+<script>
+const K = window.KEYWORDS;
+let dateIdx = K.dates.length - 1;
+let word = null;
+let query = "";
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dow = s => "일월화수목금토"[new Date(...s.split("-").map((v,i)=>i===1?v-1:+v)).getDay()];
+const fmt = s => { const [y,m,d] = s.split("-"); return `${y}년 ${+m}월 ${+d}일`; };
+
+$("since").textContent = "since " + K.dates[0].replace(/-/g,"").slice(2);
+
+/* 키워드별로 어느 날 어느 목록에 올랐는지 미리 정리 */
+const seen = {};
+["blue","yest"].forEach(kind => {
+  K[kind].forEach((list, k) => list.forEach((w, i) => {
+    ((seen[w] ||= {})[k] ||= {})[kind] = i + 1;
+  }));
+});
+
+$("prev").onclick = () => { dateIdx--; render(); };
+$("next").onclick = () => { dateIdx++; render(); };
+initDatePicker({
+  dates: K.dates, button: "todaybtn", picker: "picker",
+  get: () => dateIdx,
+  set: k => { dateIdx = k; render(); },
+});
+$("q").oninput = e => { query = e.target.value.trim(); $("qx").hidden = !query; render(); };
+$("qx").onclick = () => { query = ""; $("q").value = ""; $("qx").hidden = true; render(); };
+
+function pickWord(w){ word = (word === w ? null : w); render(); }
+
+function listHtml(kind, other){
+  const list = K[kind][dateIdx] || [];
+  if (!list.length) return `<div class="empty">기록이 없습니다.</div>`;
+  const otherSet = new Set(K[other][dateIdx] || []);
+  return list.map((w, i) => {
+    const total = Object.keys(seen[w] || {}).length;
+    return `<li>
+      <span class="n">${i + 1}</span>
+      <button class="kw" data-w="${esc(w)}">#${esc(w)}</button>
+      ${otherSet.has(w) ? '<span class="both">양쪽</span>' : ""}
+      <span class="streak">${total}일</span>
+    </li>`;
+  }).join("");
+}
+
+function detailHtml(w){
+  const rec = seen[w];
+  if (!rec) return `<div class="detail"><div class="detailhead">
+      <h2>#${esc(w)}</h2><button class="panelx" id="closedetail" aria-label="닫기">✕</button></div>
+      <div class="stat">기록이 없습니다.</div></div>`;
+  const ks = Object.keys(rec).map(Number).sort((a, b) => a - b);
+  const blue = ks.filter(k => rec[k].blue).length;
+  const yest = ks.filter(k => rec[k].yest).length;
+  return `<div class="detail">
+    <div class="detailhead">
+      <h2>#${esc(w)}</h2>
+      <button class="panelx" id="closedetail" aria-label="닫기">✕</button>
+    </div>
+    <div class="stat">기록된 ${K.dates.length}일 중 ${ks.length}일 등장 ·
+      블루오션 ${blue}일 · 어제 많이 찾음 ${yest}일</div>
+    <div class="days">${ks.map(k => {
+      const t = [];
+      if (rec[k].blue) t.push(`블 ${rec[k].blue}`);
+      if (rec[k].yest) t.push(`어 ${rec[k].yest}`);
+      return `<button class="day" data-k="${k}">${K.dates[k].slice(5).replace("-", "/")}<i>${t.join(" · ")}</i></button>`;
+    }).join("")}</div>
+  </div>`;
+}
+
+function render(){
+  const date = K.dates[dateIdx];
+  $("todaybtn").innerHTML = `${fmt(date)}<span class="dow">${dow(date)}</span>`;
+  $("prev").disabled = dateIdx === 0;
+  $("next").disabled = dateIdx === K.dates.length - 1;
+
+  $("blue").innerHTML = listHtml("blue", "yest");
+  $("yest").innerHTML = listHtml("yest", "blue");
+  document.querySelectorAll(".kw").forEach(b => b.onclick = () => pickWord(b.dataset.w));
+
+  const target = query
+    ? (seen[query] ? query : Object.keys(seen).find(w => w.toLowerCase().includes(query.toLowerCase())) || query)
+    : word;
+  $("detail").innerHTML = target ? detailHtml(target) : "";
+  if (target){
+    $("closedetail").onclick = () => {
+      word = null; query = ""; $("q").value = ""; $("qx").hidden = true; render();
+    };
+    document.querySelectorAll(".day").forEach(b => b.onclick = () => { dateIdx = +b.dataset.k; render(); });
+  }
+}
+
+render();
+</script>
+</body>
+</html>
