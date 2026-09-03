@@ -271,6 +271,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const dow = s => "일월화수목금토"[new Date(...s.split("-").map((v,i)=>i===1?v-1:+v)).getDay()];
 const fmt = s => { const [y,m,d] = s.split("-"); return `${y}년 ${+m}월 ${+d}일`; };
+const meta = i => D.items[i];   // [slug, 제목, 작가, 작가ID, 구분, 썸네일]
 
 /* 연령대별로 최고 기록을 모읍니다 */
 const best = {};
