@@ -60,6 +60,7 @@
   .today{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
   .dow{font-size:13px;color:var(--muted);font-weight:400;margin-left:4px}
   .count{font-size:13px;color:var(--muted);margin-left:6px}
+  .count .bd{color:#a5a39d;margin-left:2px}
   .hint{font-size:12.5px;color:var(--muted);margin:0 0 14px}
 
   .list{border-top:1px solid var(--line)}
@@ -154,6 +155,27 @@ D.ages.forEach(a => {
 });
 
 /* 전체 순위가 있으면 그것을, 없으면 가장 높이 오른 연령대를 보여줍니다 */
+/* 그날 출시분을 종류별로 셉니다 */
+function kindOf(flags){
+  if (flags & 2) return "큰티";
+  if (flags & 1) return (flags & 8) ? "미니움티" : "미니멈티";
+  return (flags & 8) ? "움티" : "멈티";
+}
+const KIND_ORDER = ["움티", "멈티", "미니움티", "미니멈티", "큰티"];
+
+function breakdown(items){
+  const c = {};
+  let sound = 0;
+  items.forEach(i => {
+    const f = D.items[i][4];
+    c[kindOf(f)] = (c[kindOf(f)] || 0) + 1;
+    if (f & 4) sound++;
+  });
+  const parts = KIND_ORDER.filter(k => c[k]).map(k => `${k} ${c[k]}`);
+  if (sound) parts.push(`소리 ${sound}`);
+  return parts.join(" · ");
+}
+
 function bestText(i){
   const all = best["전체"][i];
   if (all) return `최고 ${all[0]}위 · ${D.dates[all[1]].slice(5).replace("-", "/")}`;
@@ -186,7 +208,9 @@ function render(){
 
   const items = [];
   D.release.forEach((r, i) => { if (r === dateIdx) items.push(i); });
-  $("count").textContent = items.length ? `${items.length}건` : "";
+  $("count").innerHTML = items.length
+    ? `${items.length}건 <span class="bd">${breakdown(items)}</span>`
+    : "";
 
   const list = $("list");
   if (!items.length){
