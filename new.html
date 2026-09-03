@@ -144,11 +144,28 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 const dow = s => "일월화수목금토"[new Date(...s.split("-").map((v,i)=>i===1?v-1:+v)).getDay()];
 const fmt = s => { const [y,m,d] = s.split("-"); return `${y}년 ${+m}월 ${+d}일`; };
 
-/* 인기(전체) 순위에서의 최고 기록 */
+/* 연령대별로 최고 기록을 모읍니다 */
 const best = {};
-D.hot["전체"].forEach((row, k) => row.forEach((it, i) => {
-  if (!best[it] || i + 1 < best[it][0]) best[it] = [i + 1, k];
-}));
+D.ages.forEach(a => {
+  best[a] = {};
+  D.hot[a].forEach((row, k) => row.forEach((it, i) => {
+    if (!best[a][it] || i + 1 < best[a][it][0]) best[a][it] = [i + 1, k];
+  }));
+});
+
+/* 전체 순위가 있으면 그것을, 없으면 가장 높이 오른 연령대를 보여줍니다 */
+function bestText(i){
+  const all = best["전체"][i];
+  if (all) return `최고 ${all[0]}위 · ${D.dates[all[1]].slice(5).replace("-", "/")}`;
+
+  let top = null;
+  D.ages.slice(1).forEach(a => {
+    const r = best[a][i];
+    if (r && (!top || r[0] < top[1][0])) top = [a, r];
+  });
+  if (top) return `${top[0]} 최고 ${top[1][0]}위 · ${D.dates[top[1][1]].slice(5).replace("-", "/")}`;
+  return "순위 기록 없음";
+}
 
 $("since").textContent = "since " + D.dates[0].replace(/-/g,"").slice(2);
 if (D.generatedAt) $("updated").textContent = `마지막 갱신 ${D.generatedAt}`;
@@ -179,10 +196,7 @@ function render(){
   list.innerHTML = items.map((i, n) => {
     const [slug, title, creator, cid, flags, thumb] = D.items[i];
     const link = `https://e.kakao.com/t/${slug}`;
-    const b = best[i];
-    const bestText = b
-      ? `최고 ${b[0]}위 · ${D.dates[b[1]].slice(5).replace("-", "/")}`
-      : `순위 기록 없음`;
+
     return `<div class="row">
       <span class="no">${n + 1}</span>
       <a href="${link}" target="_blank" rel="noopener" aria-label="${esc(title)} 상세보기">
@@ -192,7 +206,7 @@ function render(){
         <span class="by"><a href="https://e.kakao.com/creator/${cid}" target="_blank" rel="noopener">${esc(creator)}</a>
           ${kindTags(flags)}</span>
       </span>
-      <span class="best">${bestText}</span>
+      <span class="best">${bestText(i)}</span>
     </div>`;
   }).join("");
 }
