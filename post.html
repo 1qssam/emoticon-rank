@@ -141,6 +141,17 @@ const KIND_FULL = {"멈티":"멈춰있는 이모티콘", "움티":"움직이는 
                    "미니멈티":"미니 멈춰있는 이모티콘", "미니움티":"미니 움직이는 이모티콘",
                    "큰티":"큰 이모티콘"};
 
+/* 태그 — 기본 묶음 + 그날 나온 종류만 덧붙입니다 */
+const TAG_BASE = ["신규이모티콘", "최신이모티콘", "카카오톡이모티콘출시",
+                  "이모티콘출시", "이모티콘추천", "이모티콘트렌드"];
+const TAG_KIND = {
+  "멈티":     ["멈춰있는이모티콘", "멈티"],
+  "움티":     ["움직이는이모티콘", "움티"],
+  "미니멈티": ["멈춰있는미니이모티콘", "미니멈티"],
+  "미니움티": ["움직이는미니이모티콘", "미니움티"],
+  "큰티":     ["큰이모티콘"],
+};
+
 $("prev").onclick = () => { dateIdx--; render(); };
 $("next").onclick = () => { dateIdx++; render(); };
 $("tab-rank").onclick = () => { mode = "rank"; render(); };
@@ -205,10 +216,17 @@ ${counts}`;
 
   const links = items.map(i => `https://e.kakao.com/t/${D.items[i][0]}`).join("\n");
 
+  /* 태그 */
+  const tags = [...TAG_BASE];
+  KIND_ORDER.forEach(k => { if (c[k]) tags.push(...TAG_KIND[k]); });
+  if (items.some(i => D.items[i][4] & 4)) tags.push("소리나는이모티콘");
+  if (dow(date) === "월") tags.push("월요일무료");
+
   const mods = [
     { label: "머리말", text: head },
     { label: `이모티콘 목록 ${items.length}줄`, text: names },
     { label: `링크 ${items.length}줄 · 위 목록과 같은 순서`, text: links },
+    { label: `태그 ${tags.length}개`, text: tags.map(t => "#" + t).join(", ") },
   ];
 
   mods.push({ label: "맺음말", text:
