@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스프레드시트 내보내기 · 이모티콘 순위</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{--paper:#fcfcfb;--ink:#17181a;--muted:#83878c;--line:#e7e6e1;--panel:#f5f4f0;--mark:#fee500}
+  *{box-sizing:border-box}
+  html{overflow-y:scroll}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px 20px 80px}
+  header{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
+  header a{font-size:13px;color:var(--muted)}
+  header .sp{flex:1}
+
+  .opts{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:12px;
+    padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+  .opts label{display:flex;align-items:center;gap:6px;font-size:13px}
+  .opts select{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;
+    padding:5px 7px;background:#fff;color:var(--ink)}
+  .opts .g{display:flex;align-items:center;gap:4px}
+  input[type=checkbox]{width:14px;height:14px;accent-color:#17181a;cursor:pointer}
+
+  .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;
+    padding:7px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+  .btn:hover{border-color:var(--ink)}
+  .btn.solid{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.done{background:var(--mark);color:#3a3400;border-color:var(--mark)}
+  .cnt{font-size:12.5px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+
+  .tablewrap{border:1px solid var(--line);border-radius:9px;background:#fff;overflow:auto;max-height:520px}
+  table{border-collapse:collapse;font-size:12.5px;width:100%}
+  th,td{border-bottom:1px solid var(--line);padding:6px 9px;text-align:left;white-space:nowrap}
+  th{position:sticky;top:0;background:var(--panel);font-weight:600;z-index:1}
+  td.num{font-variant-numeric:tabular-nums;color:#5c6064}
+  td.blank{background:#fffdf2}
+  .tip{font-size:12.5px;color:var(--muted);line-height:1.75;margin-top:16px;
+    padding-top:14px;border-top:1px solid var(--line)}
+  button:focus-visible,select:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>스프레드시트 내보내기</h1>
+    <span class="sp"></span>
+    <a href="post.html">블로그용 텍스트</a>
+    <a href="card.html">캡처용 순위표</a>
+  </header>
+
+  <div class="opts">
+    <label>내보낼 자료
+      <select id="kind">
+        <option value="new" selected>신규 출시</option>
+        <option value="hot">인기 순위</option>
+      </select>
+    </label>
+    <label class="g">기간
+      <select id="from"></select> –
+      <select id="to"></select>
+    </label>
+    <label id="ageWrap" hidden>연령대
+      <select id="age"></select>
+    </label>
+    <label id="topWrap" hidden>순위
+      <select id="topn">
+        <option value="20">20위까지</option>
+        <option value="50">50위까지</option>
+        <option value="100">100위까지</option>
+        <option value="200" selected>200위 전부</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="memo" checked> 직접 적을 칸 추가</label>
+  </div>
+
+  <div class="acts">
+    <button class="btn solid" id="download">CSV 내려받기</button>
+    <button class="btn" id="copy">복사해서 시트에 붙여넣기</button>
+    <span class="cnt" id="cnt"></span>
+  </div>
+
+  <div class="tablewrap"><table id="tbl"></table></div>
+
+  <p class="tip">
+    날짜는 최근 것이 위로, 순번은 작은 것이 위로 정렬됩니다.<br>
+    <b>복사해서 시트에 붙여넣기</b>는 탭으로 나눠 복사하므로 구글 시트나 엑셀에 바로 붙습니다.
+    <b>CSV 내려받기</b>는 파일로 저장됩니다.<br>
+    노란 칸(무료·동물·메모)은 비어 있습니다. 시트에서 직접 채우시면 됩니다.
+  </p>
+</div>
+
+<script src="data.js"></script>
+<script>
+const D = window.DATA;
+
+const $ = id => document.getElementById(id);
+const dow = s => "일월화수목금토"[new Date(...s.split("-").map((v,i)=>i===1?v-1:+v)).getDay()];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function kindOf(flags){
+  if (flags & 2) return "큰티";
+  if (flags & 1) return (flags & 8) ? "미니움티" : "미니멈티";
+  return (flags & 8) ? "움티" : "멈티";
+}
+
+/* 인기 순위에서의 최고 기록 (연령대별) */
+const best = {};
+D.ages.forEach(a => {
+  best[a] = {};
+  D.hot[a].forEach((row, k) => row.forEach((it, i) => {
+    if (!best[a][it] || i + 1 < best[a][it][0]) best[a][it] = [i + 1, k];
+  }));
+});
+
+/* 날짜·연령대 선택칸 채우기 */
+D.dates.forEach((d, i) => {
+  ["from","to"].forEach(id => {
+    const o = document.createElement("option");
+    o.value = i; o.textContent = d;
+    $(id).appendChild(o);
+  });
+});
+$("from").value = Math.max(0, D.dates.length - 7);
+$("to").value = D.dates.length - 1;
+D.ages.forEach(a => {
+  const o = document.createElement("option");
+  o.value = a; o.textContent = a;
+  $("age").appendChild(o);
+});
+
+["kind","from","to","age","topn","memo"].forEach(id => $(id).onchange = render);
+
+const BLANK = ["무료", "동물", "메모"];
+
+function build(){
+  let from = +$("from").value, to = +$("to").value;
+  if (from > to) [from, to] = [to, from];
+  const withMemo = $("memo").checked;
+
+  if ($("kind").value === "new"){
+    const head = ["날짜","요일","순번","상품명","작가명","시리즈","유형","소리",
+                  "전체최고순위","최고순위일","slug","링크"];
+    const rows = [];
+    for (let k = to; k >= from; k--){          // 날짜는 내림차순
+      const items = [];
+      D.release.forEach((r, i) => { if (r === k) items.push(i); });
+      items.forEach((i, n) => {                 // 순번은 오름차순
+        const [slug, title, creator, cid, flags] = D.items[i];
+        const b = best["전체"][i];
+        rows.push([
+          D.dates[k], dow(D.dates[k]), n + 1, title, creator,
+          D.items[i][6] || "", kindOf(flags), (flags & 4) ? "Y" : "",
+          b ? b[0] : "", b ? D.dates[b[1]] : "",
+          slug, `https://e.kakao.com/t/${slug}`,
+        ]);
+      });
+    }
+    return { head: withMemo ? head.concat(BLANK) : head, rows, blankFrom: head.length };
+  }
+
+  const age = $("age").value, n = +$("topn").value;
+  const head = ["날짜","요일","연령대","순위","상품명","작가명","시리즈","유형","소리","slug","링크"];
+  const rows = [];
+  for (let k = to; k >= from; k--){
+    D.hot[age][k].slice(0, n).forEach((it, i) => {
+      const [slug, title, creator, cid, flags] = D.items[it];
+      rows.push([
+        D.dates[k], dow(D.dates[k]), age, i + 1, title, creator,
+        D.items[it][6] || "", kindOf(flags), (flags & 4) ? "Y" : "",
+        slug, `https://e.kakao.com/t/${slug}`,
+      ]);
+    });
+  }
+  return { head: withMemo ? head.concat(BLANK) : head, rows, blankFrom: head.length };
+}
+
+let current = null;
+
+function render(){
+  const isNew = $("kind").value === "new";
+  $("ageWrap").hidden = isNew;
+  $("topWrap").hidden = isNew;
+
+  current = build();
+  const { head, rows, blankFrom } = current;
+
+  const body = rows.slice(0, 300).map(r => {
+    const cells = head.map((h, i) => {
+      const v = r[i] === undefined ? "" : r[i];
+      const cls = i >= blankFrom ? "blank" : (typeof v === "number" ? "num" : "");
+      return `<td class="${cls}">${esc(v)}</td>`;
+    }).join("");
+    return `<tr>${cells}</tr>`;
+  }).join("");
+
+  $("tbl").innerHTML =
+    `<thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${body}</tbody>`;
+  $("cnt").textContent = `${rows.length.toLocaleString()}줄` +
+    (rows.length > 300 ? " (아래 표에는 300줄까지 보여줍니다)" : "");
+}
+
+function toText(sep){
+  const { head, rows, blankFrom } = current;
+  const cell = v => {
+    const s = v === undefined || v === null ? "" : String(v);
+    if (sep === "," && /[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  };
+  const line = r => head.map((h, i) => cell(i >= blankFrom ? "" : r[i])).join(sep);
+  return [head.join(sep)].concat(rows.map(line)).join("\n");
+}
+
+function flash(b){
+  const old = b.textContent;
+  b.textContent = "복사됨"; b.classList.add("done");
+  setTimeout(() => { b.textContent = old; b.classList.remove("done"); }, 1500);
+}
+
+$("copy").onclick = async () => {
+  await navigator.clipboard.writeText(toText("\t"));
+  flash($("copy"));
+};
+
+$("download").onclick = () => {
+  const name = ($("kind").value === "new" ? "신규출시" : `인기순위-${$("age").value}`) +
+    `-${D.dates[Math.min(+$("from").value, +$("to").value)]}_${D.dates[Math.max(+$("from").value, +$("to").value)]}.csv`;
+  const blob = new Blob(["\uFEFF" + toText(",")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+render();
+</script>
+</body>
+</html>

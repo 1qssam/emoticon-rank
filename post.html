@@ -77,7 +77,8 @@
 <div class="wrap">
   <header>
     <h1>블로그용 텍스트</h1>
-    <a href="card.html">캡처용 순위표 →</a>
+    <a href="card.html">캡처용 순위표</a>
+    <a href="export.html" style="margin-left:12px">스프레드시트</a>
   </header>
 
   <div class="tabs" role="tablist">
@@ -164,7 +165,7 @@ initDatePicker({
 /* ── 인기순위 글 ── */
 function rankModules(date){
   const d = fmt(date), w = dow(date);
-  const title = `${d} ${w}요일 카카오 이모티콘 인기순위 TOP20 (전체/10대/20대/30대/40대/50대 이상)`;
+  const title = `${d} ${w}요일 카카오 이모티콘 인기순위 TOP10 (전체/10대/20대/30대/40대/50대 이상)`;
   const intro =
 `${d} ${w}요일 기준, 카카오톡 이모티콘 인기순위를
 전체 및 연령대별(10대/20대/30대/40대/50대 이상)로 정리해드립니다.
