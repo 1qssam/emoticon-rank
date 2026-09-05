@@ -226,7 +226,6 @@ ${counts}`;
     { label: "머리말", text: head },
     { label: `이모티콘 목록 ${items.length}줄`, text: names },
     { label: `링크 ${items.length}줄 · 위 목록과 같은 순서`, text: links },
-    { label: `태그 ${tags.length}개`, text: tags.map(t => "#" + t).join(", ") },
   ];
 
   mods.push({ label: "맺음말", text:
@@ -234,6 +233,8 @@ ${counts}`;
 출시일별 기록과 인기순위는
 ${SITE}
 에서 더 많은 정보를 확인하실 수 있습니다.` });
+
+  mods.push({ label: `태그 ${tags.length}개`, text: tags.map(t => "#" + t).join(", ") });
 
   return { title, mods };
 }
