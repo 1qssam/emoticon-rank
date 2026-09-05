@@ -60,15 +60,13 @@
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.65;
     padding:12px 14px;color:var(--ink);resize:vertical}
   .title-box{height:56px}
-  .preview{border:1px solid var(--line);border-radius:9px;background:#fff;padding:16px 18px;
-    max-height:560px;overflow-y:auto;line-height:1.75;font-size:13.5px}
-  .preview p{margin:0 0 10px}
-  .preview .sum{background:var(--panel);border-radius:8px;padding:10px 12px;margin-bottom:14px}
-  .preview .row{display:flex;align-items:center;gap:12px;padding:7px 0}
-  .preview .row img{width:52px;height:52px;border-radius:9px;background:#f2f1ec;display:block}
-  .preview .row a{color:var(--ink);text-decoration:none}
-  .preview .row .k{color:var(--muted);font-size:12.5px}
-  .preview .link{margin-top:14px;font-size:13px}
+  .mod{border:1px solid var(--line);border-radius:9px;background:#fff;margin-bottom:10px;overflow:hidden}
+  .modhead{display:flex;align-items:center;gap:9px;padding:8px 10px 8px 14px;
+    background:var(--panel);border-bottom:1px solid var(--line)}
+  .modhead span{font-size:12.5px;color:var(--muted);font-weight:500}
+  .modhead .btn{margin-left:auto;padding:4px 11px}
+  .mod pre{margin:0;padding:12px 14px;white-space:pre-wrap;word-break:break-all;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.7}
   .tip{font-size:12.5px;color:var(--muted);line-height:1.75;margin-top:18px;
     padding-top:14px;border-top:1px solid var(--line)}
   button:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{
@@ -110,19 +108,11 @@
     <textarea id="title" class="title-box" readonly></textarea>
   </div>
 
-  <div class="block">
-    <div class="blockhead">
-      <h2>본문</h2>
-      <button class="btn solid" id="copyRich">서식 그대로 복사</button>
-      <button class="btn" id="copyText">글자만 복사</button>
-      <span class="hint" id="len"></span>
-    </div>
-    <div class="preview" id="preview"></div>
-  </div>
+  <div id="modules"></div>
 
   <p class="tip">
-    <b>서식 그대로 복사</b>는 이미지와 링크까지 함께 옮깁니다. 네이버 에디터가 받아주지 않으면
-    <b>글자만 복사</b>를 쓰시고 이미지는 따로 올리세요.<br>
+    한 덩어리씩 복사해서 차례로 붙여넣으세요. 주소는 항상 줄 맨 끝에 혼자 두었기 때문에
+    네이버 에디터가 그 줄만 미리보기 카드로 바꿔줍니다.<br>
     인기순위 글은 <a href="card.html">캡처용 순위표</a>에서 이미지를 먼저 캡처한 뒤,
     이 본문을 아래에 붙이시면 됩니다.
   </p>
@@ -161,62 +151,70 @@ initDatePicker({
 });
 
 /* ── 인기순위 글 ── */
-function rankPost(date){
+function rankModules(date){
   const d = fmt(date), w = dow(date);
   const title = `${d} ${w}요일 카카오 이모티콘 인기순위 TOP20 (전체/10대/20대/30대/40대/50대 이상)`;
-  const html = `
-    <p>${d} ${w}요일 기준, 카카오톡 이모티콘 인기순위를<br>
-    전체 및 연령대별(10대/20대/30대/40대/50대 이상)로 정리해드립니다.<br>
-    인기순위는 매일 바뀌기 때문에, 오늘의 순위를 기록으로 남겨둡니다.<br>
-    예비 작가님, 이모티콘 지망생이라면 요즘 어떤 스타일이 인기 있는지<br>
-    참고하시고 트렌드를 확인해보세요.</p>
-    <p>* 당일 출시된 이모티콘은 순위에 집계되지 않습니다.<br>
-    * 신규 이모티콘은 출시 다음날부터 인기 순위에 집계됩니다.</p>
-    <p>(여기에 순위표 이미지를 넣으세요)</p>
-    <p class="link">전체 200위까지의 순위와 이모티콘별 순위 변동 그래프는<br>
-    <a href="${SITE}">${SITE}</a> 에서 더 많은 정보를 확인하실 수 있습니다.<br>
-    날짜를 넘겨가며 지난 순위도 볼 수 있습니다.</p>`;
-  return { title, html };
+  const intro =
+`${d} ${w}요일 기준, 카카오톡 이모티콘 인기순위를
+전체 및 연령대별(10대/20대/30대/40대/50대 이상)로 정리해드립니다.
+인기순위는 매일 바뀌기 때문에, 오늘의 순위를 기록으로 남겨둡니다.
+예비 작가님, 이모티콘 지망생이라면 요즘 어떤 스타일이 인기 있는지
+참고하시고 트렌드를 확인해보세요.
+
+* 당일 출시된 이모티콘은 순위에 집계되지 않습니다.
+* 신규 이모티콘은 출시 다음날부터 인기 순위에 집계됩니다.`;
+  const outro =
+`전체 200위까지의 순위와 이모티콘별 순위 변동 그래프는
+${SITE}
+에서 더 많은 정보를 확인하실 수 있습니다.`;
+  return { title, mods: [
+    { label: "머리말", text: intro },
+    { label: "순위표 이미지 자리", text: "(캡처한 순위표 이미지 6장을 여기에 넣으세요)", skip: true },
+    { label: "맺음말", text: outro },
+  ]};
 }
 
 /* ── 신규 이모티콘 글 ── */
-function newPost(date){
+function newModules(date){
   const d = fmt(date), w = dow(date);
   const items = [];
   D.release.forEach((r, i) => { if (r === dateIdx) items.push(i); });
 
-  const c = {};
-  items.forEach(i => { const k = kindOf(D.items[i][4]); c[k] = (c[k] || 0) + 1; });
-  const kinds = KIND_ORDER.filter(k => c[k]);
-
   const title = `${d} ${w}요일 신규 출시 카카오톡 이모티콘 총정리 (움직이는/멈춰있는/미니)`;
 
   if (!items.length){
-    return { title, html: `<p>${d} ${w}요일에는 새로 출시된 이모티콘이 없습니다.</p>
-      <p class="link"><a href="${SITE}">${SITE}</a> 에서 더 많은 정보를 확인하실 수 있습니다.</p>` };
+    return { title, mods: [{ label: "본문",
+      text: `${d} ${w}요일에는 새로 출시된 이모티콘이 없습니다.` }] };
   }
 
-  const sum = `<div class="sum"><b>오늘 출시 ${items.length}건</b><br>` +
-    kinds.map(k => `${KIND_FULL[k]} ${c[k]}건`).join(" · ") + `</div>`;
+  const c = {};
+  items.forEach(i => { const k = kindOf(D.items[i][4]); c[k] = (c[k] || 0) + 1; });
+  const counts = KIND_ORDER.filter(k => c[k]).map(k => `${KIND_FULL[k]} ${c[k]}건`).join("\n");
 
-  const rows = items.map(i => {
-    const [slug, title2, creator, cid, flags, thumb] = D.items[i];
-    const url = `https://e.kakao.com/t/${slug}`;
-    return `<div class="row">
-      <a href="${url}"><img src="${D.thumbBase}${thumb}" alt=""></a>
-      <span><a href="${url}"><b>${esc(title2)}</b>(${esc(creator)})</a>
-      <span class="k"> ${kindOf(flags)}</span></span>
-    </div>`;
-  }).join("");
+  const head =
+`${d} ${w}요일 카카오톡에 새로 출시된
+신규 이모티콘을 정리해드립니다.
 
-  const html = `
-    <p>${d} ${w}요일 카카오톡에 새로 출시된<br>신규 이모티콘을 정리해드립니다.</p>
-    ${sum}
-    ${rows}
-    <p class="link">이모티콘 이름을 누르면 이모티콘샵으로 바로 이동합니다.<br>
-    출시일별 기록과 인기순위는<br>
-    <a href="${SITE}">${SITE}</a> 에서 더 많은 정보를 확인하실 수 있습니다.</p>`;
-  return { title, html };
+오늘 출시 ${items.length}건
+${counts}`;
+
+  const mods = [{ label: "머리말", text: head }];
+
+  items.forEach((i, n) => {
+    const [slug, t, creator, cid, flags] = D.items[i];
+    mods.push({
+      label: `${n + 1} / ${items.length}`,
+      text: `${t}(${creator}) ${kindOf(flags)}\nhttps://e.kakao.com/t/${slug}`,
+    });
+  });
+
+  mods.push({ label: "맺음말", text:
+`이모티콘 이름을 누르면 이모티콘샵으로 바로 이동합니다.
+출시일별 기록과 인기순위는
+${SITE}
+에서 더 많은 정보를 확인하실 수 있습니다.` });
+
+  return { title, mods };
 }
 
 function render(){
@@ -227,10 +225,22 @@ function render(){
   $("tab-rank").setAttribute("aria-selected", mode === "rank");
   $("tab-new").setAttribute("aria-selected", mode === "new");
 
-  const post = mode === "rank" ? rankPost(date) : newPost(date);
+  const post = mode === "rank" ? rankModules(date) : newModules(date);
   $("title").value = post.title;
-  $("preview").innerHTML = post.html;
-  $("len").textContent = `${$("preview").innerText.trim().length.toLocaleString()}자`;
+
+  $("modules").innerHTML = post.mods.map((m, k) => `
+    <div class="mod">
+      <div class="modhead">
+        <span>${esc(m.label)}</span>
+        ${m.skip ? "" : `<button class="btn" data-k="${k}">복사</button>`}
+      </div>
+      <pre id="mod${k}">${esc(m.text)}</pre>
+    </div>`).join("");
+
+  $("modules").querySelectorAll("button[data-k]").forEach(b => b.onclick = async () => {
+    await navigator.clipboard.writeText($("mod" + b.dataset.k).textContent);
+    flash(b);
+  });
 }
 
 /* ── 복사 ── */
@@ -244,27 +254,6 @@ $("copyTitle").onclick = async () => {
   await navigator.clipboard.writeText($("title").value);
   flash($("copyTitle"));
 };
-$("copyText").onclick = async () => {
-  await navigator.clipboard.writeText($("preview").innerText.trim());
-  flash($("copyText"));
-};
-$("copyRich").onclick = async () => {
-  const html = $("preview").innerHTML;
-  const text = $("preview").innerText.trim();
-  try {
-    await navigator.clipboard.write([new ClipboardItem({
-      "text/html": new Blob([html], { type: "text/html" }),
-      "text/plain": new Blob([text], { type: "text/plain" }),
-    })]);
-  } catch (e) {
-    const r = document.createRange();
-    r.selectNodeContents($("preview"));
-    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
-    document.execCommand("copy"); sel.removeAllRanges();
-  }
-  flash($("copyRich"));
-};
-
 render();
 </script>
 </body>
