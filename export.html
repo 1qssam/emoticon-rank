@@ -127,8 +127,14 @@ D.dates.forEach((d, i) => {
     $(id).appendChild(o);
   });
 });
-$("from").value = Math.max(0, D.dates.length - 7);
-$("to").value = D.dates.length - 1;
+/* 기본값은 오늘 하루. 오늘 자료가 아직 없으면 가장 최근 날짜로 */
+(function(){
+  const t = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);  // 한국 날짜
+  let k = D.dates.indexOf(t);
+  if (k < 0) k = D.dates.length - 1;
+  $("from").value = k;
+  $("to").value = k;
+})();
 D.ages.forEach(a => {
   const o = document.createElement("option");
   o.value = a; o.textContent = a;
