@@ -198,15 +198,18 @@ function newModules(date){
 오늘 출시 ${items.length}건
 ${counts}`;
 
-  const mods = [{ label: "머리말", text: head }];
-
-  items.forEach((i, n) => {
+  const names = items.map(i => {
     const [slug, t, creator, cid, flags] = D.items[i];
-    mods.push({
-      label: `${n + 1} / ${items.length}`,
-      text: `${t}(${creator}) ${kindOf(flags)}\nhttps://e.kakao.com/t/${slug}`,
-    });
-  });
+    return `${t}(${creator}) ${kindOf(flags)}`;
+  }).join("\n");
+
+  const links = items.map(i => `https://e.kakao.com/t/${D.items[i][0]}`).join("\n");
+
+  const mods = [
+    { label: "머리말", text: head },
+    { label: `이모티콘 목록 ${items.length}줄`, text: names },
+    { label: `링크 ${items.length}줄 · 위 목록과 같은 순서`, text: links },
+  ];
 
   mods.push({ label: "맺음말", text:
 `이모티콘 이름을 누르면 이모티콘샵으로 바로 이동합니다.
