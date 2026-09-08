@@ -18,6 +18,7 @@
   .bar button,.bar select{font-family:inherit;font-size:13px;border:1px solid var(--line);
     background:#fff;border-radius:7px;padding:6px 11px;cursor:pointer;color:var(--ink)}
   .bar button:hover{border-color:var(--ink)}
+  .modebtn.on{background:#111;color:#fff;border-color:#111;font-weight:600}
   .bar .note{font-size:12.5px;color:#6f7377;line-height:1.6;max-width:1000px;
     margin:0 auto;padding:0 16px 14px}
   .datebar{display:flex;align-items:center;gap:6px;position:relative}
@@ -56,7 +57,14 @@
   .it .c{font-size:13.5px;color:#9a9ea2;margin-top:2px}
   .mark{text-align:right;font-size:16px;font-weight:500;color:#2b2c2e;
     letter-spacing:.01em;padding:12px 4px 4px}
-  @media (max-width:1000px){ .card{width:100%} .grid{grid-template-columns:1fr} }
+  .ngrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 12px}
+  .ni img{width:100%;aspect-ratio:1/1;background:#f2f1ec;object-fit:cover;display:block}
+  .ni .t{font-size:14px;font-weight:600;margin-top:8px;line-height:1.3;
+    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .ni .c{font-size:12.5px;color:#8a8e92;margin-top:2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  @media (max-width:1000px){ .card{width:100%} .grid{grid-template-columns:1fr}
+    .ngrid{grid-template-columns:repeat(2,1fr)} }
 </style>
 </head>
 <body>
@@ -75,10 +83,12 @@
       <div class="cal"></div>
     </div>
   </div>
-  <label style="font-size:13px">
+  <button id="tab-hot" class="modebtn on">인기순위</button>
+  <button id="tab-new" class="modebtn">신규 이모티콘</button>
+  <label style="font-size:13px" id="topWrap">
     <select id="topn">
-      <option value="20" selected>20위까지</option>
-      <option value="10">10위까지</option>
+      <option value="10" selected>10위까지</option>
+      <option value="20">20위까지</option>
     </select>
   </label>
   <span class="sp"></span>
@@ -105,6 +115,9 @@ const EDGE = {"전체":"#d8d6d0","10대":"#f3a8c6","20대":"#f2cf6a","30대":"#8
 $("prev").onclick = () => { dateIdx--; render(); };
 $("next").onclick = () => { dateIdx++; render(); };
 $("topn").onchange = render;
+let mode = "hot";
+$("tab-hot").onclick = () => { mode = "hot"; render(); };
+$("tab-new").onclick = () => { mode = "new"; render(); };
 initDatePicker({
   dates: D.dates, button: "todaybtn", picker: "picker",
   get: () => dateIdx, set: k => { dateIdx = k; render(); },
@@ -138,11 +151,42 @@ function card(age, n){
   </div>`;
 }
 
+function newCard(){
+  const items = [];
+  D.release.forEach((r, i) => { if (r === dateIdx) items.push(i); });
+  if (!items.length)
+    return `<div class="card" style="border-color:#d8d6d0">
+      <div style="padding:40px 0;text-align:center;color:#9a9ea2">이날 출시된 이모티콘이 없습니다.</div>
+    </div>`;
+
+  const cells = items.map(i => {
+    const [slug, title, creator, cid, flags, thumb] = D.items[i];
+    return `<div class="ni">
+      <img src="${D.thumbBase}${thumb}" alt="" loading="lazy">
+      <div class="t">${esc(title)}</div>
+      <div class="c">${esc(creator)}</div>
+    </div>`;
+  }).join("");
+
+  return `<div class="card" style="border-color:#d8d6d0">
+    <div class="ngrid">${cells}</div>
+    <div class="mark">원큐쌤의 이모티콘 클래스</div>
+  </div>`;
+}
+
 function render(){
   const date = D.dates[dateIdx];
   $("todaybtn").innerHTML = `${fmt(date)} <span style="font-size:13px;color:#8b8f93;font-weight:400">${dow(date)}</span>`;
   $("prev").disabled = dateIdx === 0;
   $("next").disabled = dateIdx === D.dates.length - 1;
+  $("tab-hot").classList.toggle("on", mode === "hot");
+  $("tab-new").classList.toggle("on", mode === "new");
+  $("topWrap").hidden = mode !== "hot";
+
+  if (mode === "new"){
+    $("shots").innerHTML = newCard();
+    return;
+  }
   const n = +$("topn").value;
   $("shots").innerHTML = D.ages.map(a => card(a, n)).join("");
 }

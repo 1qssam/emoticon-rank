@@ -142,7 +142,12 @@ const KIND_FULL = {"멈티":"멈춰있는 이모티콘", "움티":"움직이는 
                    "미니멈티":"미니 멈춰있는 이모티콘", "미니움티":"미니 움직이는 이모티콘",
                    "큰티":"큰 이모티콘"};
 
-/* 태그 — 기본 묶음 + 그날 나온 종류만 덧붙입니다 */
+/* 인기순위 글에 붙는 고정 태그 */
+const RANK_TAGS = ["카카오톡이모티콘", "이모티콘인기순위", "이모티콘순위", "신규이모티콘",
+                   "이모티콘추천", "10대이모티콘", "20대이모티콘", "30대이모티콘",
+                   "40대이모티콘", "50대이모티콘"];
+
+/* 신규 글 태그 — 기본 묶음 + 그날 나온 종류만 덧붙입니다 */
 const TAG_BASE = ["신규이모티콘", "최신이모티콘", "카카오톡이모티콘출시",
                   "이모티콘출시", "이모티콘추천", "이모티콘트렌드"];
 const TAG_KIND = {
@@ -180,9 +185,9 @@ function rankModules(date){
 ${SITE}
 에서 더 많은 정보를 확인하실 수 있습니다.`;
   return { title, mods: [
-    { label: "머리말", text: intro },
+    { label: "머리말", text: intro + "\n\n" + outro },
     { label: "순위표 이미지 자리", text: "(캡처한 순위표 이미지 6장을 여기에 넣으세요)", skip: true },
-    { label: "맺음말", text: outro },
+    { label: `태그 ${RANK_TAGS.length}개`, text: RANK_TAGS.map(t => "#" + t).join(", ") },
   ]};
 }
 
@@ -208,7 +213,12 @@ function newModules(date){
 신규 이모티콘을 정리해드립니다.
 
 오늘 출시 ${items.length}건
-${counts}`;
+${counts}
+
+이모티콘 이름을 누르면 이모티콘샵으로 바로 이동합니다.
+출시일별 기록과 인기순위는
+${SITE}
+에서 더 많은 정보를 확인하실 수 있습니다.`;
 
   const names = items.map(i => {
     const [slug, t, creator, cid, flags] = D.items[i];
@@ -228,12 +238,6 @@ ${counts}`;
     { label: `이모티콘 목록 ${items.length}줄`, text: names },
     { label: `링크 ${items.length}줄 · 위 목록과 같은 순서`, text: links },
   ];
-
-  mods.push({ label: "맺음말", text:
-`이모티콘 이름을 누르면 이모티콘샵으로 바로 이동합니다.
-출시일별 기록과 인기순위는
-${SITE}
-에서 더 많은 정보를 확인하실 수 있습니다.` });
 
   mods.push({ label: `태그 ${tags.length}개`, text: tags.map(t => "#" + t).join(", ") });
 
