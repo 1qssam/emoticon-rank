@@ -57,7 +57,8 @@
   .it .c{font-size:13.5px;color:#9a9ea2;margin-top:2px}
   .mark{text-align:right;font-size:16px;font-weight:500;color:#2b2c2e;
     letter-spacing:.01em;padding:12px 4px 4px}
-  .ngrid{display:grid;grid-template-columns:repeat(4,148px);gap:18px;justify-content:center}
+  .ncard{width:fit-content;max-width:100%;padding:18px 18px 12px}
+  .ngrid{display:grid;grid-template-columns:repeat(4,148px);gap:18px}
   .ni{width:148px}
   .ni .box{width:148px;height:148px;background:#f5f5f5;border-radius:6px;
     display:flex;align-items:center;justify-content:center}
@@ -158,7 +159,7 @@ function newCard(){
   const items = [];
   D.release.forEach((r, i) => { if (r === dateIdx) items.push(i); });
   if (!items.length)
-    return `<div class="card" style="border-color:#d8d6d0">
+    return `<div class="card ncard" style="border-color:#d8d6d0">
       <div style="padding:40px 0;text-align:center;color:#9a9ea2">이날 출시된 이모티콘이 없습니다.</div>
     </div>`;
 
@@ -171,7 +172,7 @@ function newCard(){
     </div>`;
   }).join("");
 
-  return `<div class="card" style="border-color:#d8d6d0">
+  return `<div class="card ncard" style="border-color:#d8d6d0">
     <div class="ngrid">${cells}</div>
     <div class="mark">원큐쌤의 이모티콘 클래스</div>
   </div>`;
