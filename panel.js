@@ -53,6 +53,7 @@ const CSS = `
     font-variant-numeric:tabular-nums}
   .tiprow{display:flex;align-items:center;gap:6px;line-height:1.7}
   .tiprow span.v{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+  .tiprow span.v.best{background:var(--mark);border-radius:3px;padding:0 5px;color:#3a3400}
   .foot{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);
     font-size:12.5px;color:var(--muted);line-height:1.7}
   .foot p{margin:0 0 4px}
@@ -281,6 +282,10 @@ function draw(){
     ranksBy[a] = m;
   });
   const rankText = r => r ? r + "위" : "200위 밖";
+  const best = vals => {
+    const nums = vals.map(v => v.r).filter(Boolean);
+    return nums.length ? Math.min(...nums) : null;
+  };
 
   svgEl.onmousemove = e => {
     const box = svgEl.getBoundingClientRect();
@@ -298,22 +303,26 @@ function draw(){
       body = `<div class="tiprow" style="color:var(--muted)">표시 중인 항목이 없습니다</div>`;
     } else if (oneAge){
       // 연령대 하나 → 아이템별로 표시
-      body = shown.map(p => {
-        const ci = picked.findIndex(q => q.id === p.id);
-        return `<div class="tiprow">
-          <svg width="12" height="12" aria-hidden="true">${marker(6, 6, SHAPES[ci % SHAPES.length], COLORS[ci % COLORS.length], 4)}</svg>
-          <span class="v">${rankText(ranksBy[chartAges[0]][p.id]?.[k])}</span></div>`;
-      }).join("");
+      const vals = shown.map(p => ({
+        ci: picked.findIndex(q => q.id === p.id),
+        r: ranksBy[chartAges[0]][p.id]?.[k],
+      }));
+      const top = best(vals);
+      body = vals.map(v => `<div class="tiprow">
+          <svg width="12" height="12" aria-hidden="true">${marker(6, 6, SHAPES[v.ci % SHAPES.length], COLORS[v.ci % COLORS.length], 4)}</svg>
+          <span class="v${v.r && v.r === top ? " best" : ""}">${rankText(v.r)}</span></div>`).join("");
     } else if (oneItem){
       // 아이템 하나 → 연령대별로 표시
       const p = shown[0];
       const ci = picked.findIndex(q => q.id === p.id);
       const color = COLORS[ci % COLORS.length];
-      body = chartAges.map(a => `<div class="tiprow">
+      const vals = chartAges.map(a => ({ a, r: ranksBy[a][p.id]?.[k] }));
+      const top = best(vals);
+      body = vals.map(v => `<div class="tiprow">
           <svg width="24" height="10" aria-hidden="true"><line x1="0" y1="5" x2="24" y2="5"
-            stroke="${color}" stroke-width="2" stroke-dasharray="${DASH[a]}"/></svg>
-          <span style="color:var(--muted)">${a}</span>
-          <span class="v">${rankText(ranksBy[a][p.id]?.[k])}</span></div>`).join("");
+            stroke="${color}" stroke-width="2" stroke-dasharray="${DASH[v.a]}"/></svg>
+          <span style="color:var(--muted)">${v.a}</span>
+          <span class="v${v.r && v.r === top ? " best" : ""}">${rankText(v.r)}</span></div>`).join("");
     } else {
       body = `<div class="tiprow" style="color:var(--muted)">연령대나 이모티콘 중<br>한쪽을 하나만 고르면<br>순위가 표시됩니다</div>`;
     }

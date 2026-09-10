@@ -101,6 +101,9 @@
   .up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--flat)}
   .badge{font-size:11px;padding:2px 6px;border-radius:4px;background:var(--mark);
     color:#3a3400;font-weight:600;white-space:nowrap}
+  .newmark{display:inline-flex;align-items:center;justify-content:center;
+    width:16px;height:16px;border-radius:50%;background:#d63b2f;color:#fff;
+    font-size:10.5px;font-weight:700;line-height:1;vertical-align:1px;margin-left:2px}
   .go{color:#b9b7b1;text-decoration:none;font-size:13px;padding:2px 4px}
   .go:hover{color:var(--ink)}
   .tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
@@ -240,7 +243,7 @@ function rowEl(i, rank, move, isNew, found){
     <span class="name">
       <span class="title">
         <a href="${link}" target="_blank" rel="noopener">${esc(title)}</a>
-        ${isNew ? '<span class="badge">신규</span>' : ""}
+        ${isNew ? '<span class="newmark" title="신규">N</span>' : ""}
       </span>
       <span class="by">
         <a href="https://e.kakao.com/creator/${cid}" target="_blank" rel="noopener">${esc(creator)}</a>
