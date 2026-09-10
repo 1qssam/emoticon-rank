@@ -307,10 +307,10 @@ function draw(){
         ci: picked.findIndex(q => q.id === p.id),
         r: ranksBy[chartAges[0]][p.id]?.[k],
       }));
-      const top = best(vals);
+      // 아이템끼리는 순위가 서로 다른 게 당연하므로 강조하지 않습니다
       body = vals.map(v => `<div class="tiprow">
           <svg width="12" height="12" aria-hidden="true">${marker(6, 6, SHAPES[v.ci % SHAPES.length], COLORS[v.ci % COLORS.length], 4)}</svg>
-          <span class="v${v.r && v.r === top ? " best" : ""}">${rankText(v.r)}</span></div>`).join("");
+          <span class="v">${rankText(v.r)}</span></div>`).join("");
     } else if (oneItem){
       // 아이템 하나 → 연령대별로 표시
       const p = shown[0];
