@@ -87,6 +87,12 @@ const D = window.DATA;
 const T = (window.TAGS || {items:{}, creators:{}});
 
 const $ = id => document.getElementById(id);
+/* MD추천: 딱지 있으면 "MD", 확인했는데 없으면 빈칸, 아직 확인 전이면 "-" */
+const mdOf = slug => {
+  const v = T.items[slug];
+  if (!v || v.b === undefined) return "-";
+  return v.b ? "MD" : "";
+};
 const esc = s => String(s === undefined || s === null ? "" : s)
   .replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
@@ -134,6 +140,7 @@ const ROWS = D.items.map((m, i) => {
     bestDate: b ? D.dates[b[1]] : null,
     ageBest,
     last: lastSeen[i] !== undefined ? D.dates[lastSeen[i]] : null,
+    md: mdOf(slug),
   };
 });
 
@@ -159,6 +166,7 @@ const COLS = [
   {k:"bestRank",label:"최고순위",cls:"num", cell:r => r.bestRank ?? ""},
   {k:"ageBest",label:"연령대 최고", cell:r => r.ageBest ? `${r.ageBest[0]} ${r.ageBest[1]}위` : ""},
   {k:"last",   label:"마지막 등장", cls:"num", cell:r => r.last ?? ""},
+  {k:"md",     label:"MD",      cell:r => r.md},
 ];
 
 let sortKey = "bestRank", asc = true, filtered = [];
@@ -166,6 +174,7 @@ let sortKey = "bestRank", asc = true, filtered = [];
 function value(r, k){
   if (k === "ageBest") return r.ageBest ? r.ageBest[1] : null;
   if (k === "tags") return r.tags.join(",");
+  if (k === "md") return {"MD":0, "":1, "-":2}[r.md];   // MD가 위로
   return r[k];
 }
 
@@ -222,12 +231,12 @@ function render(){
 
 $("copy").onclick = async () => {
   const head = ["상품명","작가","시리즈","유형","소리","태그","개수","가격",
-                "출시일","최고순위","최고순위일","연령대최고","마지막등장","slug","링크"];
+                "출시일","최고순위","최고순위일","연령대최고","마지막등장","slug","링크","MD"];
   const rows = filtered.map(r => [
     r.title, r.creator, r.series, r.kind, r.sound, r.tags.join(", "),
     r.count ?? "", r.price ?? "", r.released ?? "", r.bestRank ?? "", r.bestDate ?? "",
     r.ageBest ? `${r.ageBest[0]} ${r.ageBest[1]}위` : "", r.last ?? "",
-    r.slug, `https://e.kakao.com/t/${r.slug}`,
+    r.slug, `https://e.kakao.com/t/${r.slug}`, r.md,
   ]);
   await navigator.clipboard.writeText([head].concat(rows).map(x => x.join("\t")).join("\n"));
   $("copy").textContent = "복사됨"; $("copy").classList.add("done");

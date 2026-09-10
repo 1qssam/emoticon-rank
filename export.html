@@ -105,7 +105,7 @@
     날짜는 최근 것이 위로, 순번은 작은 것이 위로 정렬됩니다.<br>
     <b>복사해서 시트에 붙여넣기</b>는 탭으로 나눠 복사하므로 구글 시트나 엑셀에 바로 붙습니다.
     <b>CSV 내려받기</b>는 파일로 저장됩니다.<br>
-    노란 칸(무료·메모)은 비어 있습니다. 시트에서 직접 채우시면 됩니다.<br>태그·개수·가격은 수집이 끝난 이모티콘만 채워집니다.
+    노란 칸(무료·메모)은 비어 있습니다. 시트에서 직접 채우시면 됩니다.<br>MD 칸은 MD추천이면 MD, 아니면 빈칸, 아직 확인 전이면 - 로 표시됩니다.<br>태그·개수·가격은 수집이 끝난 이모티콘만 채워집니다.
   </p>
 </div>
 
@@ -123,6 +123,12 @@ const tagText = slug => {
 };
 
 const $ = id => document.getElementById(id);
+/* MD추천: 딱지 있으면 "MD", 확인했는데 없으면 빈칸, 아직 확인 전이면 "-" */
+const mdOf = slug => {
+  const v = T.items[slug];
+  if (!v || v.b === undefined) return "-";
+  return v.b ? "MD" : "";
+};
 const dow = s => "일월화수목금토"[new Date(...s.split("-").map((v,i)=>i===1?v-1:+v)).getDay()];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
@@ -196,7 +202,7 @@ function build(){
 
   if ($("kind").value === "new"){
     const head = ["날짜","요일","순번","상품명","작가명","시리즈","유형","소리",
-                  "태그","개수","가격","전체최고순위","최고순위일","slug","링크"];
+                  "태그","개수","가격","전체최고순위","최고순위일","slug","링크","MD"];
     const rows = [];
     for (let k = to; k >= from; k--){          // 날짜는 내림차순
       const items = [];
@@ -209,7 +215,7 @@ function build(){
           D.items[i][6] || "", kindOf(flags), (flags & 4) ? "Y" : "",
           tagText(slug), info(slug)?.n ?? "", info(slug)?.p ?? "",
           b ? b[0] : "", b ? D.dates[b[1]] : "",
-          slug, `https://e.kakao.com/t/${slug}`,
+          slug, `https://e.kakao.com/t/${slug}`, mdOf(slug),
         ]);
       });
     }
@@ -217,7 +223,7 @@ function build(){
   }
 
   const age = $("age").value, n = +$("topn").value;
-  const head = ["날짜","요일","연령대","순위","상품명","작가명","시리즈","유형","소리","태그","개수","가격","slug","링크"];
+  const head = ["날짜","요일","연령대","순위","상품명","작가명","시리즈","유형","소리","태그","개수","가격","slug","링크","MD"];
   const rows = [];
   for (let k = to; k >= from; k--){
     D.hot[age][k].slice(0, n).forEach((it, i) => {
@@ -226,7 +232,7 @@ function build(){
         D.dates[k], dow(D.dates[k]), age, i + 1, title, creator,
         D.items[it][6] || "", kindOf(flags), (flags & 4) ? "Y" : "",
         tagText(slug), info(slug)?.n ?? "", info(slug)?.p ?? "",
-        slug, `https://e.kakao.com/t/${slug}`,
+        slug, `https://e.kakao.com/t/${slug}`, mdOf(slug),
       ]);
     });
   }
