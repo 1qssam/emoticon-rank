@@ -126,7 +126,10 @@ const ROWS = D.items.map((m, i) => {
     count: v ? v.n : null,
     price: v ? Number(v.p) || null : null,
     state: v ? v.s : null,
-    released: v && v.i === "new" ? v.f : null,
+    // 출시일은 순위 데이터 쪽이 정확합니다.
+    // 첫 수집일의 신규 목록에는 그 전에 나온 것들이 섞여 있어서,
+    // 태그 파일의 '처음 본 날'을 출시일로 쓰면 안 됩니다.
+    released: D.release[i] >= 0 ? D.dates[D.release[i]] : null,
     bestRank: b ? b[0] : null,
     bestDate: b ? D.dates[b[1]] : null,
     ageBest,
