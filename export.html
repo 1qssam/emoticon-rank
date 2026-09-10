@@ -51,6 +51,7 @@
   <header>
     <h1>스프레드시트 내보내기</h1>
     <span class="sp"></span>
+    <a href="db.html">전체 목록</a>
     <a href="post.html">블로그용 텍스트</a>
     <a href="card.html">캡처용 순위표</a>
   </header>
@@ -92,13 +93,22 @@
     날짜는 최근 것이 위로, 순번은 작은 것이 위로 정렬됩니다.<br>
     <b>복사해서 시트에 붙여넣기</b>는 탭으로 나눠 복사하므로 구글 시트나 엑셀에 바로 붙습니다.
     <b>CSV 내려받기</b>는 파일로 저장됩니다.<br>
-    노란 칸(무료·동물·메모)은 비어 있습니다. 시트에서 직접 채우시면 됩니다.
+    노란 칸(무료·메모)은 비어 있습니다. 시트에서 직접 채우시면 됩니다.<br>태그·개수·가격은 수집이 끝난 이모티콘만 채워집니다.
   </p>
 </div>
 
 <script src="data.js"></script>
+<script src="tags.js"></script>
 <script>
 const D = window.DATA;
+const T = (window.TAGS || {items:{}, creators:{}});
+
+/* 아직 태그를 못 받은 이모티콘은 빈칸으로 둡니다 */
+const info = slug => T.items[slug] || null;
+const tagText = slug => {
+  const v = info(slug);
+  return v && v.t.length ? v.t.map(x => x[0]).join(", ") : "";
+};
 
 const $ = id => document.getElementById(id);
 const dow = s => "일월화수목금토"[new Date(...s.split("-").map((v,i)=>i===1?v-1:+v)).getDay()];
@@ -143,7 +153,7 @@ D.ages.forEach(a => {
 
 ["kind","from","to","age","topn","memo"].forEach(id => $(id).onchange = render);
 
-const BLANK = ["무료", "동물", "메모"];
+const BLANK = ["무료", "메모"];
 
 function build(){
   let from = +$("from").value, to = +$("to").value;
@@ -152,7 +162,7 @@ function build(){
 
   if ($("kind").value === "new"){
     const head = ["날짜","요일","순번","상품명","작가명","시리즈","유형","소리",
-                  "전체최고순위","최고순위일","slug","링크"];
+                  "태그","개수","가격","전체최고순위","최고순위일","slug","링크"];
     const rows = [];
     for (let k = to; k >= from; k--){          // 날짜는 내림차순
       const items = [];
@@ -163,6 +173,7 @@ function build(){
         rows.push([
           D.dates[k], dow(D.dates[k]), n + 1, title, creator,
           D.items[i][6] || "", kindOf(flags), (flags & 4) ? "Y" : "",
+          tagText(slug), info(slug)?.n ?? "", info(slug)?.p ?? "",
           b ? b[0] : "", b ? D.dates[b[1]] : "",
           slug, `https://e.kakao.com/t/${slug}`,
         ]);
@@ -172,7 +183,7 @@ function build(){
   }
 
   const age = $("age").value, n = +$("topn").value;
-  const head = ["날짜","요일","연령대","순위","상품명","작가명","시리즈","유형","소리","slug","링크"];
+  const head = ["날짜","요일","연령대","순위","상품명","작가명","시리즈","유형","소리","태그","개수","가격","slug","링크"];
   const rows = [];
   for (let k = to; k >= from; k--){
     D.hot[age][k].slice(0, n).forEach((it, i) => {
@@ -180,6 +191,7 @@ function build(){
       rows.push([
         D.dates[k], dow(D.dates[k]), age, i + 1, title, creator,
         D.items[it][6] || "", kindOf(flags), (flags & 4) ? "Y" : "",
+        tagText(slug), info(slug)?.n ?? "", info(slug)?.p ?? "",
         slug, `https://e.kakao.com/t/${slug}`,
       ]);
     });

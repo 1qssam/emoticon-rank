@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>이모티콘 전체 목록 · 이모티콘 순위</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{--paper:#fcfcfb;--ink:#17181a;--muted:#83878c;--line:#e7e6e1;--panel:#f5f4f0;--mark:#fee500}
+  *{box-sizing:border-box}
+  html{overflow-y:scroll}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1320px;margin:0 auto;padding:24px 20px 80px}
+  header{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
+  header .sp{flex:1}
+  header a{font-size:13px;color:var(--muted)}
+
+  .opts{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px;
+    padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+  .opts label{display:flex;align-items:center;gap:6px;font-size:13px}
+  .opts select,.opts input{font-family:inherit;font-size:13px;border:1px solid var(--line);
+    border-radius:6px;padding:5px 8px;background:#fff;color:var(--ink)}
+  .opts input[type=search]{width:220px}
+  .cnt{font-size:12.5px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:7px;
+    padding:5px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}
+  .btn:hover{border-color:var(--ink)}
+  .btn.done{background:var(--mark);color:#3a3400;border-color:var(--mark)}
+
+  .note{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+  .tablewrap{border:1px solid var(--line);border-radius:9px;background:#fff;overflow:auto;max-height:70vh}
+  table{border-collapse:collapse;font-size:12.5px;width:100%}
+  th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:left;white-space:nowrap}
+  th{position:sticky;top:0;background:var(--panel);font-weight:600;z-index:1;cursor:pointer;user-select:none}
+  th:hover{color:#000}
+  th .ar{color:#b6b4ae;font-size:10px;margin-left:3px}
+  td.num{font-variant-numeric:tabular-nums;color:#5c6064;text-align:right}
+  td.title{white-space:normal;max-width:320px;font-weight:500}
+  td.tags{white-space:normal;max-width:260px;color:#5c6064}
+  td a{color:inherit;text-decoration:none}
+  td a:hover{text-decoration:underline}
+  .thumb{width:34px;height:34px;background:#f0efea;display:block}
+  .chip{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:4px;
+    padding:1px 6px;margin:1px 3px 1px 0;cursor:pointer;background:#fff}
+  .chip:hover{border-color:var(--ink)}
+  .empty{padding:44px 0;text-align:center;color:var(--muted)}
+  button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>이모티콘 전체 목록</h1>
+    <span class="sp"></span>
+    <a href="export.html">스프레드시트 내보내기</a>
+    <a href="index.html">인기 순위</a>
+  </header>
+
+  <div class="opts">
+    <input id="q" type="search" placeholder="상품명 · 작가명 검색" autocomplete="off">
+    <label>유형
+      <select id="kind">
+        <option value="">전체</option>
+        <option>멈티</option><option>움티</option>
+        <option>미니멈티</option><option>미니움티</option><option>큰티</option>
+      </select>
+    </label>
+    <label>태그 <select id="tag"><option value="">전체</option></select></label>
+    <label><input type="checkbox" id="onlyNew"> 수집 이후 출시분만</label>
+    <button class="btn" id="copy">시트로 복사</button>
+    <span class="cnt" id="cnt"></span>
+  </div>
+
+  <p class="note" id="note"></p>
+
+  <div class="tablewrap"><table id="tbl"></table></div>
+</div>
+
+<script src="data.js"></script>
+<script src="tags.js"></script>
+<script>
+const D = window.DATA;
+const T = (window.TAGS || {items:{}, creators:{}});
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s === undefined || s === null ? "" : s)
+  .replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function kindOf(flags){
+  if (flags & 2) return "큰티";
+  if (flags & 1) return (flags & 8) ? "미니움티" : "미니멈티";
+  return (flags & 8) ? "움티" : "멈티";
+}
+
+/* 연령대별 최고 순위 */
+const best = {};
+D.ages.forEach(a => {
+  best[a] = {};
+  D.hot[a].forEach((row, k) => row.forEach((it, i) => {
+    if (!best[a][it] || i + 1 < best[a][it][0]) best[a][it] = [i + 1, k];
+  }));
+});
+/* 마지막으로 순위에 보인 날 */
+const lastSeen = {};
+D.hot["전체"].forEach((row, k) => row.forEach(it => { lastSeen[it] = k; }));
+
+/* 한 줄 만들기 */
+const ROWS = D.items.map((m, i) => {
+  const [slug, title, creator, cid, flags, thumb, series] = m;
+  const v = T.items[slug] || null;
+  const b = best["전체"][i];
+  let ageBest = null;
+  D.ages.slice(1).forEach(a => {
+    const r = best[a][i];
+    if (r && (!ageBest || r[0] < ageBest[1])) ageBest = [a, r[0]];
+  });
+  return {
+    i, slug, title, creator, cid, series: series || "", thumb,
+    kind: kindOf(flags),
+    sound: (flags & 4) ? "Y" : "",
+    tags: v ? v.t.map(x => x[0]) : [],
+    count: v ? v.n : null,
+    price: v ? Number(v.p) || null : null,
+    state: v ? v.s : null,
+    released: v && v.i === "new" ? v.f : null,
+    bestRank: b ? b[0] : null,
+    bestDate: b ? D.dates[b[1]] : null,
+    ageBest,
+    last: lastSeen[i] !== undefined ? D.dates[lastSeen[i]] : null,
+  };
+});
+
+/* 태그 목록 채우기 */
+const tagCount = {};
+ROWS.forEach(r => r.tags.forEach(t => { tagCount[t] = (tagCount[t] || 0) + 1; }));
+Object.keys(tagCount).sort((a, b) => tagCount[b] - tagCount[a]).forEach(t => {
+  const o = document.createElement("option");
+  o.value = t; o.textContent = `${t} (${tagCount[t]})`;
+  $("tag").appendChild(o);
+});
+
+const COLS = [
+  {k:"thumb",  label:"",       cell:r => `<a href="https://e.kakao.com/t/${r.slug}" target="_blank" rel="noopener"><img class="thumb" loading="lazy" alt="" src="${D.thumbBase}${r.thumb}"></a>`, nosort:true},
+  {k:"title",  label:"상품명",  cls:"title", cell:r => `<a href="https://e.kakao.com/t/${r.slug}" target="_blank" rel="noopener">${esc(r.title)}</a>`},
+  {k:"creator",label:"작가",    cell:r => `<a href="https://e.kakao.com/creator/${r.cid}" target="_blank" rel="noopener">${esc(r.creator)}</a>`},
+  {k:"series", label:"시리즈",  cell:r => esc(r.series)},
+  {k:"kind",   label:"유형",    cell:r => esc(r.kind) + (r.sound ? " · 소리" : "")},
+  {k:"tags",   label:"태그",    cls:"tags", cell:r => r.tags.map(t => `<span class="chip" data-tag="${esc(t)}">${esc(t)}</span>`).join("")},
+  {k:"count",  label:"개수",    cls:"num", cell:r => r.count ?? ""},
+  {k:"price",  label:"가격",    cls:"num", cell:r => r.price ? r.price.toLocaleString() : ""},
+  {k:"released",label:"출시일", cls:"num", cell:r => r.released ?? ""},
+  {k:"bestRank",label:"최고순위",cls:"num", cell:r => r.bestRank ?? ""},
+  {k:"ageBest",label:"연령대 최고", cell:r => r.ageBest ? `${r.ageBest[0]} ${r.ageBest[1]}위` : ""},
+  {k:"last",   label:"마지막 등장", cls:"num", cell:r => r.last ?? ""},
+];
+
+let sortKey = "bestRank", asc = true, filtered = [];
+
+function value(r, k){
+  if (k === "ageBest") return r.ageBest ? r.ageBest[1] : null;
+  if (k === "tags") return r.tags.join(",");
+  return r[k];
+}
+
+function apply(){
+  const q = $("q").value.trim().toLowerCase();
+  const kind = $("kind").value;
+  const tag = $("tag").value;
+  const onlyNew = $("onlyNew").checked;
+
+  filtered = ROWS.filter(r => {
+    if (kind && r.kind !== kind) return false;
+    if (tag && !r.tags.includes(tag)) return false;
+    if (onlyNew && !r.released) return false;
+    if (q && !(r.title.toLowerCase().includes(q) || r.creator.toLowerCase().includes(q)
+               || r.series.toLowerCase().includes(q))) return false;
+    return true;
+  });
+
+  filtered.sort((a, b) => {
+    const x = value(a, sortKey), y = value(b, sortKey);
+    if (x === null || x === undefined || x === "") return 1;   // 빈 값은 항상 뒤로
+    if (y === null || y === undefined || y === "") return -1;
+    if (x === y) return 0;
+    return (x < y ? -1 : 1) * (asc ? 1 : -1);
+  });
+
+  render();
+}
+
+function render(){
+  const head = COLS.map(c =>
+    `<th data-k="${c.k}">${c.label}${sortKey === c.k ? `<span class="ar">${asc ? "▲" : "▼"}</span>` : ""}</th>`).join("");
+
+  const body = filtered.slice(0, 500).map(r =>
+    "<tr>" + COLS.map(c => `<td class="${c.cls || ""}">${c.cell(r)}</td>`).join("") + "</tr>").join("");
+
+  $("tbl").innerHTML = `<thead><tr>${head}</tr></thead><tbody>${body || ""}</tbody>`;
+  if (!filtered.length)
+    $("tbl").innerHTML += `<tbody><tr><td colspan="${COLS.length}" class="empty">맞는 이모티콘이 없습니다.</td></tr></tbody>`;
+
+  $("cnt").textContent = `${filtered.length.toLocaleString()}개` +
+    (filtered.length > 500 ? " (500개까지 표시)" : "");
+
+  $("tbl").querySelectorAll("th[data-k]").forEach(th => th.onclick = () => {
+    const k = th.dataset.k;
+    if (COLS.find(c => c.k === k).nosort) return;
+    if (sortKey === k) asc = !asc; else { sortKey = k; asc = true; }
+    apply();
+  });
+  $("tbl").querySelectorAll(".chip").forEach(c => c.onclick = () => {
+    $("tag").value = c.dataset.tag; apply();
+  });
+}
+
+$("copy").onclick = async () => {
+  const head = ["상품명","작가","시리즈","유형","소리","태그","개수","가격",
+                "출시일","최고순위","최고순위일","연령대최고","마지막등장","slug","링크"];
+  const rows = filtered.map(r => [
+    r.title, r.creator, r.series, r.kind, r.sound, r.tags.join(", "),
+    r.count ?? "", r.price ?? "", r.released ?? "", r.bestRank ?? "", r.bestDate ?? "",
+    r.ageBest ? `${r.ageBest[0]} ${r.ageBest[1]}위` : "", r.last ?? "",
+    r.slug, `https://e.kakao.com/t/${r.slug}`,
+  ]);
+  await navigator.clipboard.writeText([head].concat(rows).map(x => x.join("\t")).join("\n"));
+  $("copy").textContent = "복사됨"; $("copy").classList.add("done");
+  setTimeout(() => { $("copy").textContent = "시트로 복사"; $("copy").classList.remove("done"); }, 1500);
+};
+
+["q","kind","tag","onlyNew"].forEach(id => {
+  $(id).oninput = apply; $(id).onchange = apply;
+});
+
+const got = Object.keys(T.items).length;
+$("note").innerHTML =
+  `${D.dates[0]}부터 ${D.dates.at(-1)}까지 순위·신규 목록에 한 번이라도 등장한 이모티콘 ${ROWS.length.toLocaleString()}개입니다. ` +
+  `태그·개수·가격은 ${got.toLocaleString()}개까지 수집됐고 나머지는 차례로 채워집니다.`;
+
+apply();
+</script>
+</body>
+</html>
