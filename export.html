@@ -25,6 +25,10 @@
   .opts select{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;
     padding:5px 7px;background:#fff;color:var(--ink)}
   .opts .g{display:flex;align-items:center;gap:4px}
+  .presets{display:flex;gap:4px}
+  .preset{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 10px;
+    font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit}
+  .preset:hover{border-color:var(--ink);color:var(--ink)}
   input[type=checkbox]{width:14px;height:14px;accent-color:#17181a;cursor:pointer}
 
   .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
@@ -34,6 +38,7 @@
   .btn.solid{background:var(--ink);color:#fff;border-color:var(--ink)}
   .btn.done{background:var(--mark);color:#3a3400;border-color:var(--mark)}
   .cnt{font-size:12.5px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+  .warn{font-size:12.5px;color:var(--muted);margin:-6px 0 12px}
 
   .tablewrap{border:1px solid var(--line);border-radius:9px;background:#fff;overflow:auto;max-height:520px}
   table{border-collapse:collapse;font-size:12.5px;width:100%}
@@ -70,6 +75,12 @@
     <label id="ageWrap" hidden>연령대
       <select id="age"></select>
     </label>
+    <span class="presets">
+      <button class="preset" data-days="7">일주일</button>
+      <button class="preset" data-days="30">30일</button>
+      <button class="preset" data-days="60">60일</button>
+      <button class="preset" data-days="90">90일</button>
+    </span>
     <label id="topWrap" hidden>순위
       <select id="topn">
         <option value="20">20위까지</option>
@@ -86,6 +97,7 @@
     <button class="btn" id="copy">복사해서 시트에 붙여넣기</button>
     <span class="cnt" id="cnt"></span>
   </div>
+  <p class="warn" id="warn"></p>
 
   <div class="tablewrap"><table id="tbl"></table></div>
 
@@ -155,9 +167,31 @@ D.ages.forEach(a => {
 
 const BLANK = ["무료", "메모"];
 
-function build(){
+const MAX_DAYS = 90;
+
+function clampRange(){
   let from = +$("from").value, to = +$("to").value;
-  if (from > to) [from, to] = [to, from];
+  if (from > to){ [from, to] = [to, from]; $("from").value = from; $("to").value = to; }
+  const span = () => (new Date(D.dates[to]) - new Date(D.dates[from])) / 86400000;
+  if (span() > MAX_DAYS){
+    while (from < to && span() > MAX_DAYS) from++;
+    $("from").value = from;
+    $("warn").textContent = `기간은 최대 ${MAX_DAYS}일까지 뽑을 수 있습니다.`;
+  } else $("warn").textContent = "";
+}
+
+document.querySelectorAll(".preset").forEach(b => b.onclick = () => {
+  const days = Math.min(+b.dataset.days, MAX_DAYS);
+  const to = D.dates.length - 1;
+  $("to").value = to;
+  $("from").value = Math.max(0, to - days + 1);
+  clampRange();
+  render();
+});
+
+function build(){
+  clampRange();
+  let from = +$("from").value, to = +$("to").value;
   const withMemo = $("memo").checked;
 
   if ($("kind").value === "new"){
