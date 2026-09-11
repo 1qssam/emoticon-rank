@@ -10,6 +10,7 @@
 <style>
   :root{--ink:#17181a;--muted:#8b8f93;--line:#e7e6e1;--panel:#f5f4f0}
   *{box-sizing:border-box}
+  [hidden]{display:none !important}
   html,body{margin:0;padding:0;background:#f0efea}
   body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
     color:var(--ink);-webkit-font-smoothing:antialiased}
@@ -69,6 +70,19 @@
      3줄 710px · 4줄 928px · 5줄 1146px · 6줄 1364px */
   .ngrid{display:grid;grid-template-columns:repeat(4,148px);grid-auto-rows:200px;gap:18px}
   .ncard .mark{height:38px}
+
+  /* 인스타 표지: '전체' 카드 위에 색을 덮고 흰 글씨 */
+  .cover{position:relative}
+  .cover .veil{position:absolute;inset:-3px}          /* 테두리까지 덮음 */
+  .cover .mark{visibility:hidden}                      /* 아랫줄은 흰 글씨로 다시 올림 */
+  .cover .ctext{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;color:#fff;text-align:center;
+    font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif;
+    text-shadow:0 2px 14px rgba(0,0,0,.12)}
+  .cover .cdate{font-size:44px;font-weight:700;letter-spacing:-.01em}
+  .cover .ctitle{font-size:120px;font-weight:800;line-height:1.1;letter-spacing:-.03em;margin-top:18px}
+  .cover .cmark{position:absolute;right:24px;bottom:16px;color:#fff;font-size:16px;font-weight:600;
+    line-height:22px;font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif}
   .ni{width:148px}
   .ni .box{width:148px;height:148px;background:#f5f5f5;border-radius:6px;
     display:flex;align-items:center;justify-content:center}
@@ -105,6 +119,14 @@
       <option value="20" selected>20위까지</option>
     </select>
   </label>
+  <label style="font-size:13px;display:flex;align-items:center;gap:5px" id="coverWrap">표지
+    <input type="color" id="coverColor" value="#ff4f8b" style="width:30px;height:28px;padding:0;border:1px solid #e7e6e1;border-radius:6px;background:#fff">
+    <select id="coverAlpha">
+      <option value="0.6">60%</option>
+      <option value="0.7" selected>70%</option>
+      <option value="0.8">80%</option>
+    </select>
+  </label>
   <span class="sp"></span>
   <a href="post.html" style="font-size:13px;color:#6f7377">블로그용 텍스트</a>
   <a href="export.html" style="font-size:13px;color:#6f7377;margin-left:10px">스프레드시트</a>
@@ -131,6 +153,8 @@ const EDGE = {"전체":"#ABC1D1","10대":"#f3a8c6","20대":"#f2cf6a","30대":"#8
 $("prev").onclick = () => { dateIdx--; render(); };
 $("next").onclick = () => { dateIdx++; render(); };
 $("topn").onchange = render;
+$("coverColor").oninput = render;
+$("coverAlpha").onchange = render;
 let mode = "hot";
 $("tab-hot").onclick = () => { mode = "hot"; render(); };
 $("tab-new").onclick = () => { mode = "new"; render(); };
@@ -139,7 +163,7 @@ initDatePicker({
   get: () => dateIdx, set: k => { dateIdx = k; render(); },
 });
 
-function card(age, n){
+function card(age, n, cover){
   const list = D.hot[age][dateIdx].slice(0, n);
   const half = Math.ceil(n / 2);
   const order = [];
@@ -160,11 +184,24 @@ function card(age, n){
   const tabs = D.ages.map(a =>
     `<span class="tab ${a === age ? "on" : ""}">${a === "50대이상" ? "50대 이상" : a}</span>`).join("");
 
-  return `<div class="card" style="border-color:${EDGE[age]}">
+  return `<div class="card${cover ? " cover" : ""}" style="border-color:${EDGE[age]}">
     <div class="tabs">${tabs}</div>
     <div class="grid">${cells}</div>
     <div class="mark">${stamp(D.dates[dateIdx], "인기순위", EDGE[age])}<span>원큐쌤의 이모티콘 클래스</span></div>
+    ${cover || ""}
   </div>`;
+}
+
+/* 인스타 카드뉴스 표지: '전체' 카드를 색으로 덮고 날짜·제목을 올립니다 */
+function coverCard(n){
+  const date = D.dates[dateIdx];
+  const over = `<div class="veil" style="background:${$("coverColor").value};opacity:${$("coverAlpha").value}"></div>
+    <div class="ctext">
+      <div class="cdate">${fmt(date)} ${dow(date)}요일</div>
+      <div class="ctitle">오늘의<br>인기순위</div>
+    </div>
+    <div class="cmark">원큐쌤의 이모티콘 클래스</div>`;
+  return card("전체", n, over);
 }
 
 function newCard(){
@@ -198,13 +235,14 @@ function render(){
   $("tab-hot").classList.toggle("on", mode === "hot");
   $("tab-new").classList.toggle("on", mode === "new");
   $("topWrap").hidden = mode !== "hot";
+  $("coverWrap").hidden = mode !== "hot";
 
   if (mode === "new"){
     $("shots").innerHTML = newCard();
     return;
   }
   const n = +$("topn").value;
-  $("shots").innerHTML = D.ages.map(a => card(a, n)).join("");
+  $("shots").innerHTML = D.ages.map(a => card(a, n)).join("") + coverCard(n);
 }
 render();
 </script>
