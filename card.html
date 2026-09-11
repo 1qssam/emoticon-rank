@@ -66,16 +66,16 @@
   .mark .day{font-weight:600;font-variant-numeric:tabular-nums}
   .ncard{width:fit-content;max-width:100%;padding:18px 18px 12px}
   /* 신규 카드는 줄 수로만 크기가 정해지도록 높이를 고정합니다 (가로 688px)
-     3줄 692px · 4줄 904px · 5줄 1116px · 6줄 1328px */
-  .ngrid{display:grid;grid-template-columns:repeat(4,148px);grid-auto-rows:194px;gap:18px}
+     3줄 710px · 4줄 928px · 5줄 1146px · 6줄 1364px */
+  .ngrid{display:grid;grid-template-columns:repeat(4,148px);grid-auto-rows:200px;gap:18px}
   .ncard .mark{height:38px}
   .ni{width:148px}
   .ni .box{width:148px;height:148px;background:#f5f5f5;border-radius:6px;
     display:flex;align-items:center;justify-content:center}
   .ni .box img{width:100px;height:100px;object-fit:contain;display:block}
-  .ni .t{width:148px;height:18px;line-height:18px;font-size:14px;font-weight:700;margin-top:9px;
+  .ni .t{width:148px;height:22px;line-height:22px;font-size:16px;font-weight:700;margin-top:9px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .ni .c{width:148px;height:16px;line-height:16px;font-size:12.5px;font-weight:400;color:#8a8e92;margin-top:3px;
+  .ni .c{width:148px;height:18px;line-height:18px;font-size:14px;font-weight:400;color:#8a8e92;margin-top:3px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   @media (max-width:1000px){ .card{width:100%} .grid{grid-template-columns:1fr}
     .ngrid{grid-template-columns:repeat(2,148px)} }
