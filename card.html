@@ -159,6 +159,19 @@ const fmt = s => { const [y,m,d] = s.split("-"); return `${y}년 ${+m}월 ${+d}�
 const EDGE = {"전체":"#ABC1D1","10대":"#f3a8c6","20대":"#f2cf6a","30대":"#8fd18f",
               "40대":"#8fb8e8","50대이상":"#b9a3e0"};
 
+/* 표지 색: 요일마다 자동으로 바뀝니다 (날짜를 바꾸면 그 요일 색으로 돌아감)
+   월요일 핑크와 같은 밝기·선명도로 맞춘 무지개 색입니다. 여기 색만 고치면 됩니다. */
+const COVER_COLORS = {
+  "월":"#ff4f8b",  // 핑크
+  "화":"#f07100",  // 주황
+  "수":"#f0a500",  // 노랑 (황금색)
+  "목":"#00ba4b",  // 초록
+  "금":"#00a6ed",  // 파랑
+  "토":"#7891ff",  // 남색
+  "일":"#c669f9",  // 보라
+};
+let coverDate = null;
+
 $("prev").onclick = () => { dateIdx--; render(); };
 $("next").onclick = () => { dateIdx++; render(); };
 $("topn").onchange = render;
@@ -247,6 +260,10 @@ function render(){
   $("tab-new").classList.toggle("on", mode === "new");
   $("topWrap").hidden = mode !== "hot";
   $("coverWrap").hidden = mode !== "hot";
+  if (coverDate !== date){                 // 날짜가 바뀌면 그 요일 색으로
+    $("coverColor").value = COVER_COLORS[dow(date)];
+    coverDate = date;
+  }
 
   if (mode === "new"){
     $("shots").innerHTML = newCard();
