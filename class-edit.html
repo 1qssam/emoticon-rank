@@ -89,6 +89,15 @@
   .preview .pt{font-size:16px;font-weight:600;margin-bottom:2px}
   .preview .pm{color:var(--muted)}
   .preview .off{color:#c2564b}
+  .mapbox{border:1px solid var(--line);border-radius:9px;padding:11px 12px;margin:12px 0 0;
+    background:#fafaf8;display:flex;flex-direction:column;gap:8px}
+  .mapbox .top{display:flex;gap:10px;align-items:center}
+  .mapbox .pin{width:17px;height:17px;flex:none}
+  .mapbox b{display:block;font-size:13.5px;font-weight:600}
+  .mapbox .ad{font-size:12.5px;color:var(--muted)}
+  .mapbox .row{display:flex;gap:6px}
+  .mapbox .mini{flex:1;text-align:center;border:1px solid var(--line);background:#fff;
+    border-radius:7px;padding:5px 9px;font-size:12.5px;color:var(--ink);text-decoration:none}
   .out{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
     background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:12px;
     white-space:pre-wrap;word-break:break-all;line-height:1.6;min-height:56px}
@@ -110,6 +119,7 @@
   .clist li.sel{background:#faf9f6}
   .crow{display:flex;align-items:center;gap:8px;cursor:pointer}
   .cdot{width:10px;height:10px;border-radius:50%;flex:none}
+  .ym{font-size:12.5px;color:var(--muted);flex:none;font-variant-numeric:tabular-nums}
   .cname{flex:1;min-width:0;font-size:13.5px;font-weight:500;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .cnum{font-size:12px;color:var(--muted);flex:none}
@@ -119,7 +129,7 @@
   .sidefoot{padding-top:10px;margin-top:6px;border-top:1px solid var(--line);
     display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-  dialog{border:0;border-radius:12px;padding:0;max-width:360px;width:calc(100% - 32px);
+  dialog{border:0;border-radius:12px;padding:0;max-width:430px;width:calc(100% - 32px);
     box-shadow:0 14px 44px rgba(0,0,0,.18);color:var(--ink)}
   dialog::backdrop{background:rgba(23,24,26,.34)}
   .sheet{padding:18px}
@@ -127,10 +137,12 @@
   .mlist{list-style:none;margin:0 0 12px;padding:0;border-top:1px solid var(--line);
     max-height:230px;overflow:auto}
   .mlist li{display:flex;gap:8px;align-items:center;padding:7px 2px;border-bottom:1px solid var(--line)}
-  .mlist .nm{flex:1;min-width:0;font-size:13.5px}
-  .mlist .ab{font-size:12.5px;color:var(--muted)}
+  .mlist .nm{flex:1;min-width:0;font-size:13.5px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mlist .ab{font-size:12.5px;color:var(--muted);flex:none;white-space:nowrap}
   .addrow{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
   .addrow input{flex:1;min-width:100px}
+  .addrow .wide{flex-basis:100%}
   button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 
   @media (max-width:900px){
@@ -298,6 +310,12 @@ function markDirty(v){
 /* ── 목록 ─────────────────────────────────── */
 let opened = null;      // 개요를 펼친 강의
 
+/* 첫 회차의 연월 네 자리 (2026-09-07 → 2609) */
+function startYm(c){
+  const first = (c.sessions || []).map(s => String(s).split(" ")[0]).filter(Boolean).sort()[0];
+  return first ? first.slice(2, 4) + first.slice(5, 7) : "";
+}
+
 function drawList(){
   $("listcnt").textContent = LIST ? `${LIST.length}개` : "";
   if (!LIST){ $("clist").innerHTML = ""; return; }
@@ -316,7 +334,8 @@ function drawList(){
     return `<li class="${editing === i ? "sel" : ""}">
       <div class="crow" data-open="${i}">
         <span class="cdot" style="background:${esc(c.color || "#ccc")}"></span>
-        <span class="cname">${esc(c.short ? c.short + " · " + c.place : c.place)}</span>
+        <span class="ym">${esc(startYm(c))}</span>
+        <span class="cname">${esc(c.place)}</span>
         <span class="cnum">${(c.sessions || []).length}회</span>
       </div>${info}</li>`;
   }).join("");
@@ -342,7 +361,9 @@ function loadInto(i){
   editing = i; opened = null;
   place = p.place || ""; kind = p.kind || "";
   if (p.place && !places().some(x => x.name === p.place)){
-    const l = readStore("place"); l.push({ name: p.place, short: p.short || "" }); writeStore("place", l);
+    const l = readStore("place");
+    l.push({ name: p.place, short: p.short || "", addr: p.addr || "", map: p.map || "" });
+    writeStore("place", l);
   }
   if (p.kind && !kinds().includes(p.kind)){
     const l = readStore("kind"); l.push(p.kind); writeStore("kind", l);
@@ -457,7 +478,8 @@ const writeStore = (k, v) => { try { localStorage.setItem(KEY[k], JSON.stringify
 function places(){
   const out = readStore("place");
   (LIST || []).forEach(c => {
-    if (c.place && !out.some(p => p.name === c.place)) out.push({ name: c.place, short: c.short || "" });
+    if (c.place && !out.some(p => p.name === c.place))
+      out.push({ name: c.place, short: c.short || "", addr: c.addr || "", map: c.map || "" });
   });
   return out;
 }
@@ -480,7 +502,12 @@ function refreshLists(){
   fillSelect($("place"), places().map(p => p.name), place, "고르세요");
   fillSelect($("kind"), kinds(), kind, "고르세요");
   const p = places().find(p => p.name === place);
-  $("shortview").textContent = p && p.short ? `약어 ${p.short}` : "";
+  if (!p) { $("shortview").textContent = ""; return; }
+  const bits = [];
+  if (p.short) bits.push(`약어 ${p.short}`);
+  bits.push(p.addr ? "주소 있음" : "주소 없음");
+  bits.push(p.map ? "지도 링크 있음" : "지도 링크 없음");
+  $("shortview").textContent = bits.join(" · ");
 }
 
 $("place").onchange = () => {
@@ -501,7 +528,8 @@ function openMan(which, adding){
 
   const rows = all.map((v, i) => {
     const name = isPlace ? v.name : v;
-    const ab = isPlace && v.short ? `<span class="ab">${esc(v.short)}</span>` : "";
+    const ab = isPlace ? `<span class="ab">${esc([v.short, v.addr ? "주소" : "", v.map ? "지도" : ""]
+          .filter(Boolean).join(" · "))}</span>` : "";
     const mine = isPlace ? own.some(o => o.name === name) : own.includes(name);
     return `<li><span class="nm">${esc(name)}</span>${ab}
       <button class="btn ghost" data-edit="${i}">고치기</button>
@@ -516,7 +544,9 @@ function openMan(which, adding){
       여기서 고쳐도 그 강의를 다시 저장해야 예전 이름이 사라집니다.</p>
     <div class="addrow">
       <input type="text" id="newname" placeholder="${isPlace ? "동대문여성인력개발센터" : "내일배움과정"}">
-      ${isPlace ? `<input type="text" id="newshort" placeholder="약어 (동대문)" style="max-width:120px">` : ""}
+      ${isPlace ? `<input type="text" id="newshort" placeholder="약어 (동대문)" style="max-width:120px">
+        <input type="text" id="newaddr" class="wide" placeholder="주소 (서울 동대문구 …)">
+        <input type="text" id="newmap" class="wide" placeholder="네이버 지도 링크 (https://naver.me/…)">` : ""}
       <button class="btn" id="addone">추가</button>
     </div>
     <button class="btn solid" id="manclose" style="width:100%">닫기</button>`;
@@ -526,7 +556,8 @@ function openMan(which, adding){
     if (!name) return;
     if (isPlace){
       const list = readStore("place");
-      list.push({ name, short: ($("newshort").value || "").trim() });
+      list.push({ name, short: ($("newshort").value || "").trim(),
+                  addr: ($("newaddr").value || "").trim(), map: ($("newmap").value || "").trim() });
       writeStore("place", list);
       place = name;
     } else {
@@ -549,16 +580,22 @@ function openMan(which, adding){
     const old = isPlace ? v.name : v;
     const name = (prompt(`${isPlace ? "장소" : "유형"} 이름`, old) || "").trim();
     if (!name) return;
-    let short = isPlace ? (v.short || "") : "";
+    let short = "", addr = "", map = "";
     if (isPlace){
-      const s = prompt("약어 (달력 칸에 나옵니다)", short);
+      const s = prompt("약어 (달력 칸에 나옵니다)", v.short || "");
       if (s === null) return;
       short = s.trim();
+      const a = prompt("주소 (팝업에 그대로 나옵니다)", v.addr || "");
+      if (a === null) return;
+      addr = a.trim();
+      const m = prompt("네이버 지도 링크\n(네이버 지도 앱에서 공유 → 링크 복사)", v.map || "");
+      if (m === null) return;
+      map = m.trim();
     }
     const list = readStore(which);
     if (isPlace){
       const at = list.findIndex(o => o.name === old);
-      if (at >= 0) list[at] = { name, short }; else list.push({ name, short });
+      if (at >= 0) list[at] = { name, short, addr, map }; else list.push({ name, short, addr, map });
     } else {
       const at = list.indexOf(old);
       if (at >= 0) list[at] = name; else list.push(name);
@@ -785,6 +822,7 @@ function payload(){
   const p = places().find(x => x.name === place);
   return {
     place, short: (p && p.short) || "", kind,
+    addr: (p && p.addr) || "", map: (p && p.map) || "",
     lunch: +$("lunch").value, link: $("link").value.trim(), color,
     sessions: [...new Set(rounds.filter(r => r[0]).map(r =>
       `${r[0]} ${r[2] ? r[1] + "-" + r[2] : r[1]}`))],
@@ -795,9 +833,22 @@ function draw(){
   drawRounds();
   const p = payload();
   const s = ClassText.summary(p);
+  const mapbox = p.place ? `
+    <div class="mapbox">
+      <div class="top">
+        <svg class="pin" viewBox="0 0 24 24" fill="#03c75a"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+        <span><b>${esc(p.place)}</b>
+          <span class="ad">${esc(p.addr || "주소 없음 — 장소 목록에서 넣을 수 있습니다")}</span></span>
+      </div>
+      <div class="row">
+        <span class="mini" style="${p.map ? "" : "opacity:.45"}">지도로 보기</span>
+        <span class="mini" style="${p.addr ? "" : "opacity:.45"}">주소 복사</span>
+      </div>
+    </div>` : "";
+
   $("preview").innerHTML = s.lines.length
     ? `<div class="pt">${esc(p.place || "장소를 고르세요")}</div>` +
-      s.lines.map(l => `<div class="${l.off ? "off" : ""}">${esc(l.text)}</div>`).join("")
+      s.lines.map(l => `<div class="${l.off ? "off" : ""}">${esc(l.text)}</div>`).join("") + mapbox
     : `<span class="pm">장소·유형과 회차를 넣으면 여기에 나옵니다.</span>`;
   $("out").textContent = (p.place || p.sessions.length)
     ? JSON.stringify(p)
