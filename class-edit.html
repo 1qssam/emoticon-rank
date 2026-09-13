@@ -136,7 +136,9 @@
   .sheet h2{font-size:15px;margin:0 0 12px;font-weight:600}
   .mlist{list-style:none;margin:0 0 12px;padding:0;border-top:1px solid var(--line);
     max-height:230px;overflow:auto}
-  .mlist li{display:flex;gap:8px;align-items:center;padding:7px 2px;border-bottom:1px solid var(--line)}
+  .mlist li{display:flex;gap:8px;align-items:center;padding:7px 6px;border-bottom:1px solid var(--line);
+    border-radius:6px}
+  .mlist li.sel{background:#fff8dd}
   .mlist .nm{flex:1;min-width:0;font-size:13.5px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mlist .ab{font-size:12.5px;color:var(--muted);flex:none;white-space:nowrap}
@@ -521,17 +523,20 @@ $("kind").onchange = () => {
 $("placeman").onclick = () => openMan("place");
 $("kindman").onclick = () => openMan("kind");
 
+let manEdit = null;      // 고치는 중인 항목 이름 (없으면 새로 추가)
+
 function openMan(which, adding){
   const isPlace = which === "place";
   const own = readStore(which);
   const all = isPlace ? places() : kinds();
+  const cur = manEdit ? all.find(v => (isPlace ? v.name : v) === manEdit) : null;
 
   const rows = all.map((v, i) => {
     const name = isPlace ? v.name : v;
     const ab = isPlace ? `<span class="ab">${esc([v.short, v.addr ? "주소" : "", v.map ? "지도" : ""]
           .filter(Boolean).join(" · "))}</span>` : "";
     const mine = isPlace ? own.some(o => o.name === name) : own.includes(name);
-    return `<li><span class="nm">${esc(name)}</span>${ab}
+    return `<li class="${manEdit === name ? "sel" : ""}"><span class="nm">${esc(name)}</span>${ab}
       <button class="btn ghost" data-edit="${i}">고치기</button>
       ${mine ? `<button class="btn ghost" data-del="${i}">지우기</button>`
              : `<span class="ab">쓰는 중</span>`}</li>`;
@@ -542,74 +547,67 @@ function openMan(which, adding){
     <ul class="mlist">${rows || `<li><span class="nm sub">아직 없습니다.</span></li>`}</ul>
     <p class="sub" style="margin:-4px 0 12px">‘쓰는 중’은 목록의 강의가 쓰고 있는 이름입니다.
       여기서 고쳐도 그 강의를 다시 저장해야 예전 이름이 사라집니다.</p>
+    <p class="sub" id="mantitle" style="margin:0 0 6px;font-weight:600;color:#43464a">
+      ${manEdit ? "고치는 중 — " + esc(manEdit) : "새로 추가"}</p>
     <div class="addrow">
-      <input type="text" id="newname" placeholder="${isPlace ? "동대문여성인력개발센터" : "내일배움과정"}">
-      ${isPlace ? `<input type="text" id="newshort" placeholder="약어 (동대문)" style="max-width:120px">
-        <input type="text" id="newaddr" class="wide" placeholder="주소 (서울 동대문구 …)">
-        <input type="text" id="newmap" class="wide" placeholder="네이버 지도 링크 (https://naver.me/…)">` : ""}
-      <button class="btn" id="addone">추가</button>
+      <input type="text" id="newname" placeholder="${isPlace ? "동대문여성인력개발센터" : "내일배움과정"}"
+        value="${esc(cur ? (isPlace ? cur.name : cur) : "")}">
+      ${isPlace ? `<input type="text" id="newshort" placeholder="약어 (동대문)" style="max-width:120px"
+          value="${esc(cur && cur.short || "")}">
+        <input type="text" id="newaddr" class="wide" placeholder="주소 (서울 동대문구 …)"
+          value="${esc(cur && cur.addr || "")}">
+        <input type="text" id="newmap" class="wide" placeholder="네이버 지도 링크 (https://naver.me/…)"
+          value="${esc(cur && cur.map || "")}">` : ""}
+      <button class="btn" id="addone">${manEdit ? "수정" : "추가"}</button>
+      ${manEdit ? `<button class="btn ghost" id="canceledit">취소</button>` : ""}
     </div>
     <button class="btn solid" id="manclose" style="width:100%">닫기</button>`;
 
   $("addone").onclick = () => {
     const name = $("newname").value.trim();
     if (!name) return;
-    if (isPlace){
-      const list = readStore("place");
-      list.push({ name, short: ($("newshort").value || "").trim(),
-                  addr: ($("newaddr").value || "").trim(), map: ($("newmap").value || "").trim() });
-      writeStore("place", list);
-      place = name;
+    const rec = isPlace ? { name, short: ($("newshort").value || "").trim(),
+                            addr: ($("newaddr").value || "").trim(),
+                            map: ($("newmap").value || "").trim() } : name;
+    const list = readStore(which);
+
+    if (manEdit){
+      const at = isPlace ? list.findIndex(o => o.name === manEdit) : list.indexOf(manEdit);
+      if (at >= 0) list[at] = rec; else list.push(rec);       // 강의 쪽에만 있던 것은 새로 담습니다
+      if (isPlace && place === manEdit) place = name;
+      if (!isPlace && kind === manEdit) kind = name;
+      manEdit = null;
     } else {
-      const list = readStore("kind");
-      list.push(name);
-      writeStore("kind", list);
-      kind = name;
+      list.push(rec);
+      if (isPlace) place = name; else kind = name;
     }
+    writeStore(which, list);
     refreshLists(); draw(); openMan(which);
   };
+
+  if ($("canceledit")) $("canceledit").onclick = () => { manEdit = null; openMan(which); };
+
   $("manbody").querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
     const name = isPlace ? all[+b.dataset.del].name : all[+b.dataset.del];
     writeStore(which, isPlace ? readStore("place").filter(o => o.name !== name)
                               : readStore("kind").filter(o => o !== name));
     if ((isPlace ? place : kind) === name){ if (isPlace) place = ""; else kind = ""; }
+    if (manEdit === name) manEdit = null;
     refreshLists(); draw(); openMan(which);
   });
+
   $("manbody").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => {
     const v = all[+b.dataset.edit];
-    const old = isPlace ? v.name : v;
-    const name = (prompt(`${isPlace ? "장소" : "유형"} 이름`, old) || "").trim();
-    if (!name) return;
-    let short = "", addr = "", map = "";
-    if (isPlace){
-      const s = prompt("약어 (달력 칸에 나옵니다)", v.short || "");
-      if (s === null) return;
-      short = s.trim();
-      const a = prompt("주소 (팝업에 그대로 나옵니다)", v.addr || "");
-      if (a === null) return;
-      addr = a.trim();
-      const m = prompt("네이버 지도 링크\n(네이버 지도 앱에서 공유 → 링크 복사)", v.map || "");
-      if (m === null) return;
-      map = m.trim();
-    }
-    const list = readStore(which);
-    if (isPlace){
-      const at = list.findIndex(o => o.name === old);
-      if (at >= 0) list[at] = { name, short, addr, map }; else list.push({ name, short, addr, map });
-    } else {
-      const at = list.indexOf(old);
-      if (at >= 0) list[at] = name; else list.push(name);
-    }
-    writeStore(which, list);
-    if (isPlace && place === old) place = name;
-    if (!isPlace && kind === old) kind = name;
-    refreshLists(); draw(); openMan(which);
+    manEdit = isPlace ? v.name : v;
+    openMan(which);
+    $("newname").focus();
   });
-  $("manclose").onclick = () => $("man").close();
+
+  $("manclose").onclick = () => { manEdit = null; $("man").close(); };
   if (!$("man").open) $("man").showModal();
   if (adding) $("newname").focus();
 }
-$("man").onclick = e => { if (e.target === $("man")) $("man").close(); };
+$("man").onclick = e => { if (e.target === $("man")){ manEdit = null; $("man").close(); } };
 
 /* ── 색 ── */
 function drawColors(){
