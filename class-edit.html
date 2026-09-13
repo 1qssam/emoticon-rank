@@ -135,7 +135,8 @@ const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, "0");
 const DOW = "일월화수목금토";
 
-const PALETTE = ["#2f6fd0","#d63b2f","#e08a1e","#2f9e63","#7a5cd6","#c2437f","#3a8f97","#6b7280"];
+/* 색약이 있어도 구분되는 조합(Okabe–Ito)입니다 */
+const PALETTE = ["#E69F00","#56B4E9","#009E73","#0072B2","#D55E00","#CC79A7","#6B7280"];
 let color = PALETTE[0];
 let picked = new Set();          // 고른 요일 (0=일)
 let rounds = [];                 // ["2026-10-06","14:00","17:00"] 묶음

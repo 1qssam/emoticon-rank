@@ -43,11 +43,6 @@
   .today{border:1px solid var(--line);background:#fff;border-radius:7px;padding:5px 11px;
     font-size:12.5px;font-family:inherit;color:var(--ink);cursor:pointer}
   .today:hover{border-color:var(--ink)}
-  .views{margin-left:auto;display:flex;gap:2px}
-  .viewbtn{border:1px solid var(--line);background:#fff;padding:5px 13px;border-radius:999px;
-    font-size:13px;color:var(--muted);cursor:pointer;font-family:inherit}
-  .viewbtn[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);font-weight:600}
-
   /* ── 달력 ── */
   .cal{border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}
   .dows{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--panel);
@@ -80,30 +75,16 @@
   .legend button{border:0;background:none;font-family:inherit;font-size:12.5px;color:#4c5054;
     cursor:pointer;display:flex;align-items:center;gap:6px;padding:2px 0}
   .legend button:hover{color:var(--ink);text-decoration:underline}
-
-  /* ── 목록 ── */
-  .list{border-top:1px solid var(--line)}
-  .item{display:grid;grid-template-columns:170px 1fr auto;gap:14px;align-items:baseline;
-    padding:11px 4px;border-bottom:1px solid var(--line)}
-  .item:hover{background:#faf9f6}
-  .when{font-size:13px;color:#43464a}
-  .when b{font-weight:600;margin-right:6px}
-  .mark{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:4px;
-    padding:1px 5px;margin-left:5px;white-space:nowrap}
-  .what{min-width:0}
-  .what button{border:0;background:none;font-family:inherit;font-size:15px;font-weight:500;
-    color:var(--ink);cursor:pointer;padding:0;text-align:left;display:flex;gap:7px;align-items:center}
-  .what button:hover{text-decoration:underline}
   .dot{width:9px;height:9px;border-radius:50%;flex:none}
-  .where{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .nth{font-size:12.5px;color:var(--muted);white-space:nowrap}
-  .empty{padding:48px 0;text-align:center;color:var(--muted);font-size:13.5px}
 
   /* ── 강의 상세 ── */
   dialog{border:0;border-radius:12px;padding:0;max-width:400px;width:calc(100% - 32px);
     box-shadow:0 14px 44px rgba(0,0,0,.18);color:var(--ink)}
   dialog::backdrop{background:rgba(23,24,26,.34)}
-  .sheet{padding:20px 20px 18px}
+  .sheet{padding:20px 20px 18px;position:relative}
+  .x{position:absolute;top:10px;right:10px;width:30px;height:30px;border:0;background:none;
+    border-radius:8px;font-size:17px;line-height:1;color:var(--muted);cursor:pointer;font-family:inherit}
+  .x:hover{background:var(--panel);color:var(--ink)}
   .sheet .band{height:4px;border-radius:999px;width:38px;margin-bottom:13px}
   .sheet h2{font-size:17px;margin:0 0 3px;font-weight:600;letter-spacing:-.01em}
   .sheet .place{font-size:13.5px;color:var(--muted);margin:0 0 14px}
@@ -112,6 +93,8 @@
   .rounds li{display:flex;gap:9px;align-items:baseline;padding:7px 2px;
     border-bottom:1px solid var(--line);font-size:13.5px}
   .rounds .no{color:var(--muted);font-size:12.5px;width:28px;flex:none}
+  .rounds .mark{font-size:11.5px;color:var(--muted);border:1px solid var(--line);
+    border-radius:4px;padding:1px 5px;margin-left:auto;white-space:nowrap}
   .rounds .done{opacity:.42}
   .rounds .done .rdate::after{content:" 종료";font-size:11.5px;color:var(--muted)}
   .btns{display:flex;gap:8px}
@@ -129,16 +112,15 @@
   button:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 
   @media (max-width:640px){
-    .wrap{padding:20px 12px 60px}
+    .wrap{padding:20px 0 60px}
+    header,.topbar,.hint,.legend,.foot{padding-left:12px;padding-right:12px}
+    .cal{border-left:0;border-right:0;border-radius:0}
     .day{min-height:74px;padding:4px 3px;gap:2px}
     .day .d{font-size:11.5px}
     .chip{display:block;overflow:hidden;padding:2px 3px 2px 4px;font-size:10.5px}
     .chip .t{display:block;font-size:10px}
     .chip .n{display:block}
     .chip .mk{display:none}      /* 좁은 화면에서는 칸을 넘겨서 뺍니다 */
-    .item{grid-template-columns:112px 1fr;gap:8px}
-    .where{grid-column:2;white-space:normal}
-    .nth{display:none}
   }
 </style>
 </head>
@@ -161,10 +143,6 @@
       <button class="daynav" id="next" aria-label="다음 달">›</button>
     </div>
     <button class="today" id="todaybtn">오늘</button>
-    <div class="views">
-      <button class="viewbtn" id="v-cal">달력</button>
-      <button class="viewbtn" id="v-list">목록</button>
-    </div>
   </div>
 
   <p class="hint">일정을 누르면 그 강의의 전체 회차와 신청 링크를 볼 수 있습니다.</p>
@@ -207,13 +185,10 @@ ROUNDS.forEach(r => (byDate[r.date] = byDate[r.date] || []).push(r));
 /* 보이는 달: 다음 일정이 있는 달, 없으면 이번 달 */
 const upcoming = ROUNDS.find(r => r.date >= todayStr);
 let cursor = (upcoming ? upcoming.date : todayStr).slice(0, 7);
-let view = "cal";
 
 $("prev").onclick = () => { cursor = shift(cursor, -1); render(); };
 $("next").onclick = () => { cursor = shift(cursor, +1); render(); };
 $("todaybtn").onclick = () => { cursor = todayStr.slice(0, 7); render(); };
-$("v-cal").onclick = () => { view = "cal"; render(); };
-$("v-list").onclick = () => { view = "list"; render(); };
 
 function shift(ym, by){
   let [y, m] = ym.split("-").map(Number);
@@ -271,27 +246,6 @@ function calendar(){
   </div>${legend}`;
 }
 
-/* ── 목록 (다가오는 순서) ── */
-function listview(){
-  const rows = ROUNDS.filter(r => r.date >= todayStr);
-  if (!rows.length)
-    return `<div class="empty">예정된 강의가 없습니다.</div>`;
-
-  return `<div class="list">` + rows.map(r => {
-    const c = C[r.ci];
-    return `<div class="item">
-      <span class="when"><b>${esc(fmtDay(r.date))}</b>${esc(r.time)}${r.end ? esc("–" + r.end) : ""}</span>
-      <span class="what">
-        <button data-c="${r.ci}"><span class="dot" style="background:${esc(c.color)}"></span>${esc(c.name)}${
-          r.n === 1 ? `<span class="mark">시작</span>`
-          : r.n === r.of && r.of > 1 ? `<span class="mark">종료</span>` : ""}</button>
-        <span class="where">${esc(c.place)}</span>
-      </span>
-      <span class="nth">${r.n}/${r.of}회차</span>
-    </div>`;
-  }).join("") + `</div>`;
-}
-
 /* ── 강의 상세 ── */
 function openSheet(ci){
   const c = C[ci];
@@ -307,6 +261,7 @@ function openSheet(ci){
   }).join("");
 
   $("sheetbody").innerHTML = `
+    <button class="x" id="xbtn" aria-label="닫기">✕</button>
     <div class="band" style="background:${esc(c.color)}"></div>
     <h2>${esc(c.name)}</h2>
     <p class="place">${esc(c.place)}</p>
@@ -317,19 +272,17 @@ function openSheet(ci){
       ${c.link ? `<a class="btn solid" href="${esc(c.link)}" target="_blank" rel="noopener">신청하기</a>` : ""}
     </div>`;
   $("closebtn").onclick = () => $("sheet").close();
+  $("xbtn").onclick = () => $("sheet").close();
   $("sheet").showModal();
 }
+
+/* 바깥을 누르면 닫습니다 */
+$("sheet").onclick = e => { if (e.target === $("sheet")) $("sheet").close(); };
 
 function render(){
   const [y, m] = cursor.split("-").map(Number);
   $("month").textContent = `${y}년 ${m}월`;
-  $("v-cal").setAttribute("aria-pressed", view === "cal");
-  $("v-list").setAttribute("aria-pressed", view === "list");
-  // 달 이동은 달력에서만 의미가 있습니다
-  document.querySelector(".monthnav").style.visibility = view === "cal" ? "" : "hidden";
-  $("todaybtn").style.visibility = view === "cal" ? "" : "hidden";
-
-  $("view").innerHTML = view === "cal" ? calendar() : listview();
+  $("view").innerHTML = calendar();
   $("view").querySelectorAll("[data-c]").forEach(b => b.onclick = () => openSheet(+b.dataset.c));
 }
 
