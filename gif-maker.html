@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GIF 만들기 · 원큐쌤의 이모티콘 클래스</title>
+<meta name="description" content="PNG 여러 장을 투명 배경 GIF로 만듭니다. 프레임마다 속도를 따로 정할 수 있습니다.">
+<style>
+  :root{
+    --paper:#fcfcfb; --ink:#17181a; --muted:#83878c; --line:#e7e6e1; --panel:#f5f4f0;
+    --accent:#0f8f4d; --warn:#c2564b; --mark:#fee500;
+    --checker:#e9e8e3;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  body{background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;min-height:100%}
+  [hidden]{display:none !important}
+
+  /* ── 맨 위 줄 ── */
+  .top{display:flex;align-items:center;gap:12px;padding:12px 18px;
+    border-bottom:1px solid var(--line);background:#fff;flex-wrap:wrap}
+  .top h1{font-size:15px;font-weight:700;margin:0;letter-spacing:-.01em}
+  .top .sub{font-size:12.5px;color:var(--muted)}
+  .top .sp{flex:1}
+
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;
+    padding:7px 13px;font-size:13px;cursor:pointer;font-family:inherit}
+  .btn:hover{border-color:var(--ink)}
+  .btn:disabled{opacity:.4;cursor:default;border-color:var(--line)}
+  .btn.solid{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+  .btn.solid:hover{filter:brightness(.94)}
+  .btn.ghost{border-color:transparent;color:var(--muted);padding:5px 8px;font-size:12.5px}
+  .btn.ghost:hover{color:var(--ink)}
+  .btn.sm{padding:4px 9px;font-size:12px}
+
+  /* ── 본문 두 칸 ── */
+  .cols{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 380px;min-height:0}
+  .stage{display:flex;flex-direction:column;min-width:0;background:var(--panel)}
+  .side{border-left:1px solid var(--line);background:#fff;display:flex;flex-direction:column;min-height:0}
+
+  /* ── 미리보기 ── */
+  .bgbar{display:flex;align-items:center;gap:10px;padding:10px 16px;flex-wrap:wrap;
+    border-bottom:1px solid var(--line);background:#fff}
+  .bgbar .lb{font-size:12.5px;color:var(--muted)}
+  .swatch{width:24px;height:24px;border-radius:6px;border:1px solid #d8d6d0;cursor:pointer;padding:0}
+  .swatch[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:1px}
+  .checker{background-image:
+      linear-gradient(45deg,var(--checker) 25%,transparent 25%),
+      linear-gradient(-45deg,var(--checker) 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,var(--checker) 75%),
+      linear-gradient(-45deg,transparent 75%,var(--checker) 75%);
+    background-size:16px 16px;
+    background-position:0 0,0 8px,8px -8px,-8px 0;
+    background-color:#fff}
+
+  .canvaswrap{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;min-height:0}
+  #view{max-width:100%;max-height:100%;border:1px solid #cfcdc7;display:block}
+  .empty{color:var(--muted);font-size:13.5px;text-align:center;line-height:1.9}
+
+  .player{display:flex;align-items:center;gap:10px;padding:10px 16px;
+    border-top:1px solid var(--line);background:#fff;flex-wrap:wrap}
+  .pbtn{width:34px;height:30px;border:1px solid var(--line);background:#fff;border-radius:7px;
+    cursor:pointer;font-size:13px;line-height:1;color:var(--ink)}
+  .pbtn:hover{border-color:var(--ink)}
+  .player .info{margin-left:auto;font-size:12.5px;color:var(--muted);
+    font-variant-numeric:tabular-nums;display:flex;gap:14px}
+
+  /* ── 설정 ── */
+  .opts{border-top:1px solid var(--line);background:#fff;padding:12px 16px 14px}
+  .row{display:flex;align-items:center;gap:9px;margin-bottom:9px;flex-wrap:wrap}
+  .row > label{font-size:12.5px;color:#5c6064;width:96px;flex:none}
+  input[type=number],input[type=text],select{font-family:inherit;font-size:13px;
+    border:1px solid var(--line);border-radius:7px;padding:6px 8px;background:#fff;color:var(--ink)}
+  input[type=number]{width:82px;text-align:center}
+  input[type=range]{accent-color:var(--accent);flex:1;max-width:200px}
+  .hint{font-size:12px;color:var(--muted)}
+  .warn{font-size:12.5px;color:var(--warn);margin:4px 0 0}
+
+  /* ── 프레임 목록 ── */
+  .sidehead{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .sidehead h2{font-size:14px;font-weight:600;margin:0;flex:1}
+  .sidehead .cnt{font-size:12.5px;color:var(--muted)}
+  .drop{margin:14px;border:1.5px dashed #cfcdc7;border-radius:10px;padding:30px 16px;
+    text-align:center;color:var(--muted);font-size:13px;line-height:1.8;cursor:pointer}
+  .drop.on{border-color:var(--accent);background:#f2faf5;color:var(--ink)}
+  .frames{flex:1;overflow:auto;padding:10px 12px 16px;
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start}
+  .card{border:1px solid var(--line);border-radius:9px;background:#fff;padding:7px;position:relative}
+  .card.drag{opacity:.4}
+  .card.over{border-color:var(--accent);box-shadow:0 0 0 2px #d6f0e2}
+  .card.locked{background:#fffdf1;border-color:#ecdfae}
+  .card .no{position:absolute;top:9px;left:9px;background:rgba(23,24,26,.72);color:#fff;
+    font-size:11px;border-radius:5px;padding:1px 5px;font-variant-numeric:tabular-nums}
+  .card .lock{position:absolute;top:7px;right:7px;width:20px;height:20px;cursor:pointer;
+    accent-color:#b58a00;margin:0}
+  .card .th{width:100%;height:92px;border-radius:6px;object-fit:contain;display:block;cursor:grab}
+  .card .dl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px}
+  .card .dl input{width:58px;padding:3px;text-align:center;font-size:12px;
+    border:1px solid var(--line);border-radius:5px;font-family:inherit}
+  .card .dl input:disabled{background:#f6f4ea;color:#8a8577}
+  .card .tools{display:flex;gap:4px;justify-content:center;margin-top:5px}
+
+  /* ── 결과 ── */
+  dialog{border:0;border-radius:14px;padding:0;max-width:560px;width:calc(100% - 32px);
+    box-shadow:0 16px 50px rgba(0,0,0,.22);color:var(--ink)}
+  dialog::backdrop{background:rgba(23,24,26,.4)}
+  .result{padding:20px}
+  .result h3{margin:0 0 2px;font-size:16px}
+  .bar{height:6px;background:var(--line);border-radius:999px;overflow:hidden;margin:10px 0}
+  .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+  .result img{max-width:100%;max-height:46vh;border:1px solid var(--line);border-radius:8px;display:block}
+  .result .btns{display:flex;gap:8px;margin-top:14px}
+  .result .btns > *{flex:1;text-align:center;text-decoration:none}
+
+  @media (max-width:900px){
+    .cols{grid-template-columns:1fr}
+    .side{border-left:0;border-top:1px solid var(--line)}
+    .canvaswrap{min-height:260px}
+    .row > label{width:100%}
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>GIF 만들기</h1>
+  <span class="sub">원큐쌤의 이모티콘 클래스 · 수강생용</span>
+  <span class="sp"></span>
+  <button class="btn" id="reset">처음으로</button>
+  <button class="btn solid" id="make" disabled>GIF 만들기</button>
+</div>
+
+<div class="cols">
+  <!-- 왼쪽: 미리보기와 설정 -->
+  <div class="stage">
+    <div class="bgbar">
+      <span class="lb">미리보기 배경</span>
+      <button class="swatch checker" data-bg="checker" aria-pressed="true" title="투명"></button>
+      <button class="swatch" data-bg="#ffffff" style="background:#fff" title="흰색"></button>
+      <button class="swatch" data-bg="#1e1e1e" style="background:#1e1e1e" title="검정"></button>
+      <button class="swatch" data-bg="#fee500" style="background:#fee500" title="카카오 노랑"></button>
+      <button class="swatch" data-bg="#b2c7d9" style="background:#b2c7d9" title="카톡 배경"></button>
+      <input type="color" id="bgpick" value="#ff9ecd" title="직접 고르기"
+        style="width:28px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:#fff">
+      <span class="hint">배경은 눈으로 보기 위한 것입니다. 만들어진 GIF는 투명합니다.</span>
+    </div>
+
+    <div class="canvaswrap" id="canvaswrap">
+      <p class="empty" id="stageempty">오른쪽에 PNG 파일을 넣으면 여기에서 움직임을 볼 수 있습니다.<br>
+        파일 이름 순서대로 들어갑니다.</p>
+      <canvas id="view" hidden></canvas>
+    </div>
+
+    <div class="player">
+      <button class="pbtn" id="first" title="처음으로">⏮</button>
+      <button class="pbtn" id="play" title="재생">▶</button>
+      <button class="pbtn" id="stop" title="정지">■</button>
+      <button class="pbtn" id="last" title="마지막으로">⏭</button>
+      <span class="info">
+        <span id="pos">0 / 0 프레임</span>
+        <span id="total">전체 시간 0.00초</span>
+      </span>
+    </div>
+
+    <div class="opts">
+      <div class="row">
+        <label for="w">만들 크기</label>
+        <input type="number" id="w" value="740" min="1" max="2000"> ×
+        <input type="number" id="h" value="640" min="1" max="2000">
+        <button class="btn sm" id="ogq">OGQ 기본값</button>
+        <span class="hint">OGQ 애니메이션 스티커는 740 × 640</span>
+      </div>
+      <div class="row">
+        <label for="bulk">전체 속도</label>
+        <input type="number" id="bulk" value="10" min="1" max="1000">
+        <span class="hint">1/100초 단위 · <b id="fps">10.0 FPS</b> · 넣으면 잠기지 않은 프레임이 모두 바뀝니다</span>
+      </div>
+      <div class="row">
+        <label for="alpha">반투명 기준</label>
+        <input type="range" id="alpha" min="1" max="254" value="128">
+        <span class="hint"><b id="alphav">128</b> 미만은 투명, 이상은 불투명으로 바뀝니다</span>
+      </div>
+      <div class="row">
+        <label for="repeat">반복</label>
+        <select id="repeat">
+          <option value="0" selected>무한 반복</option>
+          <option value="1">1번만</option>
+          <option value="3">3번</option>
+          <option value="4">4번</option>
+        </select>
+        <span class="hint">OGQ는 무한 반복입니다</span>
+      </div>
+      <p class="warn" id="warn" hidden></p>
+    </div>
+  </div>
+
+  <!-- 오른쪽: 프레임 -->
+  <aside class="side">
+    <div class="sidehead">
+      <h2>프레임 <span class="cnt" id="fcnt">0</span></h2>
+      <button class="btn sm" id="addbtn">이미지 추가</button>
+      <button class="btn ghost" id="lockall">전체 잠금</button>
+      <button class="btn ghost" id="clear">비우기</button>
+    </div>
+    <div id="dropzone"></div>
+    <div class="frames" id="frames"></div>
+    <input type="file" id="file" accept="image/png,image/*" multiple hidden>
+  </aside>
+</div>
+
+<dialog id="resdlg"><div class="result" id="result"></div></dialog>
+
+<!-- GIF 만드는 라이브러리 (gif.js) -->
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+<script>
+const WORKER_URL = "https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js";
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* 투명으로 쓸 색. 그림에 거의 쓰이지 않는 색이라야 합니다. */
+const MAGIC = { r: 254, g: 0, b: 254, hex: 0xfe00fe };
+const MAX_FRAMES = 100;
+
+let frames = [];      // {id, name, img, delay(ms), locked}
+let seq = 0;
+let bgMode = "checker";
+let playing = false, cursor = 0, timer = null;
+
+/* ── 파일 넣기 ───────────────────────────── */
+function drawDrop(){
+  $("dropzone").innerHTML = frames.length ? "" :
+    `<div class="drop" id="drop">PNG 파일을 여기에 끌어다 놓거나<br>눌러서 고르세요
+       <div class="hint" style="margin-top:6px">최대 ${MAX_FRAMES}장 · 파일 이름 순서로 들어갑니다</div></div>`;
+  if (!frames.length){
+    const d = $("drop");
+    d.onclick = () => $("file").click();
+    ["dragenter","dragover"].forEach(t => d.addEventListener(t, e => { e.preventDefault(); d.classList.add("on"); }));
+    ["dragleave","drop"].forEach(t => d.addEventListener(t, e => { e.preventDefault(); d.classList.remove("on"); }));
+    d.addEventListener("drop", e => addFiles(e.dataTransfer.files));
+  }
+}
+$("addbtn").onclick = () => $("file").click();
+$("file").onchange = e => { addFiles(e.target.files); e.target.value = ""; };
+
+/* 목록 전체에 끌어다 놓기 */
+["dragenter","dragover"].forEach(t => $("frames").addEventListener(t, e => e.preventDefault()));
+$("frames").addEventListener("drop", e => {
+  if (e.dataTransfer.files && e.dataTransfer.files.length){ e.preventDefault(); addFiles(e.dataTransfer.files); }
+});
+
+function addFiles(fileList){
+  const files = [...fileList].filter(f => f.type.startsWith("image/"));
+  if (!files.length) return;
+  files.sort((a, b) => a.name.localeCompare(b.name, "ko", { numeric: true }));
+
+  const room = MAX_FRAMES - frames.length;
+  if (room <= 0) return warn(`프레임은 ${MAX_FRAMES}장까지 넣을 수 있습니다.`);
+  const use = files.slice(0, room);
+  if (files.length > room) warn(`${MAX_FRAMES}장을 넘겨서 앞의 ${room}장만 넣었습니다.`);
+
+  const delay = +$("bulk").value * 10;
+  let left = use.length;
+  use.forEach(f => {
+    const r = new FileReader();
+    r.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        frames.push({ id: ++seq, name: f.name, img, delay, locked: false });
+        if (--left === 0){
+          frames.sort((a, b) => a.name.localeCompare(b.name, "ko", { numeric: true }));
+          afterChange();
+        }
+      };
+      img.onerror = () => { if (--left === 0) afterChange(); };
+      img.src = r.result;
+    };
+    r.readAsDataURL(f);
+  });
+}
+
+function warn(msg){
+  $("warn").textContent = msg || "";
+  $("warn").hidden = !msg;
+}
+
+/* ── 프레임 카드 ─────────────────────────── */
+function drawFrames(){
+  $("fcnt").textContent = frames.length ? `${frames.length} / ${MAX_FRAMES}` : "0";
+  $("frames").innerHTML = frames.map((f, i) => `
+    <div class="card${f.locked ? " locked" : ""}" data-i="${i}" draggable="true">
+      <span class="no">${i + 1}</span>
+      <input type="checkbox" class="lock" ${f.locked ? "checked" : ""}
+        title="잠그면 전체 속도를 바꿔도 이 프레임은 그대로입니다" data-lock="${i}">
+      <img class="th checker" src="${f.img.src}" alt="" draggable="false">
+      <div class="dl">
+        <input type="number" step="0.01" min="0.01" value="${(f.delay / 1000).toFixed(2)}"
+          data-delay="${i}" ${f.locked ? "" : ""}>
+        <span class="hint">초</span>
+      </div>
+      <div class="tools">
+        <button class="btn ghost" data-copy="${i}">복제</button>
+        <button class="btn ghost" data-del="${i}">삭제</button>
+      </div>
+    </div>`).join("");
+
+  $("frames").querySelectorAll("[data-delay]").forEach(el => el.onchange = () => {
+    const v = Math.max(0.01, +el.value || 0.1);
+    frames[+el.dataset.delay].delay = Math.round(v * 1000);
+    afterChange();
+  });
+  $("frames").querySelectorAll("[data-lock]").forEach(el => el.onchange = () => {
+    frames[+el.dataset.lock].locked = el.checked;
+    drawFrames();
+  });
+  $("frames").querySelectorAll("[data-copy]").forEach(b => b.onclick = () => {
+    const i = +b.dataset.copy;
+    if (frames.length >= MAX_FRAMES) return warn(`프레임은 ${MAX_FRAMES}장까지입니다.`);
+    frames.splice(i + 1, 0, { ...frames[i], id: ++seq });
+    afterChange();
+  });
+  $("frames").querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+    frames.splice(+b.dataset.del, 1);
+    afterChange();
+  });
+
+  /* 끌어서 순서 바꾸기 */
+  let from = null;
+  $("frames").querySelectorAll(".card").forEach(card => {
+    card.ondragstart = e => {
+      from = +card.dataset.i;
+      card.classList.add("drag");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", String(from));
+    };
+    card.ondragend = () => {
+      from = null;
+      $("frames").querySelectorAll(".card").forEach(c => c.classList.remove("drag", "over"));
+    };
+    card.ondragover = e => {
+      if (from === null) return;                 // 파일을 끌어온 경우는 건드리지 않습니다
+      e.preventDefault();
+      card.classList.add("over");
+    };
+    card.ondragleave = () => card.classList.remove("over");
+    card.ondrop = e => {
+      if (from === null) return;
+      e.preventDefault(); e.stopPropagation();
+      const to = +card.dataset.i;
+      if (from !== to){
+        const [moved] = frames.splice(from, 1);
+        frames.splice(to, 0, moved);
+      }
+      from = null;
+      afterChange();
+    };
+  });
+}
+
+/* ── 전체 속도 일괄 적용 ──────────────────── */
+$("bulk").oninput = () => {
+  const cs = Math.max(1, +$("bulk").value || 10);
+  $("fps").textContent = (100 / cs).toFixed(1) + " FPS";
+  frames.forEach(f => { if (!f.locked) f.delay = cs * 10; });
+  afterChange();
+};
+$("lockall").onclick = () => {
+  const on = frames.some(f => !f.locked);
+  frames.forEach(f => f.locked = on);
+  $("lockall").textContent = on ? "전체 잠금 해제" : "전체 잠금";
+  drawFrames();
+};
+$("clear").onclick = () => {
+  if (frames.length && !confirm("넣은 프레임을 모두 지울까요?")) return;
+  frames = []; afterChange();
+};
+$("reset").onclick = () => {
+  if (frames.length && !confirm("처음 상태로 되돌릴까요?")) return;
+  frames = [];
+  $("w").value = 740; $("h").value = 640; $("bulk").value = 10;
+  $("alpha").value = 128; $("alphav").textContent = "128";
+  $("repeat").value = "0"; $("fps").textContent = "10.0 FPS";
+  $("result").innerHTML = ""; if ($("resdlg").open) $("resdlg").close();
+  afterChange();
+};
+$("ogq").onclick = () => { $("w").value = 740; $("h").value = 640; afterChange(); };
+$("alpha").oninput = () => { $("alphav").textContent = $("alpha").value; };
+
+/* ── 미리보기 ─────────────────────────────── */
+document.querySelectorAll("[data-bg]").forEach(b => b.onclick = () => {
+  bgMode = b.dataset.bg;
+  document.querySelectorAll("[data-bg]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  paintBg();
+});
+$("bgpick").oninput = () => {
+  bgMode = $("bgpick").value;
+  document.querySelectorAll("[data-bg]").forEach(x => x.setAttribute("aria-pressed", false));
+  paintBg();
+};
+
+function paintBg(){
+  const wrap = $("canvaswrap"), v = $("view");
+  v.classList.toggle("checker", bgMode === "checker");
+  v.style.background = bgMode === "checker" ? "" : bgMode;
+}
+
+function drawFrame(i){
+  const v = $("view"), ctx = v.getContext("2d");
+  const W = +$("w").value || 740, H = +$("h").value || 640;
+  if (v.width !== W || v.height !== H){ v.width = W; v.height = H; }
+  ctx.clearRect(0, 0, W, H);
+  const f = frames[i];
+  if (f) drawFit(ctx, f.img, W, H);
+  $("pos").textContent = `${frames.length ? i + 1 : 0} / ${frames.length} 프레임`;
+}
+
+/* 비율을 지키며 가운데에 그립니다 */
+function drawFit(ctx, img, W, H){
+  const s = Math.min(W / img.width, H / img.height);
+  const w = img.width * s, h = img.height * s;
+  ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+}
+
+function step(){
+  if (!playing || !frames.length) return;
+  drawFrame(cursor);
+  const wait = frames[cursor].delay;
+  cursor = (cursor + 1) % frames.length;
+  timer = setTimeout(step, wait);
+}
+function play(){
+  if (!frames.length) return;
+  playing = true; $("play").textContent = "⏸";
+  clearTimeout(timer); step();
+}
+function pause(){
+  playing = false; $("play").textContent = "▶";
+  clearTimeout(timer);
+}
+$("play").onclick = () => playing ? pause() : play();
+$("stop").onclick = () => { pause(); cursor = 0; drawFrame(0); };
+$("first").onclick = () => { pause(); cursor = 0; drawFrame(0); };
+$("last").onclick = () => { pause(); cursor = Math.max(0, frames.length - 1); drawFrame(cursor); };
+
+/* ── 바뀔 때마다 ─────────────────────────── */
+function afterChange(){
+  const has = frames.length > 0;
+  $("view").hidden = !has;
+  $("stageempty").hidden = has;
+  $("make").disabled = !has;
+  if (!has){ pause(); cursor = 0; }
+  if (cursor >= frames.length) cursor = 0;
+
+  const total = frames.reduce((s, f) => s + f.delay, 0) / 1000;
+  $("total").textContent = `전체 시간 ${total.toFixed(2)}초`;
+
+  drawDrop(); drawFrames(); paintBg();
+  if (has) drawFrame(cursor);
+  warn("");
+}
+
+/* ── GIF 만들기 ──────────────────────────── */
+let workerBlob = null;
+async function getWorker(){
+  if (workerBlob) return workerBlob;
+  // 다른 곳에 있는 파일은 일꾼으로 바로 못 쓰기 때문에, 내려받아 브라우저 안에 옮겨 둡니다.
+  const res = await fetch(WORKER_URL);
+  const text = await res.text();
+  workerBlob = URL.createObjectURL(new Blob([text], { type: "application/javascript" }));
+  return workerBlob;
+}
+
+$("make").onclick = async () => {
+  if (!frames.length) return;
+  if (typeof GIF === "undefined")
+    return warn("GIF 만드는 도구를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.");
+
+  pause();
+  const W = Math.max(1, +$("w").value || 740), H = Math.max(1, +$("h").value || 640);
+  const cut = +$("alpha").value;
+
+  $("result").innerHTML = `<h3>GIF를 만드는 중입니다…</h3>
+    <div class="bar"><i id="pbar"></i></div>
+    <div class="hint" id="pmsg">프레임을 다듬는 중</div>`;
+  if (!$("resdlg").open) $("resdlg").showModal();
+  $("make").disabled = true;
+
+  try {
+    const worker = await getWorker();
+    const gif = new GIF({
+      workers: 2, quality: 10, width: W, height: H,
+      repeat: +$("repeat").value,
+      transparent: MAGIC.hex,
+      workerScript: worker,
+    });
+
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+
+    frames.forEach(f => {
+      ctx.clearRect(0, 0, W, H);
+      drawFit(ctx, f.img, W, H);
+      const d = ctx.getImageData(0, 0, W, H);
+      const px = d.data;
+      for (let i = 0; i < px.length; i += 4){
+        if (px[i + 3] < cut){                 // 투명하게 둘 점
+          px[i] = MAGIC.r; px[i + 1] = MAGIC.g; px[i + 2] = MAGIC.b;
+        }
+        px[i + 3] = 255;                      // GIF는 반투명을 담지 못합니다
+      }
+      ctx.putImageData(d, 0, 0);
+      gif.addFrame(ctx, { delay: f.delay, copy: true });
+    });
+
+    gif.on("progress", p => {
+      $("pbar").style.width = Math.round(p * 100) + "%";
+      $("pmsg").textContent = `굽는 중 ${Math.round(p * 100)}%`;
+    });
+    gif.on("finished", blob => {
+      const url = URL.createObjectURL(blob);
+      const kb = blob.size / 1024;
+      $("result").innerHTML = `
+        <h3>다 됐습니다.</h3>
+        <div class="hint" style="margin:0 0 12px">
+          ${W} × ${H} · ${frames.length}프레임 · ${kb > 1024 ? (kb/1024).toFixed(1) + "MB" : Math.round(kb) + "KB"}
+          · ${$("repeat").value === "0" ? "무한 반복" : $("repeat").value + "번 반복"}
+        </div>
+        <img class="checker" src="${url}" alt="만들어진 GIF">
+        <div class="btns">
+          <button class="btn" id="resclose">닫기</button>
+          <a class="btn solid" href="${url}" download="animation.gif">GIF 내려받기</a>
+        </div>`;
+      $("resclose").onclick = () => $("resdlg").close();
+      $("make").disabled = false;
+    });
+    gif.render();
+  } catch (e) {
+    $("result").innerHTML = `<h3 style="color:var(--warn)">만들지 못했습니다.</h3>
+      <div class="hint">${esc(e.message || e)}</div>
+      <div class="btns"><button class="btn" id="resclose">닫기</button></div>`;
+    $("resclose").onclick = () => $("resdlg").close();
+    $("make").disabled = false;
+  }
+};
+
+/* 바깥을 누르면 닫습니다 */
+$("resdlg").onclick = e => { if (e.target === $("resdlg")) $("resdlg").close(); };
+
+afterChange();
+</script>
+</body>
+</html>
