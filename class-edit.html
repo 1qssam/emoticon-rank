@@ -312,13 +312,26 @@ function markDirty(v){
 /* ── 목록 ─────────────────────────────────── */
 let opened = null;      // 개요를 펼친 강의
 
+/* 첫 회차 날짜 (2026-09-07) */
+function startDate(c){
+  return (c.sessions || []).map(s => String(s).split(" ")[0]).filter(Boolean).sort()[0] || "9999-99-99";
+}
 /* 첫 회차의 연월 네 자리 (2026-09-07 → 2609) */
 function startYm(c){
-  const first = (c.sessions || []).map(s => String(s).split(" ")[0]).filter(Boolean).sort()[0];
-  return first ? first.slice(2, 4) + first.slice(5, 7) : "";
+  const d = startDate(c);
+  return d === "9999-99-99" ? "" : d.slice(2, 4) + d.slice(5, 7);
+}
+
+/* 시작일이 이른 강의가 위로. 고치는 중인 강의는 자리를 따라갑니다. */
+function sortList(){
+  if (!LIST) return;
+  const keep = editing === null ? null : LIST[editing];
+  LIST.sort((a, b) => startDate(a).localeCompare(startDate(b)));
+  if (keep) editing = LIST.indexOf(keep);
 }
 
 function drawList(){
+  sortList();
   $("listcnt").textContent = LIST ? `${LIST.length}개` : "";
   if (!LIST){ $("clist").innerHTML = ""; return; }
   if (!LIST.length){
