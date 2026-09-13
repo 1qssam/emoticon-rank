@@ -34,6 +34,12 @@
   .nav a{font-size:13px;color:var(--muted);text-decoration:none}
   .nav a:hover{color:var(--ink);text-decoration:underline}
   .nav a[aria-current]{color:var(--ink);font-weight:600}
+  .nav .s{display:none}                       /* 좁은 화면에서 쓰는 짧은 이름 */
+  @media (max-width:560px){
+    .nav{gap:11px}
+    .nav .l{display:none}
+    .nav .s{display:inline}
+  }
 
   .datebar{display:flex;align-items:center;gap:8px;margin-bottom:6px;position:relative;flex-wrap:nowrap}
   .daynav{flex:none}
@@ -111,9 +117,10 @@
     <h1>신규 이모티콘</h1>
     <span class="since" id="since"></span>
     <nav class="nav">
-      <a href="index.html">인기 순위</a>
-      <a href="new.html" aria-current="page">신규 이모티콘</a>
-      <a href="archive.html">날짜별 기록</a>
+      <a href="index.html"><span class="l">인기 순위</span><span class="s">인기순위</span></a>
+      <a href="new.html" aria-current="page"><span class="l">신규 이모티콘</span><span class="s">신규출시</span></a>
+      <a href="class.html"><span class="l">강의 일정</span><span class="s">강의일정</span></a>
+      <a href="archive.html"><span class="l">날짜별 기록</span><span class="s">일별기록</span></a>
     </nav>
   </header>
 
