@@ -49,6 +49,7 @@
   .rounds li{display:flex;gap:8px;align-items:center;padding:5px 0;flex-wrap:wrap}
   .rounds .no{font-size:12.5px;color:var(--muted);width:30px;flex:none}
   .rounds .dw{font-size:12.5px;color:var(--muted);width:18px;flex:none}
+  .rounds .dash{color:var(--muted);font-size:12.5px}
   .none{font-size:13px;color:var(--muted);padding:8px 0}
 
   .out{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
@@ -93,6 +94,7 @@
     <div class="field"><label>요일</label><div class="dows" id="dows"></div></div>
     <div class="field"><label for="time">시간</label>
       <input id="time" type="time" value="14:00" step="600">
+      – <input id="time2" type="time" value="17:00" step="600">
       <button class="btn" id="make">회차 만들기</button>
       <span style="font-size:12.5px;color:var(--muted)">기존 회차 뒤에 더해집니다</span>
     </div>
@@ -134,7 +136,7 @@ const DOW = "일월화수목금토";
 const PALETTE = ["#2f6fd0","#d63b2f","#e08a1e","#2f9e63","#7a5cd6","#c2437f","#3a8f97","#6b7280"];
 let color = PALETTE[0];
 let picked = new Set();          // 고른 요일 (0=일)
-let rounds = [];                 // ["2026-10-06","14:00"] 짝
+let rounds = [];                 // ["2026-10-06","14:00","17:00"] 묶음
 
 /* 색 고르기 */
 PALETTE.forEach(hex => {
@@ -162,7 +164,8 @@ PALETTE.forEach(hex => {
 
 /* 회차 만들기 */
 $("make").onclick = () => {
-  const from = $("from").value, to = $("to").value, time = $("time").value || "14:00";
+  const from = $("from").value, to = $("to").value;
+  const time = $("time").value || "14:00", time2 = $("time2").value || "";
   const warn = m => { $("makewarn").textContent = m; $("makewarn").hidden = !m; };
   if (!from || !to) return warn("기간을 채워주세요.");
   if (from > to) return warn("시작일이 끝날보다 뒤입니다.");
@@ -177,7 +180,7 @@ $("make").onclick = () => {
     if (!picked.has(d.getDay())) continue;
     const date = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
     if (rounds.some(r => r[0] === date && r[1] === time)) continue;   // 같은 것은 건너뜁니다
-    rounds.push([date, time]);
+    rounds.push([date, time, time2]);
     made++;
   }
   sortRounds();
@@ -188,7 +191,7 @@ $("make").onclick = () => {
 $("add").onclick = () => {
   $("makewarn").hidden = true;
   const last = rounds[rounds.length - 1];
-  rounds.push(last ? [last[0], last[1]] : ["", "14:00"]);
+  rounds.push(last ? [last[0], last[1], last[2] || ""] : ["", "14:00", ""]);
   draw();
 };
 $("clear").onclick = () => { if (rounds.length && confirm("회차를 전부 지울까요?")) { rounds = []; draw(); } };
@@ -203,13 +206,15 @@ function drawRounds(){
     $("rounds").innerHTML = `<li class="none">위에서 만들거나 ‘한 줄 추가’로 넣으세요.</li>`;
     return;
   }
-  $("rounds").innerHTML = rounds.map(([date, time], i) => {
+  $("rounds").innerHTML = rounds.map(([date, time, time2], i) => {
     const dw = date ? DOW[new Date(...date.split("-").map((v, k) => k === 1 ? v-1 : +v)).getDay()] : "";
     return `<li>
       <span class="no">${i + 1}회</span>
       <input type="date" value="${date}" data-i="${i}" data-k="0">
       <span class="dw">${dw}</span>
       <input type="time" value="${time}" data-i="${i}" data-k="1" step="600">
+      <span class="dash">–</span>
+      <input type="time" value="${time2 || ""}" data-i="${i}" data-k="2" step="600">
       <button class="btn ghost" data-del="${i}">지우기</button>
     </li>`;
   }).join("");
@@ -230,7 +235,10 @@ function payload(){
     place: $("place").value.trim(),
     link: $("link").value.trim(),
     note: $("note").value.trim(),
-    sessions: [...new Set(rounds.filter(r => r[0]).map(r => `${r[0]} ${r[1] || "14:00"}`))],
+    sessions: [...new Set(rounds.filter(r => r[0]).map(r => {
+      const t = r[1] || "14:00";
+      return `${r[0]} ${r[2] ? t + "-" + r[2] : t}`;
+    }))],
   };
 }
 
@@ -270,7 +278,8 @@ $("load").onclick = () => {
   }
   rounds = (p.sessions || []).map(s => {
     const [d, t] = String(s).split(" ");
-    return [d, t || "14:00"];
+    const [t1, t2] = String(t || "14:00").split("-");
+    return [d, t1 || "14:00", t2 || ""];
   });
   sortRounds();
   draw();
