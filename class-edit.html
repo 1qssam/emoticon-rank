@@ -76,6 +76,8 @@
     <legend>강의</legend>
     <div class="field"><label for="name">이름</label>
       <input id="name" type="text" placeholder="이모티콘 기초반 12기"></div>
+    <div class="field"><label for="short">짧은 이름</label>
+      <input id="short" type="text" placeholder="동대문 (달력 칸에 이 이름이 나옵니다)"></div>
     <div class="field"><label for="place">장소</label>
       <input id="place" type="text" placeholder="홍대입구역 원큐클래스"></div>
     <div class="field"><label for="link">신청 링크</label>
@@ -120,8 +122,8 @@
   <p class="tip">
     <b>처음 넣을 때</b> — 저장소에 <b>classes.js</b> 파일이 없으면 새로 만들고, 첫 줄에
     <b>window.CLASSES = [</b>, 마지막 줄에 <b>];</b> 를 적은 뒤 그 사이에 붙여넣습니다.<br>
-    <b>강의를 더할 때</b> — 이미 있는 덩어리 <b>뒤에 쉼표를 찍고</b> 줄을 바꿔 붙여넣습니다.
-    맨 마지막 덩어리 뒤에는 쉼표를 찍지 않습니다.<br>
+    <b>강의를 더할 때</b> — 이미 있는 덩어리 <b>뒤에 쉼표(,)를 찍고</b> 줄을 바꿔 붙여넣습니다.
+    줄만 바꾸고 쉼표를 빼면 일정이 하나도 안 나옵니다. 맨 마지막 덩어리 뒤에는 쉼표를 찍지 않습니다.<br>
     <b>고칠 때</b> — classes.js에서 그 강의 한 줄을 복사해 <b>적어둔 강의 불러와 고치기</b>에
     붙여넣으면 이 화면이 채워집니다. 고친 뒤 다시 복사해서 그 줄을 바꿔치기하면 됩니다.<br>
     지난 회차도 지우지 말고 두세요. 일정 페이지에서 흐리게 표시됩니다.
@@ -231,6 +233,7 @@ function drawRounds(){
 function payload(){
   return {
     name: $("name").value.trim(),
+    short: $("short").value.trim(),
     color,
     place: $("place").value.trim(),
     link: $("link").value.trim(),
@@ -250,7 +253,7 @@ function draw(){
     : "강의 이름과 회차를 채우면 여기에 글이 나옵니다.";
 }
 
-["name","place","link","note"].forEach(id => $(id).oninput = draw);
+["name","short","place","link","note"].forEach(id => $(id).oninput = draw);
 
 $("copy").onclick = async () => {
   const p = payload();
@@ -269,6 +272,7 @@ $("load").onclick = () => {
   catch { return alert("읽지 못했습니다. { 로 시작해 } 로 끝나는 부분만 붙여넣어 주세요."); }
 
   $("name").value = p.name || "";
+  $("short").value = p.short || "";
   $("place").value = p.place || "";
   $("link").value = p.link || "";
   $("note").value = p.note || "";
@@ -287,7 +291,7 @@ $("load").onclick = () => {
 
 $("reset").onclick = () => {
   if (!confirm("적은 내용을 지우고 새로 쓸까요?")) return;
-  ["name","place","link","note"].forEach(id => $(id).value = "");
+  ["name","short","place","link","note"].forEach(id => $(id).value = "");
   rounds = []; picked.clear();
   document.querySelectorAll(".dow").forEach(b => b.setAttribute("aria-pressed", "false"));
   draw();

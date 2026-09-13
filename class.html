@@ -71,9 +71,11 @@
     display:flex;gap:5px;align-items:baseline;width:100%;color:var(--ink)}
   .chip:hover{filter:brightness(.96)}
   .chip .t{color:#4c5054;flex:none;font-size:11px}
-  .chip .n{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+  .chip .n{min-width:0;overflow:hidden;white-space:nowrap;font-weight:500}
   .chip.past{opacity:.45}
+  .chip .mk{font-size:10px;font-weight:400;color:#4c5054;margin-left:4px}
 
+  .hint{font-size:12.5px;color:var(--muted);margin:0 0 12px}
   .legend{display:flex;gap:12px;flex-wrap:wrap;padding:12px 2px 0}
   .legend button{border:0;background:none;font-family:inherit;font-size:12.5px;color:#4c5054;
     cursor:pointer;display:flex;align-items:center;gap:6px;padding:2px 0}
@@ -130,9 +132,10 @@
     .wrap{padding:20px 12px 60px}
     .day{min-height:74px;padding:4px 3px;gap:2px}
     .day .d{font-size:11.5px}
-    .chip{display:block;overflow:hidden;padding:2px 4px;font-size:10.5px}
+    .chip{display:block;overflow:hidden;padding:2px 3px 2px 4px;font-size:10.5px}
     .chip .t{display:block;font-size:10px}
     .chip .n{display:block}
+    .chip .mk{display:none}      /* 좁은 화면에서는 칸을 넘겨서 뺍니다 */
     .item{grid-template-columns:112px 1fr;gap:8px}
     .where{grid-column:2;white-space:normal}
     .nth{display:none}
@@ -163,6 +166,8 @@
       <button class="viewbtn" id="v-list">목록</button>
     </div>
   </div>
+
+  <p class="hint">일정을 누르면 그 강의의 전체 회차와 신청 링크를 볼 수 있습니다.</p>
 
   <div id="view"></div>
 
@@ -243,11 +248,12 @@ function calendar(){
 
     const chips = (byDate[date] || []).map(r => {
       const c = C[r.ci];
-      const mark = r.n === 1 ? " (시작)" : r.n === r.of && r.of > 1 ? " (종료)" : "";
+      const mark = r.n === 1 ? "시작" : r.n === r.of && r.of > 1 ? "종료" : "";
       return `<button class="chip${date < todayStr ? " past" : ""}" data-c="${r.ci}"
         style="background:${esc(c.color)}1a;border-left-color:${esc(c.color)}"
-        title="${esc(c.name + mark)}">
-        <span class="t">${esc(r.time)}</span><span class="n">${esc(c.name)}${mark}</span></button>`;
+        title="${esc(c.name + (mark ? " " + mark : ""))}">
+        <span class="t">${esc(r.time)}</span><span class="n">${esc(c.short || c.name)}${
+          mark ? `<span class="mk">${mark}</span>` : ""}</span></button>`;
     }).join("");
 
     cells += `<div class="${cls.join(" ")}"><span class="d">${d.getDate()}</span>${chips}</div>`;
@@ -256,7 +262,7 @@ function calendar(){
   // 이 달에 회차가 있는 강의만 아래에 색으로 알려줍니다
   const shown = [...new Set(ROUNDS.filter(r => r.date.slice(0, 7) === cursor).map(r => r.ci))];
   const legend = shown.length ? `<div class="legend">` + shown.map(ci =>
-    `<button data-c="${ci}"><span class="dot" style="background:${esc(C[ci].color)}"></span>${esc(C[ci].name)}</button>`
+    `<button data-c="${ci}"><span class="dot" style="background:${esc(C[ci].color)}"></span>${esc(C[ci].short ? C[ci].short + " · " + C[ci].name : C[ci].name)}</button>`
   ).join("") + `</div>` : "";
 
   return `<div class="cal">
