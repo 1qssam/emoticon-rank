@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>강의 일정 등록 · 이모티콘 순위</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{--paper:#fcfcfb;--ink:#17181a;--muted:#83878c;--line:#e7e6e1;--panel:#f5f4f0;--mark:#fee500}
+  *{box-sizing:border-box}
+  html{overflow-y:scroll}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px;margin:0 auto;padding:24px 20px 80px}
+  header{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+  h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
+  header .sp{flex:1}
+  header a{font-size:13px;color:var(--muted)}
+  .lead{font-size:13px;color:var(--muted);margin:0 0 18px;line-height:1.7}
+
+  fieldset{border:1px solid var(--line);border-radius:10px;background:#fff;
+    padding:14px 16px 16px;margin:0 0 14px}
+  legend{font-size:13px;font-weight:600;padding:0 6px;color:#43464a}
+  .field{display:flex;gap:10px;align-items:center;margin-bottom:9px;flex-wrap:wrap}
+  .field > label{font-size:13px;width:64px;flex:none;color:#5c6064}
+  input[type=text],input[type=url],input[type=date],input[type=time],textarea{
+    font-family:inherit;font-size:13.5px;border:1px solid var(--line);border-radius:7px;
+    padding:7px 9px;background:#fff;color:var(--ink)}
+  input[type=text],input[type=url]{flex:1;min-width:200px}
+  textarea{width:100%;resize:vertical;line-height:1.6}
+  .colors{display:flex;gap:6px;flex-wrap:wrap}
+  .swatch{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+  .swatch[aria-pressed="true"]{border-color:var(--ink)}
+  .dows{display:flex;gap:4px;flex-wrap:wrap}
+  .dow{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;
+    font-size:13px;font-family:inherit;color:var(--muted);cursor:pointer}
+  .dow[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);font-weight:600}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;
+    padding:7px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+  .btn:hover{border-color:var(--ink)}
+  .btn.solid{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.done{background:var(--mark);color:#3a3400;border-color:var(--mark)}
+  .btn.ghost{border-color:transparent;color:var(--muted);padding:4px 8px;font-size:12.5px}
+  .btn.ghost:hover{color:var(--ink)}
+
+  .rounds{list-style:none;margin:10px 0 0;padding:0}
+  .rounds li{display:flex;gap:8px;align-items:center;padding:5px 0;flex-wrap:wrap}
+  .rounds .no{font-size:12.5px;color:var(--muted);width:30px;flex:none}
+  .rounds .dw{font-size:12.5px;color:var(--muted);width:18px;flex:none}
+  .none{font-size:13px;color:var(--muted);padding:8px 0}
+
+  .out{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+    background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:12px;
+    white-space:pre-wrap;word-break:break-all;line-height:1.6;min-height:64px}
+  .acts{display:flex;gap:8px;align-items:center;margin:12px 0 6px;flex-wrap:wrap}
+  .warn{font-size:12.5px;color:#c2564b;margin:6px 0 0}
+  .tip{font-size:12.5px;color:var(--muted);line-height:1.8;margin-top:16px;
+    padding-top:14px;border-top:1px solid var(--line)}
+  .tip b{color:#43464a}
+  button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>강의 일정 등록</h1>
+    <span class="sp"></span>
+    <a href="class.html">일정 보기</a>
+  </header>
+  <p class="lead">아래를 채우고 맨 끝의 글을 복사해서, 저장소의 <b>classes.js</b> 파일에 붙여넣으면 일정 페이지에 나옵니다.</p>
+
+  <fieldset>
+    <legend>강의</legend>
+    <div class="field"><label for="name">이름</label>
+      <input id="name" type="text" placeholder="이모티콘 기초반 12기"></div>
+    <div class="field"><label for="place">장소</label>
+      <input id="place" type="text" placeholder="홍대입구역 원큐클래스"></div>
+    <div class="field"><label for="link">신청 링크</label>
+      <input id="link" type="url" placeholder="https://..."></div>
+    <div class="field"><label for="note">한 줄 소개</label>
+      <input id="note" type="text" placeholder="처음 만드는 분을 위한 4회 과정"></div>
+    <div class="field"><label>색</label><div class="colors" id="colors"></div></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>회차 한 번에 만들기</legend>
+    <div class="field">
+      <label for="from">기간</label>
+      <input id="from" type="date"> – <input id="to" type="date">
+    </div>
+    <div class="field"><label>요일</label><div class="dows" id="dows"></div></div>
+    <div class="field"><label for="time">시간</label>
+      <input id="time" type="time" value="14:00" step="600">
+      <button class="btn" id="make">회차 만들기</button>
+      <span style="font-size:12.5px;color:var(--muted)">기존 회차 뒤에 더해집니다</span>
+    </div>
+    <p class="warn" id="makewarn" hidden></p>
+  </fieldset>
+
+  <fieldset>
+    <legend>회차 <span id="cnt" style="font-weight:400;color:var(--muted)"></span></legend>
+    <ul class="rounds" id="rounds"></ul>
+    <div class="acts">
+      <button class="btn" id="add">한 줄 추가</button>
+      <button class="btn ghost" id="clear">전부 지우기</button>
+    </div>
+  </fieldset>
+
+  <div class="acts">
+    <button class="btn solid" id="copy">이 강의 복사하기</button>
+    <button class="btn" id="load">적어둔 강의 불러와 고치기</button>
+    <button class="btn ghost" id="reset">새로 쓰기</button>
+  </div>
+  <div class="out" id="out"></div>
+
+  <p class="tip">
+    <b>처음 넣을 때</b> — 저장소에 <b>classes.js</b> 파일이 없으면 새로 만들고, 첫 줄에
+    <b>window.CLASSES = [</b>, 마지막 줄에 <b>];</b> 를 적은 뒤 그 사이에 붙여넣습니다.<br>
+    <b>강의를 더할 때</b> — 이미 있는 덩어리 <b>뒤에 쉼표를 찍고</b> 줄을 바꿔 붙여넣습니다.
+    맨 마지막 덩어리 뒤에는 쉼표를 찍지 않습니다.<br>
+    <b>고칠 때</b> — classes.js에서 그 강의 한 줄을 복사해 <b>적어둔 강의 불러와 고치기</b>에
+    붙여넣으면 이 화면이 채워집니다. 고친 뒤 다시 복사해서 그 줄을 바꿔치기하면 됩니다.<br>
+    지난 회차도 지우지 말고 두세요. 일정 페이지에서 흐리게 표시됩니다.
+  </p>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, "0");
+const DOW = "일월화수목금토";
+
+const PALETTE = ["#2f6fd0","#d63b2f","#e08a1e","#2f9e63","#7a5cd6","#c2437f","#3a8f97","#6b7280"];
+let color = PALETTE[0];
+let picked = new Set();          // 고른 요일 (0=일)
+let rounds = [];                 // ["2026-10-06","14:00"] 짝
+
+/* 색 고르기 */
+PALETTE.forEach(hex => {
+  const b = document.createElement("button");
+  b.className = "swatch"; b.style.background = hex; b.title = hex;
+  b.setAttribute("aria-pressed", hex === color);
+  b.onclick = () => {
+    color = hex;
+    document.querySelectorAll(".swatch").forEach(s => s.setAttribute("aria-pressed", s.title === hex));
+    draw();
+  };
+  $("colors").appendChild(b);
+});
+
+/* 요일 고르기 */
+[...DOW].forEach((d, i) => {
+  const b = document.createElement("button");
+  b.className = "dow"; b.textContent = d; b.setAttribute("aria-pressed", "false");
+  b.onclick = () => {
+    picked.has(i) ? picked.delete(i) : picked.add(i);
+    b.setAttribute("aria-pressed", picked.has(i));
+  };
+  $("dows").appendChild(b);
+});
+
+/* 회차 만들기 */
+$("make").onclick = () => {
+  const from = $("from").value, to = $("to").value, time = $("time").value || "14:00";
+  const warn = m => { $("makewarn").textContent = m; $("makewarn").hidden = !m; };
+  if (!from || !to) return warn("기간을 채워주세요.");
+  if (from > to) return warn("시작일이 끝날보다 뒤입니다.");
+  if (!picked.size) return warn("요일을 하나 이상 골라주세요.");
+  warn("");
+
+  const [fy, fm, fd] = from.split("-").map(Number);
+  const [ty, tm, td] = to.split("-").map(Number);
+  const end = new Date(ty, tm-1, td);
+  let made = 0;
+  for (let d = new Date(fy, fm-1, fd); d <= end; d.setDate(d.getDate() + 1)){
+    if (!picked.has(d.getDay())) continue;
+    const date = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    if (rounds.some(r => r[0] === date && r[1] === time)) continue;   // 같은 것은 건너뜁니다
+    rounds.push([date, time]);
+    made++;
+  }
+  sortRounds();
+  draw();
+  if (!made) warn("그 기간에 고른 요일이 없거나, 이미 다 들어가 있습니다.");
+};
+
+$("add").onclick = () => {
+  $("makewarn").hidden = true;
+  const last = rounds[rounds.length - 1];
+  rounds.push(last ? [last[0], last[1]] : ["", "14:00"]);
+  draw();
+};
+$("clear").onclick = () => { if (rounds.length && confirm("회차를 전부 지울까요?")) { rounds = []; draw(); } };
+
+function sortRounds(){
+  rounds.sort((a, b) => (a[0] + a[1]).localeCompare(b[0] + b[1]));
+}
+
+function drawRounds(){
+  $("cnt").textContent = rounds.length ? `${rounds.length}회` : "";
+  if (!rounds.length){
+    $("rounds").innerHTML = `<li class="none">위에서 만들거나 ‘한 줄 추가’로 넣으세요.</li>`;
+    return;
+  }
+  $("rounds").innerHTML = rounds.map(([date, time], i) => {
+    const dw = date ? DOW[new Date(...date.split("-").map((v, k) => k === 1 ? v-1 : +v)).getDay()] : "";
+    return `<li>
+      <span class="no">${i + 1}회</span>
+      <input type="date" value="${date}" data-i="${i}" data-k="0">
+      <span class="dw">${dw}</span>
+      <input type="time" value="${time}" data-i="${i}" data-k="1" step="600">
+      <button class="btn ghost" data-del="${i}">지우기</button>
+    </li>`;
+  }).join("");
+
+  $("rounds").querySelectorAll("input[data-i]").forEach(el => {
+    el.onchange = () => { rounds[+el.dataset.i][+el.dataset.k] = el.value; sortRounds(); draw(); };
+  });
+  $("rounds").querySelectorAll("[data-del]").forEach(b => {
+    b.onclick = () => { rounds.splice(+b.dataset.del, 1); draw(); };
+  });
+}
+
+/* 붙여넣을 글 만들기 */
+function payload(){
+  return {
+    name: $("name").value.trim(),
+    color,
+    place: $("place").value.trim(),
+    link: $("link").value.trim(),
+    note: $("note").value.trim(),
+    sessions: [...new Set(rounds.filter(r => r[0]).map(r => `${r[0]} ${r[1] || "14:00"}`))],
+  };
+}
+
+function draw(){
+  drawRounds();
+  const p = payload();
+  $("out").textContent = (p.name || p.sessions.length)
+    ? JSON.stringify(p)
+    : "강의 이름과 회차를 채우면 여기에 글이 나옵니다.";
+}
+
+["name","place","link","note"].forEach(id => $(id).oninput = draw);
+
+$("copy").onclick = async () => {
+  const p = payload();
+  if (!p.name) return alert("강의 이름을 채워주세요.");
+  if (!p.sessions.length) return alert("회차를 하나 이상 넣어주세요.");
+  await navigator.clipboard.writeText(JSON.stringify(p));
+  $("copy").textContent = "복사됨"; $("copy").classList.add("done");
+  setTimeout(() => { $("copy").textContent = "이 강의 복사하기"; $("copy").classList.remove("done"); }, 1500);
+};
+
+$("load").onclick = () => {
+  const text = prompt("classes.js 에서 강의 한 덩어리( { 부터 } 까지 )를 복사해 붙여넣으세요.");
+  if (!text) return;
+  let p;
+  try { p = JSON.parse(text.trim().replace(/,\s*$/, "")); }
+  catch { return alert("읽지 못했습니다. { 로 시작해 } 로 끝나는 부분만 붙여넣어 주세요."); }
+
+  $("name").value = p.name || "";
+  $("place").value = p.place || "";
+  $("link").value = p.link || "";
+  $("note").value = p.note || "";
+  if (p.color){
+    color = p.color;
+    document.querySelectorAll(".swatch").forEach(s => s.setAttribute("aria-pressed", s.title === color));
+  }
+  rounds = (p.sessions || []).map(s => {
+    const [d, t] = String(s).split(" ");
+    return [d, t || "14:00"];
+  });
+  sortRounds();
+  draw();
+};
+
+$("reset").onclick = () => {
+  if (!confirm("적은 내용을 지우고 새로 쓸까요?")) return;
+  ["name","place","link","note"].forEach(id => $(id).value = "");
+  rounds = []; picked.clear();
+  document.querySelectorAll(".dow").forEach(b => b.setAttribute("aria-pressed", "false"));
+  draw();
+};
+
+draw();
+</script>
+</body>
+</html>
