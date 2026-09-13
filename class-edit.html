@@ -250,13 +250,16 @@ function openMan(which, adding){
     const ab = isPlace && v.short ? `<span class="ab">${esc(v.short)}</span>` : "";
     const mine = isPlace ? own.some(o => o.name === name) : own.includes(name);
     return `<li><span class="nm">${esc(name)}</span>${ab}
+      <button class="btn ghost" data-edit="${i}">고치기</button>
       ${mine ? `<button class="btn ghost" data-del="${i}">지우기</button>`
-             : `<span class="ab">일정에 쓰는 중</span>`}</li>`;
+             : `<span class="ab">쓰는 중</span>`}</li>`;
   }).join("");
 
   $("manbody").innerHTML = `
     <h2>${isPlace ? "장소" : "유형"} 목록</h2>
     <ul class="mlist">${rows || `<li><span class="nm sub">아직 없습니다.</span></li>`}</ul>
+    <p class="sub" style="margin:-4px 0 12px">‘쓰는 중’은 classes.js에 이미 적힌 이름입니다.
+      여기서 고쳐도 그 강의를 다시 저장해야 예전 이름이 목록에서 사라집니다.</p>
     <div class="addrow">
       <input type="text" id="newname" placeholder="${isPlace ? "동대문여성인력개발센터" : "내일배움과정"}">
       ${isPlace ? `<input type="text" id="newshort" placeholder="약어 (동대문)" style="max-width:120px">` : ""}
@@ -284,6 +287,38 @@ function openMan(which, adding){
     const name = isPlace ? all[+b.dataset.del].name : all[+b.dataset.del];
     writeStore(which, isPlace ? readStore("place").filter(o => o.name !== name)
                               : readStore("kind").filter(o => o !== name));
+    if ((isPlace ? place : kind) === name){ if (isPlace) place = ""; else kind = ""; }
+    refreshLists(); draw(); openMan(which);
+  });
+
+  // 고치기 — 이름을 바꾸면 이 화면에서 고르고 있던 값도 따라갑니다
+  $("manbody").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => {
+    const v = all[+b.dataset.edit];
+    const old = isPlace ? v.name : v;
+
+    const name = (prompt(`${isPlace ? "장소" : "유형"} 이름`, old) || "").trim();
+    if (!name) return;
+    let short = isPlace ? (v.short || "") : "";
+    if (isPlace){
+      const s = prompt("약어 (달력 칸에 나옵니다)", short);
+      if (s === null) return;
+      short = s.trim();
+    }
+
+    const list = readStore(which);
+    if (isPlace){
+      const at = list.findIndex(o => o.name === old);
+      if (at >= 0) list[at] = { name, short };
+      else list.push({ name, short });          // classes.js 쪽에만 있던 것은 새로 담습니다
+    } else {
+      const at = list.indexOf(old);
+      if (at >= 0) list[at] = name;
+      else list.push(name);
+    }
+    writeStore(which, list);
+
+    if (isPlace && place === old) place = name;
+    if (!isPlace && kind === old) kind = name;
     refreshLists(); draw(); openMan(which);
   });
   $("manclose").onclick = () => $("man").close();
