@@ -8,26 +8,30 @@
 <style>
   :root{--paper:#fcfcfb;--ink:#17181a;--muted:#83878c;--line:#e7e6e1;--panel:#f5f4f0;--mark:#fee500}
   *{box-sizing:border-box}
+  [hidden]{display:none !important}
   html{overflow-y:scroll}
   html,body{margin:0;padding:0}
   body{background:var(--paper);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
     font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:840px;margin:0 auto;padding:24px 20px 80px}
+  .wrap{max-width:1200px;margin:0 auto;padding:24px 20px 80px}
   header{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
   h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
   header .sp{flex:1}
   header a{font-size:13px;color:var(--muted)}
   .lead{font-size:13px;color:var(--muted);margin:0 0 18px;line-height:1.7}
 
+  .cols{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+
   fieldset{border:1px solid var(--line);border-radius:10px;background:#fff;
     padding:14px 16px 16px;margin:0 0 14px}
+  fieldset:disabled{opacity:.5}
   legend{font-size:13px;font-weight:600;padding:0 6px;color:#43464a}
   .field{display:flex;gap:9px;align-items:center;margin-bottom:9px;flex-wrap:wrap}
   .field > label{font-size:13px;width:70px;flex:none;color:#5c6064}
   input[type=text],input[type=url],select{font-family:inherit;font-size:13.5px;
     border:1px solid var(--line);border-radius:7px;padding:7px 9px;background:#fff;color:var(--ink)}
-  input[type=text],input[type=url]{flex:1;min-width:180px}
+  input[type=text],input[type=url]{flex:1;min-width:170px}
   select{cursor:pointer}
   .sub{font-size:12.5px;color:var(--muted)}
 
@@ -67,6 +71,7 @@
   .btn.done{background:var(--mark);color:#3a3400;border-color:var(--mark)}
   .btn.ghost{border-color:transparent;color:var(--muted);padding:4px 8px;font-size:12.5px}
   .btn.ghost:hover{color:var(--ink)}
+  .btn:disabled{opacity:.45;cursor:default;border-color:var(--line)}
 
   .rounds{list-style:none;margin:10px 0 0;padding:0}
   .rounds li{display:flex;gap:8px;align-items:center;padding:5px 0;flex-wrap:wrap}
@@ -75,6 +80,8 @@
   .rounds .dash{color:var(--muted);font-size:12.5px}
   .rounds input[type=date],.rounds input[type=time]{font-family:inherit;font-size:13.5px;
     border:1px solid var(--line);border-radius:7px;padding:6px 8px;background:#fff;color:var(--ink)}
+  .rounds li.clash input[type=date],.rounds li.clash input[type=time]{border-color:#c2564b}
+  .clashmsg{font-size:12.5px;color:#c2564b;margin:8px 0 0;line-height:1.7}
   .none{font-size:13px;color:var(--muted);padding:8px 0}
 
   .preview{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;
@@ -82,16 +89,35 @@
   .preview .pt{font-size:16px;font-weight:600;margin-bottom:2px}
   .preview .pm{color:var(--muted)}
   .preview .off{color:#c2564b}
-  .out{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+  .out{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
     background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:12px;
-    white-space:pre-wrap;word-break:break-all;line-height:1.6;min-height:60px}
+    white-space:pre-wrap;word-break:break-all;line-height:1.6;min-height:56px}
   .acts{display:flex;gap:8px;align-items:center;margin:12px 0 8px;flex-wrap:wrap}
   .warn{font-size:12.5px;color:#c2564b;margin:6px 0 0}
-  .rounds li.clash input[type=date],.rounds li.clash input[type=time]{border-color:#c2564b}
-  .clashmsg{font-size:12.5px;color:#c2564b;margin:8px 0 0;line-height:1.7}
-  .tip{font-size:12.5px;color:var(--muted);line-height:1.8;margin-top:16px;
-    padding-top:14px;border-top:1px solid var(--line)}
-  .tip b{color:#43464a}
+  .editing{font-size:12.5px;color:#4c5054;background:#fff8dd;border:1px solid #f0e2a8;
+    border-radius:8px;padding:8px 11px;margin:0 0 12px}
+
+  /* ── 오른쪽 패널 ── */
+  .side{position:sticky;top:20px;border:1px solid var(--line);border-radius:10px;background:#fff;
+    padding:14px;max-height:calc(100vh - 40px);display:flex;flex-direction:column}
+  .sidehead{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .sidehead h2{font-size:14px;font-weight:600;margin:0;flex:1}
+  .drop{border:1.5px dashed #cfcdc7;border-radius:9px;padding:22px 14px;text-align:center;
+    color:var(--muted);font-size:13px;line-height:1.7;cursor:pointer}
+  .drop.on{border-color:var(--ink);background:#faf9f6;color:var(--ink)}
+  .clist{list-style:none;margin:0;padding:0;overflow:auto;flex:1}
+  .clist li{border-bottom:1px solid var(--line);padding:9px 2px}
+  .clist li.sel{background:#faf9f6}
+  .crow{display:flex;align-items:center;gap:8px;cursor:pointer}
+  .cdot{width:10px;height:10px;border-radius:50%;flex:none}
+  .cname{flex:1;min-width:0;font-size:13.5px;font-weight:500;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cnum{font-size:12px;color:var(--muted);flex:none}
+  .cinfo{font-size:12.5px;color:#5c6064;line-height:1.7;padding:8px 0 2px}
+  .cinfo .off{color:#c2564b}
+  .cbtns{display:flex;gap:6px;padding-top:6px}
+  .sidefoot{padding-top:10px;margin-top:6px;border-top:1px solid var(--line);
+    display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
   dialog{border:0;border-radius:12px;padding:0;max-width:360px;width:calc(100% - 32px);
     box-shadow:0 14px 44px rgba(0,0,0,.18);color:var(--ink)}
@@ -106,7 +132,10 @@
   .addrow{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
   .addrow input{flex:1;min-width:100px}
   button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-  @media (max-width:640px){
+
+  @media (max-width:900px){
+    .cols{grid-template-columns:1fr}
+    .side{position:static;max-height:none;order:-1}
     .field > label{width:100%}
     .pick{left:auto;right:0}
   }
@@ -119,77 +148,85 @@
     <span class="sp"></span>
     <a href="class.html">일정 보기</a>
   </header>
-  <p class="lead">장소·유형과 회차만 넣으면 소개 문장은 알아서 만들어집니다. 맨 끝의 글을 복사해 <b>classes.js</b>에 붙여넣으세요.</p>
+  <p class="lead">오른쪽에 지금 쓰고 있는 <b>classes.js</b>를 올리고, 왼쪽에서 고치거나 새로 만든 뒤, 다시 내려받아 저장소에 덮어씁니다.</p>
 
-  <fieldset>
-    <legend>강의</legend>
-    <div class="field"><label for="place">장소</label>
-      <select id="place"></select>
-      <span class="sub" id="shortview"></span>
-      <button class="btn ghost" id="placeman">목록 관리</button></div>
-    <div class="field"><label for="kind">유형</label>
-      <select id="kind"></select>
-      <button class="btn ghost" id="kindman">목록 관리</button></div>
-    <div class="field"><label for="lunch">점심시간</label>
-      <select id="lunch"><option value="0" selected>없음</option><option value="60">1시간</option></select></div>
-    <div class="field"><label for="link">신청 링크</label>
-      <input id="link" type="url" placeholder="https://..."></div>
-    <div class="field"><label>색</label><div class="colors" id="colors"></div></div>
-  </fieldset>
+  <div class="cols">
+  <div>
+    <p class="editing" id="editing" hidden></p>
 
-  <fieldset>
-    <legend>회차 한 번에 만들기</legend>
-    <div class="field"><label>기간</label>
-      <span class="pickwrap"><button class="pickbtn none" id="from">시작일</button><div class="pick" id="from-pick" hidden></div></span>
-      <span class="sub">–</span>
-      <span class="pickwrap"><button class="pickbtn none" id="to">종료일</button><div class="pick" id="to-pick" hidden></div></span>
-    </div>
-    <div class="field"><label>요일</label><div class="dows" id="dows"></div></div>
-    <div class="field"><label>시간</label>
-      <span id="t1"></span> <span class="sub">~</span> <span id="t2"></span>
-    </div>
-    <div class="field"><label></label>
-      <button class="btn" id="make">회차 만들기</button>
-      <span class="sub">기존 회차 뒤에 더해집니다</span></div>
-    <p class="warn" id="makewarn" hidden></p>
-  </fieldset>
+    <fieldset id="fs1" disabled>
+      <legend>강의</legend>
+      <div class="field"><label for="place">장소</label>
+        <select id="place"></select>
+        <span class="sub" id="shortview"></span>
+        <button class="btn ghost" id="placeman">목록 관리</button></div>
+      <div class="field"><label for="kind">유형</label>
+        <select id="kind"></select>
+        <button class="btn ghost" id="kindman">목록 관리</button></div>
+      <div class="field"><label for="lunch">점심시간</label>
+        <select id="lunch"><option value="0" selected>없음</option><option value="60">1시간</option></select></div>
+      <div class="field"><label for="link">신청 링크</label>
+        <input id="link" type="url" placeholder="https://..."></div>
+      <div class="field"><label>색</label><div class="colors" id="colors"></div></div>
+    </fieldset>
 
-  <fieldset>
-    <legend>회차 <span id="cnt" style="font-weight:400;color:var(--muted)"></span></legend>
-    <ul class="rounds" id="rounds"></ul>
-    <p class="clashmsg" id="clash" hidden></p>
-    <div class="acts">
-      <button class="btn" id="add">한 줄 추가</button>
-      <button class="btn ghost" id="clear">전부 지우기</button>
-    </div>
-  </fieldset>
+    <fieldset id="fs2" disabled>
+      <legend>회차 한 번에 만들기</legend>
+      <div class="field"><label>기간</label>
+        <span class="pickwrap"><button class="pickbtn none" id="from">시작일</button><div class="pick" id="from-pick" hidden></div></span>
+        <span class="sub">–</span>
+        <span class="pickwrap"><button class="pickbtn none" id="to">종료일</button><div class="pick" id="to-pick" hidden></div></span>
+      </div>
+      <div class="field"><label>요일</label><div class="dows" id="dows"></div></div>
+      <div class="field"><label>시간</label>
+        <span id="t1"></span> <span class="sub">~</span> <span id="t2"></span></div>
+      <div class="field"><label></label>
+        <button class="btn" id="make">회차 만들기</button>
+        <span class="sub">기존 회차 뒤에 더해집니다</span></div>
+      <p class="warn" id="makewarn" hidden></p>
+    </fieldset>
 
-  <fieldset>
-    <legend>이렇게 보입니다</legend>
-    <div class="preview" id="preview"></div>
-  </fieldset>
+    <fieldset id="fs3" disabled>
+      <legend>회차 <span id="cnt" style="font-weight:400;color:var(--muted)"></span></legend>
+      <ul class="rounds" id="rounds"></ul>
+      <p class="clashmsg" id="clash" hidden></p>
+      <div class="acts">
+        <button class="btn" id="add">한 줄 추가</button>
+        <button class="btn ghost" id="clear">전부 지우기</button>
+      </div>
+    </fieldset>
 
-  <div class="acts">
-    <button class="btn solid" id="copy">이 강의 복사하기</button>
-    <button class="btn" id="load">적어둔 강의 불러와 고치기</button>
-    <button class="btn ghost" id="reset">새로 쓰기</button>
+    <fieldset id="fs4" disabled>
+      <legend>이렇게 보입니다</legend>
+      <div class="preview" id="preview"></div>
+      <div class="acts">
+        <button class="btn solid" id="save">목록에 저장</button>
+        <button class="btn" id="addnew">새 강의로 추가</button>
+        <button class="btn ghost" id="reset">입력 비우기</button>
+      </div>
+      <div class="out" id="out"></div>
+      <div class="acts"><button class="btn ghost" id="copy">이 강의만 글로 복사</button></div>
+    </fieldset>
   </div>
-  <div class="out" id="out"></div>
 
-  <p class="tip">
-    <b>처음 넣을 때</b> — 저장소에 <b>classes.js</b>가 없으면 새로 만들고, 첫 줄에
-    <b>window.CLASSES = [</b>, 마지막 줄에 <b>];</b> 를 적은 뒤 그 사이에 붙여넣습니다.<br>
-    <b>강의를 더할 때</b> — 이미 있는 덩어리 <b>뒤에 쉼표(,)를 찍고</b> 줄을 바꿔 붙여넣습니다.
-    쉼표를 빼면 일정이 하나도 안 나옵니다. 맨 마지막 덩어리 뒤에는 찍지 않습니다.<br>
-    <b>고칠 때</b> — classes.js에서 그 강의 한 줄을 복사해 <b>적어둔 강의 불러와 고치기</b>에
-    붙여넣으면 이 화면이 채워집니다.<br>
-    휴강은 따로 적지 않습니다. 회차에서 그날을 지우면 알아서 휴강으로 나옵니다.
-  </p>
+  <aside class="side">
+    <div class="sidehead">
+      <h2>강의 목록 <span class="sub" id="listcnt"></span></h2>
+      <button class="btn ghost" id="download" disabled>내려받기</button>
+    </div>
+    <div id="dropzone"></div>
+    <ul class="clist" id="clist"></ul>
+    <div class="sidefoot" id="sidefoot" hidden>
+      <button class="btn ghost" id="reload">다른 파일 올리기</button>
+      <span class="sub" id="dirty"></span>
+    </div>
+    <input type="file" id="file" accept=".js,text/javascript" hidden>
+  </aside>
+  </div>
 </div>
 
 <dialog id="man"><div class="sheet" id="manbody"></div></dialog>
 
-<script src="classes.js"></script>
 <script src="class-format.js"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -197,22 +234,236 @@ const pad = n => String(n).padStart(2, "0");
 const DOW = "일월화수목금토";
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-/* ── 장소·유형 목록 ─────────────────────────────
-   이 브라우저에 저장해 두고, classes.js에 이미 쓰인 것도 함께 보여줍니다. */
+let LIST = null;        // 올린 파일의 강의들. null = 아직 안 올림
+let editing = null;     // 고치고 있는 강의 번호
+let dirty = false;      // 내려받지 않은 변경이 있는지
+
+/* ── 파일 올리기 ───────────────────────────── */
+function drawDrop(){
+  $("dropzone").innerHTML = LIST
+    ? ""
+    : `<div class="drop" id="drop">여기에 <b>classes.js</b>를 끌어다 놓거나<br>눌러서 고르세요<br>
+         <span class="sub">아직 파일이 없다면 <button class="btn ghost" id="blank">빈 목록으로 시작</button></span></div>`;
+  if (LIST) return;
+  const d = $("drop");
+  d.onclick = e => { if (e.target.id !== "blank") $("file").click(); };
+  $("blank").onclick = e => { e.stopPropagation(); LIST = []; afterLoad(); };
+  ["dragenter","dragover"].forEach(t => d.addEventListener(t, e => { e.preventDefault(); d.classList.add("on"); }));
+  ["dragleave","drop"].forEach(t => d.addEventListener(t, e => { e.preventDefault(); d.classList.remove("on"); }));
+  d.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) readFile(f); });
+}
+$("file").onchange = e => { const f = e.target.files[0]; if (f) readFile(f); e.target.value = ""; };
+
+function readFile(f){
+  const r = new FileReader();
+  r.onload = () => {
+    const text = String(r.result);
+    const a = text.indexOf("["), b = text.lastIndexOf("]");
+    if (a < 0 || b < a) return alert("classes.js 가 아닌 것 같습니다. window.CLASSES = [ ... ]; 가 들어 있어야 합니다.");
+    try {
+      LIST = JSON.parse(text.slice(a, b + 1).replace(/,(\s*[\]}])/g, "$1"));
+    } catch {
+      return alert("파일을 읽지 못했습니다. 쉼표가 빠졌거나 글자가 깨졌을 수 있습니다.");
+    }
+    if (!Array.isArray(LIST)){ LIST = null; return alert("강의 목록을 찾지 못했습니다."); }
+    afterLoad();
+  };
+  r.readAsText(f, "utf-8");
+}
+
+function afterLoad(){
+  dirty = false;
+  editing = null;
+  clearForm();
+  ["fs1","fs2","fs3","fs4"].forEach(id => $(id).disabled = false);
+  $("download").disabled = false;
+  $("sidefoot").hidden = false;
+  refreshLists(); drawColors(); drawDrop(); draw(); drawList();
+}
+
+$("reload").onclick = () => {
+  if (dirty && !confirm("내려받지 않은 변경이 있습니다. 그래도 다른 파일을 올릴까요?")) return;
+  LIST = null; editing = null;
+  ["fs1","fs2","fs3","fs4"].forEach(id => $(id).disabled = true);
+  $("download").disabled = true;
+  $("sidefoot").hidden = true;
+  drawDrop(); drawList(); markDirty(false);
+};
+
+function markDirty(v){
+  dirty = v;
+  $("dirty").textContent = v ? "내려받지 않은 변경 있음" : "";
+}
+
+/* ── 목록 ─────────────────────────────────── */
+let opened = null;      // 개요를 펼친 강의
+
+function drawList(){
+  $("listcnt").textContent = LIST ? `${LIST.length}개` : "";
+  if (!LIST){ $("clist").innerHTML = ""; return; }
+  if (!LIST.length){
+    $("clist").innerHTML = `<li><span class="sub">아직 강의가 없습니다. 왼쪽에서 만들어 ‘새 강의로 추가’를 누르세요.</span></li>`;
+    return;
+  }
+  $("clist").innerHTML = LIST.map((c, i) => {
+    const info = opened === i
+      ? `<div class="cinfo">${ClassText.summary(c).lines
+           .map(l => `<div class="${l.off ? "off" : ""}">${esc(l.text)}</div>`).join("")}</div>
+         <div class="cbtns">
+           <button class="btn" data-load="${i}">불러오기</button>
+           <button class="btn ghost" data-del="${i}">삭제</button>
+         </div>` : "";
+    return `<li class="${editing === i ? "sel" : ""}">
+      <div class="crow" data-open="${i}">
+        <span class="cdot" style="background:${esc(c.color || "#ccc")}"></span>
+        <span class="cname">${esc(c.short ? c.short + " · " + c.place : c.place)}</span>
+        <span class="cnum">${(c.sessions || []).length}회</span>
+      </div>${info}</li>`;
+  }).join("");
+
+  $("clist").querySelectorAll("[data-open]").forEach(el => el.onclick = () => {
+    opened = opened === +el.dataset.open ? null : +el.dataset.open;
+    drawList();
+  });
+  $("clist").querySelectorAll("[data-load]").forEach(b => b.onclick = () => loadInto(+b.dataset.load));
+  $("clist").querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+    const i = +b.dataset.del;
+    if (!confirm(`‘${LIST[i].place}’ 강의를 목록에서 지울까요?`)) return;
+    LIST.splice(i, 1);
+    if (editing === i){ editing = null; clearForm(); }
+    else if (editing > i) editing--;
+    opened = null;
+    markDirty(true); drawList(); draw();
+  });
+}
+
+function loadInto(i){
+  const p = LIST[i];
+  editing = i; opened = null;
+  place = p.place || ""; kind = p.kind || "";
+  if (p.place && !places().some(x => x.name === p.place)){
+    const l = readStore("place"); l.push({ name: p.place, short: p.short || "" }); writeStore("place", l);
+  }
+  if (p.kind && !kinds().includes(p.kind)){
+    const l = readStore("kind"); l.push(p.kind); writeStore("kind", l);
+  }
+  $("lunch").value = String(p.lunch ?? 0);
+  $("link").value = p.link || "";
+  if (p.color){ color = p.color; if (!PALETTE.includes(color)) customColor = color; }
+  rounds = (p.sessions || []).map(s => {
+    const [d, t] = String(s).split(" ");
+    const [a, b] = String(t || "10:00").split("-");
+    return [d, a || "10:00", b || ""];
+  });
+  sortRounds();
+  if (rounds.length){
+    const [h, m] = rounds[0][1].split(":").map(Number); setTime("t1", h, m);
+    if (rounds[0][2]){ const [h2, m2] = rounds[0][2].split(":").map(Number); setTime("t2", h2, m2); }
+  }
+  refreshLists(); drawColors(); draw(); drawList();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function clearForm(){
+  place = kind = ""; rounds = []; picked.clear();
+  $("link").value = ""; $("lunch").value = "0";
+  chosen.from = chosen.to = "";
+  $("from").textContent = "시작일"; $("to").textContent = "종료일";
+  $("from").classList.add("none"); $("to").classList.add("none");
+  document.querySelectorAll(".dow").forEach(b => b.setAttribute("aria-pressed", "false"));
+  color = PALETTE[0];
+  editing = null;
+  refreshLists(); drawColors(); draw(); drawList();
+}
+
+/* ── 저장 ─────────────────────────────────── */
+$("save").onclick = () => {
+  const p = payload();
+  if (!check(p)) return;
+  if (editing === null){
+    LIST.push(p); editing = LIST.length - 1;
+  } else {
+    LIST[editing] = p;
+  }
+  markDirty(true); drawList(); draw();
+  flash($("save"), "저장됨");
+};
+
+$("addnew").onclick = () => {
+  const p = payload();
+  if (!check(p)) return;
+  LIST.push(p); editing = LIST.length - 1;
+  markDirty(true); drawList(); draw();
+  flash($("addnew"), "추가됨");
+};
+
+function check(p){
+  if (!p.place){ alert("장소를 골라주세요."); return false; }
+  if (!p.sessions.length){ alert("회차를 하나 이상 넣어주세요."); return false; }
+  const { msgs } = clashes();
+  if (msgs.length && !confirm("겹치는 시간이 있습니다.\n\n" + msgs.join("\n") + "\n\n그래도 저장할까요?")) return false;
+  return true;
+}
+
+function flash(b, word){
+  const old = b.textContent;
+  b.textContent = word; b.classList.add("done");
+  setTimeout(() => { b.textContent = old; b.classList.remove("done"); }, 1400);
+}
+
+$("reset").onclick = () => {
+  if (!confirm("입력란을 비울까요? 목록에 저장한 내용은 그대로입니다.")) return;
+  clearForm();
+};
+
+$("copy").onclick = async () => {
+  const p = payload();
+  if (!p.place) return alert("장소를 골라주세요.");
+  await navigator.clipboard.writeText(JSON.stringify(p));
+  flash($("copy"), "복사됨");
+};
+
+/* ── 내려받기 ─────────────────────────────── */
+$("download").onclick = () => {
+  const body = LIST.map(c => JSON.stringify(c)).join(",\n\n");
+  const text =
+`/* 강의 일정
+   ------------------------------------------------
+   class-edit.html 에서 만들어 내려받은 파일입니다.
+   손으로 고쳐도 되지만, 덩어리 사이의 쉼표를 빠뜨리지 마세요.        */
+
+window.CLASSES = [
+
+${body}
+
+];
+`;
+  const blob = new Blob(["\uFEFF" + text], { type: "text/javascript;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "classes.js";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  markDirty(false);
+};
+
+window.onbeforeunload = () => dirty ? "" : undefined;
+
+/* ── 장소·유형 목록 ───────────────────────── */
 const KEY = { place: "1q-places", kind: "1q-kinds" };
 const readStore = k => { try { return JSON.parse(localStorage.getItem(KEY[k]) || "[]"); } catch { return []; } };
 const writeStore = (k, v) => { try { localStorage.setItem(KEY[k], JSON.stringify(v)); } catch {} };
 
 function places(){
   const out = readStore("place");
-  (window.CLASSES || []).forEach(c => {
+  (LIST || []).forEach(c => {
     if (c.place && !out.some(p => p.name === c.place)) out.push({ name: c.place, short: c.short || "" });
   });
   return out;
 }
 function kinds(){
   const out = readStore("kind");
-  (window.CLASSES || []).forEach(c => { if (c.kind && !out.includes(c.kind)) out.push(c.kind); });
+  (LIST || []).forEach(c => { if (c.kind && !out.includes(c.kind)) out.push(c.kind); });
   return out;
 }
 
@@ -261,8 +512,8 @@ function openMan(which, adding){
   $("manbody").innerHTML = `
     <h2>${isPlace ? "장소" : "유형"} 목록</h2>
     <ul class="mlist">${rows || `<li><span class="nm sub">아직 없습니다.</span></li>`}</ul>
-    <p class="sub" style="margin:-4px 0 12px">‘쓰는 중’은 classes.js에 이미 적힌 이름입니다.
-      여기서 고쳐도 그 강의를 다시 저장해야 예전 이름이 목록에서 사라집니다.</p>
+    <p class="sub" style="margin:-4px 0 12px">‘쓰는 중’은 목록의 강의가 쓰고 있는 이름입니다.
+      여기서 고쳐도 그 강의를 다시 저장해야 예전 이름이 사라집니다.</p>
     <div class="addrow">
       <input type="text" id="newname" placeholder="${isPlace ? "동대문여성인력개발센터" : "내일배움과정"}">
       ${isPlace ? `<input type="text" id="newshort" placeholder="약어 (동대문)" style="max-width:120px">` : ""}
@@ -293,12 +544,9 @@ function openMan(which, adding){
     if ((isPlace ? place : kind) === name){ if (isPlace) place = ""; else kind = ""; }
     refreshLists(); draw(); openMan(which);
   });
-
-  // 고치기 — 이름을 바꾸면 이 화면에서 고르고 있던 값도 따라갑니다
   $("manbody").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => {
     const v = all[+b.dataset.edit];
     const old = isPlace ? v.name : v;
-
     const name = (prompt(`${isPlace ? "장소" : "유형"} 이름`, old) || "").trim();
     if (!name) return;
     let short = isPlace ? (v.short || "") : "";
@@ -307,19 +555,15 @@ function openMan(which, adding){
       if (s === null) return;
       short = s.trim();
     }
-
     const list = readStore(which);
     if (isPlace){
       const at = list.findIndex(o => o.name === old);
-      if (at >= 0) list[at] = { name, short };
-      else list.push({ name, short });          // classes.js 쪽에만 있던 것은 새로 담습니다
+      if (at >= 0) list[at] = { name, short }; else list.push({ name, short });
     } else {
       const at = list.indexOf(old);
-      if (at >= 0) list[at] = name;
-      else list.push(name);
+      if (at >= 0) list[at] = name; else list.push(name);
     }
     writeStore(which, list);
-
     if (isPlace && place === old) place = name;
     if (!isPlace && kind === old) kind = name;
     refreshLists(); draw(); openMan(which);
@@ -362,7 +606,7 @@ const picked = new Set();
   $("dows").appendChild(b);
 });
 
-/* ── 시각 고르기 (오전·오후 / 시 / 분) ── */
+/* ── 시각 고르기 ── */
 function timePicker(host, hh, mm){
   $(host).innerHTML = `
     <select data-p="ap"><option>오전</option><option>오후</option></select>
@@ -436,7 +680,7 @@ datePicker("from"); datePicker("to");
 document.addEventListener("click", () => document.querySelectorAll(".pick").forEach(p => p.hidden = true));
 
 /* ── 회차 ── */
-let rounds = [];    // [날짜, 시작, 종료]
+let rounds = [];
 const sortRounds = () => rounds.sort((a, b) => (a[0]+a[1]).localeCompare(b[0]+b[1]));
 
 $("make").onclick = () => {
@@ -472,8 +716,6 @@ $("add").onclick = () => {
 };
 $("clear").onclick = () => { if (rounds.length && confirm("회차를 전부 지울까요?")){ rounds = []; draw(); } };
 
-/* 시간이 겹치는 회차 찾기.
-   같은 강의 안에서도 보고, classes.js에 이미 있는 다른 강의와도 견줍니다. */
 const mins = t => { const [h, m] = String(t || "0:0").split(":").map(Number); return h*60 + m; };
 
 function clashes(){
@@ -490,9 +732,8 @@ function clashes(){
       }
     }
   }
-
-  (window.CLASSES || []).forEach(c => {
-    if (c.place === place && c.kind === kind) return;      // 고치고 있는 그 강의는 건너뜁니다
+  (LIST || []).forEach((c, ci) => {
+    if (ci === editing) return;                 // 고치고 있는 그 강의는 건너뜁니다
     (c.sessions || []).forEach(s => {
       const [d, t] = String(s).split(" ");
       const [a, b] = String(t || "").split("-");
@@ -505,7 +746,6 @@ function clashes(){
       });
     });
   });
-
   return { bad, msgs: [...new Set(msgs)] };
 }
 
@@ -513,6 +753,7 @@ function drawRounds(){
   $("cnt").textContent = rounds.length ? `${rounds.length}회` : "";
   if (!rounds.length){
     $("rounds").innerHTML = `<li class="none">위에서 만들거나 ‘한 줄 추가’로 넣으세요.</li>`;
+    $("clash").hidden = true;
     return;
   }
   const { bad, msgs } = clashes();
@@ -539,7 +780,7 @@ function drawRounds(){
   });
 }
 
-/* ── 내보내기 ── */
+/* ── 그리기 ── */
 function payload(){
   const p = places().find(x => x.name === place);
   return {
@@ -561,68 +802,23 @@ function draw(){
   $("out").textContent = (p.place || p.sessions.length)
     ? JSON.stringify(p)
     : "채우면 여기에 붙여넣을 글이 나옵니다.";
+
+  $("editing").hidden = editing === null;
+  if (editing !== null)
+    $("editing").textContent = `‘${LIST[editing].place}’ 를 고치는 중입니다. ‘목록에 저장’을 누르면 이 강의가 바뀝니다.`;
+  $("save").textContent = editing === null ? "목록에 저장" : "이 강의 저장";
 }
 
 $("link").oninput = draw;
 $("lunch").onchange = draw;
 
-$("copy").onclick = async () => {
-  const p = payload();
-  if (!p.place) return alert("장소를 골라주세요.");
-  if (!p.sessions.length) return alert("회차를 하나 이상 넣어주세요.");
-  const { msgs } = clashes();
-  if (msgs.length && !confirm("겹치는 시간이 있습니다.\n\n" + msgs.join("\n") + "\n\n그래도 복사할까요?")) return;
-  await navigator.clipboard.writeText(JSON.stringify(p));
-  $("copy").textContent = "복사됨"; $("copy").classList.add("done");
-  setTimeout(() => { $("copy").textContent = "이 강의 복사하기"; $("copy").classList.remove("done"); }, 1500);
-};
-
-$("load").onclick = () => {
-  const text = prompt("classes.js에서 강의 한 덩어리( { 부터 } 까지 )를 복사해 붙여넣으세요.");
-  if (!text) return;
-  let p;
-  try { p = JSON.parse(text.trim().replace(/,\s*$/, "")); }
-  catch { return alert("읽지 못했습니다. { 로 시작해 } 로 끝나는 부분만 붙여넣어 주세요."); }
-
-  place = p.place || ""; kind = p.kind || "";
-  if (p.place && !places().some(x => x.name === p.place)){
-    const list = readStore("place"); list.push({ name: p.place, short: p.short || "" }); writeStore("place", list);
-  }
-  if (p.kind && !kinds().includes(p.kind)){
-    const list = readStore("kind"); list.push(p.kind); writeStore("kind", list);
-  }
-  $("lunch").value = String(p.lunch ?? 0);
-  $("link").value = p.link || "";
-  if (p.color){ color = p.color; if (!PALETTE.includes(color)) customColor = color; }
-  rounds = (p.sessions || []).map(s => {
-    const [d, t] = String(s).split(" ");
-    const [a, b] = String(t || "10:00").split("-");
-    return [d, a || "10:00", b || ""];
-  });
-  sortRounds();
-  if (rounds.length){
-    const [h, m] = rounds[0][1].split(":").map(Number); setTime("t1", h, m);
-    if (rounds[0][2]){ const [h2, m2] = rounds[0][2].split(":").map(Number); setTime("t2", h2, m2); }
-  }
-  refreshLists(); drawColors(); draw();
-};
-
-$("reset").onclick = () => {
-  if (!confirm("적은 내용을 지우고 새로 쓸까요?")) return;
-  place = kind = ""; rounds = []; picked.clear();
-  $("link").value = ""; $("lunch").value = "0";
-  chosen.from = chosen.to = "";
-  $("from").textContent = "시작일"; $("to").textContent = "종료일";
-  $("from").classList.add("none"); $("to").classList.add("none");
-  document.querySelectorAll(".dow").forEach(b => b.setAttribute("aria-pressed", "false"));
-  refreshLists(); drawColors(); draw();
-};
-
 timePicker("t1", 10, 0);
 timePicker("t2", 17, 0);
+drawDrop();
 refreshLists();
 drawColors();
 draw();
+drawList();
 </script>
 </body>
 </html>
