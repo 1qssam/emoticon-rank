@@ -87,8 +87,8 @@
   .x:hover{background:var(--panel);color:var(--ink)}
   .sheet .band{height:4px;border-radius:999px;width:38px;margin-bottom:13px}
   .sheet h2{font-size:17px;margin:0 0 3px;font-weight:600;letter-spacing:-.01em}
-  .sheet .place{font-size:13.5px;color:var(--muted);margin:0 0 14px}
-  .sheet .note{font-size:13.5px;color:#4c5054;margin:0 0 14px;line-height:1.6}
+  .sheet .info{font-size:13.5px;color:#4c5054;line-height:1.7;margin:4px 0 14px}
+  .sheet .info .off{color:#c2564b}
   .rounds{list-style:none;margin:0 0 16px;padding:0;border-top:1px solid var(--line)}
   .rounds li{display:flex;gap:9px;align-items:baseline;padding:7px 2px;
     border-bottom:1px solid var(--line);font-size:13.5px}
@@ -158,6 +158,7 @@
 </div>
 
 <script src="classes.js"></script>
+<script src="class-format.js"></script>
 <script>
 const C = (window.CLASSES || []);
 const $ = id => document.getElementById(id);
@@ -226,8 +227,8 @@ function calendar(){
       const mark = r.n === 1 ? "시작" : r.n === r.of && r.of > 1 ? "종료" : "";
       return `<button class="chip${date < todayStr ? " past" : ""}" data-c="${r.ci}"
         style="background:${esc(c.color)}1a;border-left-color:${esc(c.color)}"
-        title="${esc(c.name + (mark ? " " + mark : ""))}">
-        <span class="t">${esc(r.time)}</span><span class="n">${esc(c.short || c.name)}${
+        title="${esc(ClassText.title(c) + (mark ? " " + mark : ""))}">
+        <span class="t">${esc(r.time)}</span><span class="n">${esc(c.short || c.place)}${
           mark ? `<span class="mk">${mark}</span>` : ""}</span></button>`;
     }).join("");
 
@@ -237,7 +238,7 @@ function calendar(){
   // 이 달에 회차가 있는 강의만 아래에 색으로 알려줍니다
   const shown = [...new Set(ROUNDS.filter(r => r.date.slice(0, 7) === cursor).map(r => r.ci))];
   const legend = shown.length ? `<div class="legend">` + shown.map(ci =>
-    `<button data-c="${ci}"><span class="dot" style="background:${esc(C[ci].color)}"></span>${esc(C[ci].short ? C[ci].short + " · " + C[ci].name : C[ci].name)}</button>`
+    `<button data-c="${ci}"><span class="dot" style="background:${esc(C[ci].color)}"></span>${esc(C[ci].short ? C[ci].short + " · " + ClassText.title(C[ci]) : ClassText.title(C[ci]))}</button>`
   ).join("") + `</div>` : "";
 
   return `<div class="cal">
@@ -260,12 +261,14 @@ function openSheet(ci){
       <span class="rdate">${esc(fmtDay(date))} ${esc(when)}</span>${mark}</li>`;
   }).join("");
 
+  const info = ClassText.summary(c).lines
+    .map(l => `<div class="${l.off ? "off" : ""}">${esc(l.text)}</div>`).join("");
+
   $("sheetbody").innerHTML = `
     <button class="x" id="xbtn" aria-label="닫기">✕</button>
     <div class="band" style="background:${esc(c.color)}"></div>
-    <h2>${esc(c.name)}</h2>
-    <p class="place">${esc(c.place)}</p>
-    ${c.note ? `<p class="note">${esc(c.note)}</p>` : ""}
+    <h2>${esc(c.place)}</h2>
+    <div class="info">${info}</div>
     <ul class="rounds">${rounds}</ul>
     <div class="btns">
       <button class="btn" id="closebtn">닫기</button>
