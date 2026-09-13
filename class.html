@@ -51,11 +51,12 @@
   .dows span:first-child{color:#c2564b}
   .dows span:last-child{color:#3a6fb0}
   .weeks{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
-  .day{min-height:132px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+  /* 일정 두 개까지는 같은 높이, 세 개부터 늘어납니다 */
+  .day{min-height:100px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);
     padding:6px 5px;display:flex;flex-direction:column;gap:3px}
   .day:nth-child(7n){border-right:0}
   .day.off{background:#fbfaf7}
-  .day .d{font-size:12.5px;color:#5c6064;padding:0 2px 1px}
+  .day .d{font-size:11.5px;color:#5c6064;padding:0 2px 1px}
   .day.off .d{color:#c2c0ba}
   .day.sun .d{color:#c2564b}
   .day.sat .d{color:#3a6fb0}
@@ -89,6 +90,17 @@
   .sheet h2{font-size:17px;margin:0 0 3px;font-weight:600;letter-spacing:-.01em}
   .sheet .info{font-size:13.5px;color:#4c5054;line-height:1.7;margin:4px 0 14px}
   .sheet .info .off{color:#c2564b}
+  .mapbox{border:1px solid var(--line);border-radius:9px;padding:11px 12px;margin:0 0 14px;
+    background:#fafaf8;display:flex;flex-direction:column;gap:8px}
+  .mapbox .top{display:flex;gap:10px;align-items:center}
+  .mapbox .pin{width:17px;height:17px;flex:none}
+  .mapbox b{display:block;font-size:13.5px;font-weight:600}
+  .mapbox .ad{font-size:12.5px;color:var(--muted);user-select:all;cursor:text}
+  .mapbox .row{display:flex;gap:6px}
+  .mini{flex:1;text-align:center;border:1px solid var(--line);background:#fff;border-radius:7px;
+    padding:6px 9px;font-size:12.5px;color:var(--ink);text-decoration:none;font-family:inherit;cursor:pointer}
+  .mini:hover{border-color:var(--ink)}
+  .mini.copied{background:var(--mark);border-color:var(--mark);color:#3a3400}
   .rounds{list-style:none;margin:0 0 16px;padding:0;border-top:1px solid var(--line)}
   .rounds li{display:flex;gap:9px;align-items:baseline;padding:7px 2px;
     border-bottom:1px solid var(--line);font-size:13.5px}
@@ -115,8 +127,8 @@
     .wrap{padding:20px 0 60px}
     header,.topbar,.hint,.legend,.foot{padding-left:12px;padding-right:12px}
     .cal{border-left:0;border-right:0;border-radius:0}
-    .day{min-height:74px;padding:4px 3px;gap:2px}
-    .day .d{font-size:11.5px}
+    .day{min-height:72px;padding:4px 3px;gap:2px}
+    .day .d{font-size:10.5px}
     .chip{display:block;overflow:hidden;padding:2px 3px 2px 4px;font-size:10.5px}
     .chip .t{display:block;font-size:10px}
     .chip .n{display:block}
@@ -264,11 +276,25 @@ function openSheet(ci){
   const info = ClassText.summary(c).lines
     .map(l => `<div class="${l.off ? "off" : ""}">${esc(l.text)}</div>`).join("");
 
+  const hasMap = c.map || c.addr;
+  const mapbox = hasMap ? `
+    <div class="mapbox">
+      <div class="top">
+        <svg class="pin" viewBox="0 0 24 24" fill="#03c75a" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+        <span><b>${esc(c.place)}</b>${c.addr ? `<span class="ad">${esc(c.addr)}</span>` : ""}</span>
+      </div>
+      <div class="row">
+        ${c.map ? `<a class="mini" href="${esc(c.map)}" target="_blank" rel="noopener">지도로 보기</a>` : ""}
+        ${c.addr ? `<button class="mini" id="copyaddr">주소 복사</button>` : ""}
+      </div>
+    </div>` : "";
+
   $("sheetbody").innerHTML = `
     <button class="x" id="xbtn" aria-label="닫기">✕</button>
     <div class="band" style="background:${esc(c.color)}"></div>
     <h2>${esc(c.place)}</h2>
     <div class="info">${info}</div>
+    ${mapbox}
     <ul class="rounds">${rounds}</ul>
     <div class="btns">
       <button class="btn" id="closebtn">닫기</button>
@@ -276,6 +302,12 @@ function openSheet(ci){
     </div>`;
   $("closebtn").onclick = () => $("sheet").close();
   $("xbtn").onclick = () => $("sheet").close();
+  if ($("copyaddr")) $("copyaddr").onclick = async () => {
+    await navigator.clipboard.writeText(c.addr);
+    const b = $("copyaddr");
+    b.textContent = "복사됨"; b.classList.add("copied");
+    setTimeout(() => { b.textContent = "주소 복사"; b.classList.remove("copied"); }, 1400);
+  };
   $("sheet").showModal();
 }
 

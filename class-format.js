@@ -103,7 +103,12 @@ window.ClassText = (function(){
     const days = [...new Set(list.map(s => dowOf(s.date)))].sort();
     const bits = [c.place, c.kind];
     if (days.length) bits.push(days.map(d => DOW[d]).join("·") + "요일");
-    if (list[0] && list[0].start) bits.push(ampm(list[0].start).replace(":00", "시").replace(":", "시 ") );
+    if (list[0] && list[0].start){
+      const [h, m] = list[0].start.split(":").map(Number);
+      const ap = h >= 12 ? "오후" : "오전";
+      let hh = h % 12; if (hh === 0) hh = 12;
+      bits.push(`${ap} ${hh}시${m ? " " + m + "분" : ""}`);
+    }
     return bits.filter(Boolean).join(" ");
   }
 
