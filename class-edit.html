@@ -118,7 +118,9 @@
   .clist li{border-bottom:1px solid var(--line);padding:9px 2px}
   .clist li.sel{background:#faf9f6}
   .crow{display:flex;align-items:center;gap:8px;cursor:pointer}
-  .cdot{width:10px;height:10px;border-radius:50%;flex:none}
+  .cdot{width:14px;height:14px;border-radius:50%;flex:none;border:0;padding:0;cursor:pointer}
+  .cdot:hover{box-shadow:0 0 0 2px #fff,0 0 0 3px var(--ink)}
+  .swatches{display:flex;gap:6px;flex-wrap:wrap;padding:8px 0 2px}
   .ym{font-size:12.5px;color:var(--muted);flex:none;font-variant-numeric:tabular-nums}
   .cname{flex:1;min-width:0;font-size:13.5px;font-weight:500;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -346,18 +348,34 @@ function drawList(){
            <button class="btn" data-load="${i}">불러오기</button>
            <button class="btn ghost" data-del="${i}">삭제</button>
          </div>` : "";
+    const pick = opened === i ? `<div class="swatches">${
+      PALETTE.map(hex => `<button class="swatch" style="background:${hex}" data-setc="${i}|${hex}"
+        aria-pressed="${hex === c.color}" title="${hex}"></button>`).join("")}</div>` : "";
     return `<li class="${editing === i ? "sel" : ""}">
       <div class="crow" data-open="${i}">
-        <span class="cdot" style="background:${esc(c.color || "#ccc")}"></span>
+        <button class="cdot" data-color="${i}" title="색 바꾸기"
+          style="background:${esc(c.color || "#ccc")}"></button>
         <span class="ym">${esc(startYm(c))}</span>
         <span class="cname">${esc(c.place)}</span>
         <span class="cnum">${(c.sessions || []).length}회</span>
-      </div>${info}</li>`;
+      </div>${pick}${info}</li>`;
   }).join("");
 
-  $("clist").querySelectorAll("[data-open]").forEach(el => el.onclick = () => {
+  $("clist").querySelectorAll("[data-open]").forEach(el => el.onclick = e => {
+    if (e.target.dataset.color !== undefined) return;      // 색 점은 따로 다룹니다
     opened = opened === +el.dataset.open ? null : +el.dataset.open;
     drawList();
+  });
+  $("clist").querySelectorAll("[data-color]").forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    opened = +b.dataset.color;
+    drawList();
+  });
+  $("clist").querySelectorAll("[data-setc]").forEach(b => b.onclick = () => {
+    const [i, hex] = b.dataset.setc.split("|");
+    LIST[+i].color = hex;
+    if (editing === +i) { color = hex; drawColors(); }
+    markDirty(true); drawList(); draw();
   });
   $("clist").querySelectorAll("[data-load]").forEach(b => b.onclick = () => loadInto(+b.dataset.load));
   $("clist").querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
@@ -589,6 +607,17 @@ function openMan(which, adding){
       if (at >= 0) list[at] = rec; else list.push(rec);       // 강의 쪽에만 있던 것은 새로 담습니다
       if (isPlace && place === manEdit) place = name;
       if (!isPlace && kind === manEdit) kind = name;
+
+      // 이 장소·유형을 쓰는 강의들에도 바로 반영합니다
+      let hit = 0;
+      (LIST || []).forEach(c => {
+        if (isPlace && c.place === manEdit){
+          c.place = name; c.short = rec.short; c.addr = rec.addr; c.map = rec.map; hit++;
+        }
+        if (!isPlace && c.kind === manEdit){ c.kind = name; hit++; }
+      });
+      if (hit){ markDirty(true); drawList(); }
+
       manEdit = null;
     } else {
       list.push(rec);

@@ -56,12 +56,15 @@
     padding:6px 5px;display:flex;flex-direction:column;gap:3px}
   .day:nth-child(7n){border-right:0}
   .day.off{background:#fbfaf7}
-  .day .d{font-size:11.5px;color:#5c6064;padding:0 2px 1px}
+  .day .d{font-size:11.5px;color:#5c6064;padding:0 2px 1px;
+    display:flex;align-items:baseline;gap:4px;min-width:0}
+  .day .hol{font-size:11px;color:#c2564b;white-space:nowrap;overflow:hidden;min-width:0}
   .day.off .d{color:#c2c0ba}
-  .day.sun .d{color:#c2564b}
-  .day.sat .d{color:#3a6fb0}
-  .day.now .d{background:var(--ink);color:#fff;border-radius:999px;padding:1px 6px;
-    display:inline-block;width:fit-content;font-weight:600}
+  .day.sun .d .n{color:#c2564b}
+  .day.sat .d .n{color:#3a6fb0}
+  .day.hd .d .n{color:#c2564b}          /* 공휴일은 토요일보다 먼저 */
+  .day.now .d .n{color:#fff}
+  .day.now .d .n{background:var(--ink);color:#fff;border-radius:999px;padding:1px 6px;font-weight:600}
   .chip{border:0;border-left:3px solid;background:none;font-family:inherit;text-align:left;cursor:pointer;
     padding:3px 5px 3px 6px;border-radius:0 5px 5px 0;font-size:11.5px;line-height:1.35;
     display:flex;gap:5px;align-items:baseline;width:100%;color:var(--ink)}
@@ -127,8 +130,9 @@
     .wrap{padding:20px 0 60px}
     header,.topbar,.hint,.legend,.foot{padding-left:12px;padding-right:12px}
     .cal{border-left:0;border-right:0;border-radius:0}
-    .day{min-height:72px;padding:4px 3px;gap:2px}
-    .day .d{font-size:10.5px}
+    .day{min-height:94px;padding:4px 3px;gap:2px}   /* 일정 두 개 기준 */
+    .day .d{font-size:10.5px;gap:3px}
+    .day .hol{font-size:10px}
     .chip{display:block;overflow:hidden;padding:2px 3px 2px 4px;font-size:10.5px}
     .chip .t{display:block;font-size:10px}
     .chip .n{display:block}
@@ -169,10 +173,12 @@
   </footer>
 </div>
 
+<script src="holidays.js" onerror="window.HOLIDAYS={}"></script>
 <script src="classes.js"></script>
 <script src="class-format.js"></script>
 <script>
 const C = (window.CLASSES || []);
+const H = (window.HOLIDAYS || {});
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const DOW = "일월화수목금토";
@@ -232,6 +238,7 @@ function calendar(){
     if (date.slice(0, 7) !== cursor) cls.push("off");
     if (d.getDay() === 0) cls.push("sun");
     if (d.getDay() === 6) cls.push("sat");
+    if (H[date]) cls.push("hd");
     if (date === todayStr) cls.push("now");
 
     const chips = (byDate[date] || []).map(r => {
@@ -244,7 +251,8 @@ function calendar(){
           mark ? `<span class="mk">${mark}</span>` : ""}</span></button>`;
     }).join("");
 
-    cells += `<div class="${cls.join(" ")}"><span class="d">${d.getDate()}</span>${chips}</div>`;
+    cells += `<div class="${cls.join(" ")}"><span class="d"><span class="n">${d.getDate()}</span>${
+      H[date] ? `<span class="hol">${esc(H[date])}</span>` : ""}</span>${chips}</div>`;
   }
 
   // 이 달에 회차가 있는 강의만 아래에 색으로 알려줍니다
