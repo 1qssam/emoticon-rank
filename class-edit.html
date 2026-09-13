@@ -87,6 +87,8 @@
     white-space:pre-wrap;word-break:break-all;line-height:1.6;min-height:60px}
   .acts{display:flex;gap:8px;align-items:center;margin:12px 0 8px;flex-wrap:wrap}
   .warn{font-size:12.5px;color:#c2564b;margin:6px 0 0}
+  .rounds li.clash input[type=date],.rounds li.clash input[type=time]{border-color:#c2564b}
+  .clashmsg{font-size:12.5px;color:#c2564b;margin:8px 0 0;line-height:1.7}
   .tip{font-size:12.5px;color:var(--muted);line-height:1.8;margin-top:16px;
     padding-top:14px;border-top:1px solid var(--line)}
   .tip b{color:#43464a}
@@ -129,7 +131,7 @@
       <select id="kind"></select>
       <button class="btn ghost" id="kindman">목록 관리</button></div>
     <div class="field"><label for="lunch">점심시간</label>
-      <select id="lunch"><option value="0">없음</option><option value="60" selected>1시간</option></select></div>
+      <select id="lunch"><option value="0" selected>없음</option><option value="60">1시간</option></select></div>
     <div class="field"><label for="link">신청 링크</label>
       <input id="link" type="url" placeholder="https://..."></div>
     <div class="field"><label>색</label><div class="colors" id="colors"></div></div>
@@ -155,6 +157,7 @@
   <fieldset>
     <legend>회차 <span id="cnt" style="font-weight:400;color:var(--muted)"></span></legend>
     <ul class="rounds" id="rounds"></ul>
+    <p class="clashmsg" id="clash" hidden></p>
     <div class="acts">
       <button class="btn" id="add">한 줄 추가</button>
       <button class="btn ghost" id="clear">전부 지우기</button>
@@ -469,15 +472,56 @@ $("add").onclick = () => {
 };
 $("clear").onclick = () => { if (rounds.length && confirm("회차를 전부 지울까요?")){ rounds = []; draw(); } };
 
+/* 시간이 겹치는 회차 찾기.
+   같은 강의 안에서도 보고, classes.js에 이미 있는 다른 강의와도 견줍니다. */
+const mins = t => { const [h, m] = String(t || "0:0").split(":").map(Number); return h*60 + m; };
+
+function clashes(){
+  const mine = rounds.map(([d, a, b], i) => ({ i, d, a: mins(a), b: b ? mins(b) : mins(a) + 60 }))
+                     .filter(r => r.d);
+  const bad = new Set(), msgs = [];
+
+  for (let x = 0; x < mine.length; x++){
+    for (let y = x + 1; y < mine.length; y++){
+      const p = mine[x], q = mine[y];
+      if (p.d === q.d && p.a < q.b && q.a < p.b){
+        bad.add(p.i); bad.add(q.i);
+        msgs.push(`${p.d} — 이 강의 안에서 ${p.i+1}회와 ${q.i+1}회가 겹칩니다.`);
+      }
+    }
+  }
+
+  (window.CLASSES || []).forEach(c => {
+    if (c.place === place && c.kind === kind) return;      // 고치고 있는 그 강의는 건너뜁니다
+    (c.sessions || []).forEach(s => {
+      const [d, t] = String(s).split(" ");
+      const [a, b] = String(t || "").split("-");
+      const A = mins(a), B = b ? mins(b) : A + 60;
+      mine.forEach(r => {
+        if (r.d === d && r.a < B && A < r.b){
+          bad.add(r.i);
+          msgs.push(`${d} — ${c.place}${c.kind ? " " + c.kind : ""} 와 시간이 겹칩니다.`);
+        }
+      });
+    });
+  });
+
+  return { bad, msgs: [...new Set(msgs)] };
+}
+
 function drawRounds(){
   $("cnt").textContent = rounds.length ? `${rounds.length}회` : "";
   if (!rounds.length){
     $("rounds").innerHTML = `<li class="none">위에서 만들거나 ‘한 줄 추가’로 넣으세요.</li>`;
     return;
   }
+  const { bad, msgs } = clashes();
+  $("clash").hidden = !msgs.length;
+  $("clash").innerHTML = msgs.map(m => esc(m)).join("<br>");
+
   $("rounds").innerHTML = rounds.map(([date, t1, t2], i) => {
     const dw = date ? DOW[new Date(...date.split("-").map((v, k) => k === 1 ? v-1 : +v)).getDay()] : "";
-    return `<li>
+    return `<li class="${bad.has(i) ? "clash" : ""}">
       <span class="no">${i+1}회</span>
       <input type="date" value="${date}" data-i="${i}" data-k="0">
       <span class="dw">${dw}</span>
@@ -526,6 +570,8 @@ $("copy").onclick = async () => {
   const p = payload();
   if (!p.place) return alert("장소를 골라주세요.");
   if (!p.sessions.length) return alert("회차를 하나 이상 넣어주세요.");
+  const { msgs } = clashes();
+  if (msgs.length && !confirm("겹치는 시간이 있습니다.\n\n" + msgs.join("\n") + "\n\n그래도 복사할까요?")) return;
   await navigator.clipboard.writeText(JSON.stringify(p));
   $("copy").textContent = "복사됨"; $("copy").classList.add("done");
   setTimeout(() => { $("copy").textContent = "이 강의 복사하기"; $("copy").classList.remove("done"); }, 1500);
@@ -545,7 +591,7 @@ $("load").onclick = () => {
   if (p.kind && !kinds().includes(p.kind)){
     const list = readStore("kind"); list.push(p.kind); writeStore("kind", list);
   }
-  $("lunch").value = String(p.lunch ?? 60);
+  $("lunch").value = String(p.lunch ?? 0);
   $("link").value = p.link || "";
   if (p.color){ color = p.color; if (!PALETTE.includes(color)) customColor = color; }
   rounds = (p.sessions || []).map(s => {
@@ -564,7 +610,7 @@ $("load").onclick = () => {
 $("reset").onclick = () => {
   if (!confirm("적은 내용을 지우고 새로 쓸까요?")) return;
   place = kind = ""; rounds = []; picked.clear();
-  $("link").value = ""; $("lunch").value = "60";
+  $("link").value = ""; $("lunch").value = "0";
   chosen.from = chosen.to = "";
   $("from").textContent = "시작일"; $("to").textContent = "종료일";
   $("from").classList.add("none"); $("to").classList.add("none");
