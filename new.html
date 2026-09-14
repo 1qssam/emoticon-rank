@@ -196,16 +196,16 @@ function kindOf(flags){
 const KIND_ORDER = ["멈티", "움티", "미니멈티", "미니움티", "큰티"];
 
 function breakdown(items){
-  const c = {};
-  let sound = 0;
+  const c = {}, s = {};          // 종류별 개수, 그중 소리 있는 것
   items.forEach(i => {
-    const f = D.items[i][4];
-    c[kindOf(f)] = (c[kindOf(f)] || 0) + 1;
-    if (f & 4) sound++;
+    const f = D.items[i][4], k = kindOf(f);
+    c[k] = (c[k] || 0) + 1;
+    if (f & 4) s[k] = (s[k] || 0) + 1;
   });
-  const parts = KIND_ORDER.filter(k => c[k]).map(k => `${k} ${c[k]}`);
-  if (sound) parts.push(`소리 ${sound}`);
-  return parts.join(" · ");
+  // 소리는 따로 세지 않고 그 종류 안에 묶어 적습니다 — 움티 3(소리 1)
+  return KIND_ORDER.filter(k => c[k])
+    .map(k => `${k} ${c[k]}` + (s[k] ? `(소리 ${s[k]})` : ""))
+    .join(" · ");
 }
 
 function bestText(i){
