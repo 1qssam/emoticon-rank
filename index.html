@@ -115,6 +115,8 @@
     font-family:Arial,Helvetica,sans-serif;text-indent:.5px;letter-spacing:0}
   .go{color:#b9b7b1;text-decoration:none;font-size:13px;padding:2px 4px}
   .go:hover{color:var(--ink)}
+  .freetag{font-size:11px;padding:2px 6px;border-radius:4px;background:#eaf4ff;
+    color:#1d5fa8;font-weight:600;white-space:nowrap;margin-left:4px}
   .tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
   .tag-sound{display:inline-flex;align-items:center;gap:3px}
   .sound{width:11px;height:11px;display:inline-block;vertical-align:-1px}
@@ -214,6 +216,13 @@ $("since").innerHTML = "since " + D.dates[0].replace(/-/g,"").slice(2) +
   ' · <a href="https://litt.ly/1qssam" target="_blank" rel="noopener">원큐쌤(@1qssam)</a>';
 if (D.generatedAt) $("updated").textContent = `마지막 갱신 ${D.generatedAt}`;
 
+/* 월요일 무료 이벤트 — 항목 번호 → 풀린 날짜들 */
+const FREE = {};
+Object.entries(D.free || {}).forEach(([date, nums]) =>
+  nums.forEach(i => (FREE[i] = FREE[i] || []).push(date)));
+const freeTag = i => FREE[i]
+  ? `<span class="freetag" title="${FREE[i].join(", ")} 무료 이벤트">월요무료</span>` : "";
+
 /* 연령대 버튼 (목록용) */
 D.ages.forEach(a => {
   const b = document.createElement("button");
@@ -258,7 +267,7 @@ function rowEl(i, rank, move, isNew, found){
       </span>
       <span class="by">
         <a href="https://e.kakao.com/creator/${cid}" target="_blank" rel="noopener">${esc(creator)}</a>
-        ${kindTags(flags)}${released}
+        ${kindTags(flags)}${released}${freeTag(i)}
       </span>
     </span>
     ${found ? "" : `<span>${move}</span>`}

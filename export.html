@@ -115,6 +115,12 @@
 const D = window.DATA;
 const T = (window.TAGS || {items:{}, creators:{}});
 
+/* 월요일 무료 이벤트 — 항목 번호 → 풀린 날짜들 */
+const FREE = {};
+Object.entries(D.free || {}).forEach(([date, nums]) =>
+  nums.forEach(i => (FREE[i] = FREE[i] || []).push(date)));
+const freeOf = i => FREE[i] ? FREE[i].join(", ") : "";
+
 /* 아직 태그를 못 받은 이모티콘은 빈칸으로 둡니다 */
 const info = slug => T.items[slug] || null;
 const tagText = slug => {
@@ -202,7 +208,7 @@ function build(){
 
   if ($("kind").value === "new"){
     const head = ["날짜","요일","순번","상품명","작가명","시리즈","유형","소리",
-                  "태그","개수","가격","전체최고순위","최고순위일","slug","링크","MD"];
+                  "태그","개수","가격","전체최고순위","최고순위일","slug","링크","MD","월요무료"];
     const rows = [];
     for (let k = to; k >= from; k--){          // 날짜는 내림차순
       const items = [];
@@ -215,7 +221,7 @@ function build(){
           D.items[i][6] || "", kindOf(flags), (flags & 4) ? "Y" : "",
           tagText(slug), info(slug)?.n ?? "", info(slug)?.p ?? "",
           b ? b[0] : "", b ? D.dates[b[1]] : "",
-          slug, `https://e.kakao.com/t/${slug}`, mdOf(slug),
+          slug, `https://e.kakao.com/t/${slug}`, mdOf(slug), freeOf(i),
         ]);
       });
     }
@@ -223,7 +229,7 @@ function build(){
   }
 
   const age = $("age").value, n = +$("topn").value;
-  const head = ["날짜","요일","연령대","순위","상품명","작가명","시리즈","유형","소리","태그","개수","가격","slug","링크","MD"];
+  const head = ["날짜","요일","연령대","순위","상품명","작가명","시리즈","유형","소리","태그","개수","가격","slug","링크","MD","월요무료"];
   const rows = [];
   for (let k = to; k >= from; k--){
     D.hot[age][k].slice(0, n).forEach((it, i) => {
@@ -232,7 +238,7 @@ function build(){
         D.dates[k], dow(D.dates[k]), age, i + 1, title, creator,
         D.items[it][6] || "", kindOf(flags), (flags & 4) ? "Y" : "",
         tagText(slug), info(slug)?.n ?? "", info(slug)?.p ?? "",
-        slug, `https://e.kakao.com/t/${slug}`, mdOf(slug),
+        slug, `https://e.kakao.com/t/${slug}`, mdOf(slug), freeOf(it),
       ]);
     });
   }

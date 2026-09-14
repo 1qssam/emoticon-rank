@@ -120,10 +120,13 @@
 </div>
 
 <script src="data.js"></script>
+<script src="tags.js"></script>
 <script src="common.js"></script>
 <script>
 const D = window.DATA;
+const T = (window.TAGS || {items:{}, creators:{}});
 const SITE = "https://1qssam.github.io/emoticon-rank/";
+const MAX_TAGS = 30;               // 블로그 태그는 30개까지
 let dateIdx = D.dates.length - 1;
 let mode = "rank";
 
@@ -131,6 +134,17 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const dow = s => "일월화수목금토"[new Date(...s.split("-").map((v,i)=>i===1?v-1:+v)).getDay()];
 const fmt = s => { const [y,m,d] = s.split("-"); return `${y}년 ${+m}월 ${+d}일`; };
+
+/* 그날 무료로 풀린 이모티콘 (항목 번호) */
+const freeOn = date => (D.free && D.free[date]) || [];
+
+/* 이름과 링크를 줄줄이 적습니다 */
+const nameLines = (list, freeSet) => list.map(i => {
+  const [slug, t, creator, cid, flags] = D.items[i];
+  const mark = freeSet && freeSet.has(i) ? "[월요일무료]" : "";
+  return `${mark}${t}(${creator}) ${kindOf(flags)}`;
+}).join("\n");
+const linkLines = list => list.map(i => `https://e.kakao.com/t/${D.items[i][0]}`).join("\n");
 
 function kindOf(flags){
   if (flags & 2) return "큰티";
@@ -141,6 +155,8 @@ const KIND_ORDER = ["멈티", "움티", "미니멈티", "미니움티", "큰티"
 const KIND_FULL = {"멈티":"멈춰있는 이모티콘", "움티":"움직이는 이모티콘",
                    "미니멈티":"미니 멈춰있는 이모티콘", "미니움티":"미니 움직이는 이모티콘",
                    "큰티":"큰 이모티콘"};
+/* 제목은 자리가 좁아서 줄여 씁니다 */
+const KIND_SHORT = {"멈티":"멈티", "움티":"움티", "미니멈티":"멈미", "미니움티":"움미", "큰티":"큰티"};
 
 /* 인기순위 글에 붙는 고정 태그 */
 const RANK_TAGS = ["카카오톡이모티콘", "이모티콘인기순위", "이모티콘순위", "신규이모티콘",
@@ -197,16 +213,36 @@ function newModules(date){
   const items = [];
   D.release.forEach((r, i) => { if (r === dateIdx) items.push(i); });
 
-  const title = `${d} ${w}요일 신규 출시 카카오톡 이모티콘 총정리 (움직이는/멈춰있는/미니)`;
+  const free = freeOn(date);
+  const freeSet = new Set(free);
+
+  /* 종류별 개수와, 그중 소리 있는 것 */
+  const c = {}, snd = {};
+  items.forEach(i => {
+    const f = D.items[i][4], k = kindOf(f);
+    c[k] = (c[k] || 0) + 1;
+    if (f & 4) snd[k] = (snd[k] || 0) + 1;
+  });
+  const brief = KIND_ORDER.filter(k => c[k])
+    .map(k => `${KIND_SHORT[k]}${c[k]}` + (snd[k] ? `(소리${snd[k]})` : "")).join(" ");
+
+  const title = items.length
+    ? `${d} ${w}요일 신규 이모티콘 ${items.length}종 (${brief})` +
+      (free.length ? ` 월요일무료 ${free.length}종` : "")
+    : `${d} ${w}요일 신규 이모티콘` + (free.length ? ` 없음 · 월요일무료 ${free.length}종` : " 없음");
 
   if (!items.length){
-    return { title, mods: [{ label: "본문",
-      text: `${d} ${w}요일에는 새로 출시된 이모티콘이 없습니다.` }] };
+    const mods = [{ label: "본문", text: `${d} ${w}요일에는 새로 출시된 이모티콘이 없습니다.` }];
+    if (free.length){
+      mods.push({ label: `월요일 무료 ${free.length}줄`, text: nameLines(free, freeSet) });
+      mods.push({ label: `월요일 무료 링크 ${free.length}줄`, text: linkLines(free) });
+      mods.push({ label: "태그", text: ["월요일무료","무료이모티콘","카카오톡이모티콘"].map(t => "#" + t).join(", ") });
+    }
+    return { title, mods };
   }
 
-  const c = {};
-  items.forEach(i => { const k = kindOf(D.items[i][4]); c[k] = (c[k] || 0) + 1; });
-  const counts = KIND_ORDER.filter(k => c[k]).map(k => `${KIND_FULL[k]} ${c[k]}건`).join("\n");
+  const counts = KIND_ORDER.filter(k => c[k])
+    .map(k => `${KIND_FULL[k]} ${c[k]}건` + (snd[k] ? ` (소리 ${snd[k]}건)` : "")).join("\n");
 
   const head =
 `${d} ${w}요일 카카오톡에 새로 출시된
@@ -214,30 +250,54 @@ function newModules(date){
 
 오늘 출시 ${items.length}건
 ${counts}
-
+${free.length ? `\n오늘 무료로 받을 수 있는 이모티콘 ${free.length}건도 아래에 함께 정리했습니다.\n` : ""}
 이모티콘 이름을 누르면 이모티콘샵으로 바로 이동합니다.
 출시일별 기록과 인기순위는
 ${SITE}
 에서 더 많은 정보를 확인하실 수 있습니다.`;
 
-  const names = items.map(i => {
-    const [slug, t, creator, cid, flags] = D.items[i];
-    return `${t}(${creator}) ${kindOf(flags)}`;
-  }).join("\n");
+  const names = nameLines(items, freeSet);
+  const links = linkLines(items);
 
-  const links = items.map(i => `https://e.kakao.com/t/${D.items[i][0]}`).join("\n");
-
-  /* 태그 */
+  /* 태그 — 기본 → 종류 → MD·무료 → 남는 자리에 그날 많이 나온 태그 */
   const tags = [...TAG_BASE];
   KIND_ORDER.forEach(k => { if (c[k]) tags.push(...TAG_KIND[k]); });
   if (items.some(i => D.items[i][4] & 4)) tags.push("소리나는이모티콘");
-  if (dow(date) === "월") tags.push("월요일무료");
+
+  const md = items.filter(i => {
+    const v = T.items[D.items[i][0]];
+    return v && v.b;
+  });
+  if (md.length) tags.push("MD추천이모티콘", "MD추천");
+  if (free.length) tags.push("월요일무료", "무료이모티콘");
+
+  // 미니에 딸린 태그는 빼고, 많이 나온 순서대로 채웁니다
+  const count = {};
+  items.forEach(i => {
+    if (D.items[i][4] & 1) return;                 // 미니는 건너뜁니다
+    const v = T.items[D.items[i][0]];
+    if (!v || !v.t) return;
+    v.t.forEach(([name]) => {
+      const key = String(name).replace(/\s+/g, "");
+      if (key) count[key] = (count[key] || 0) + 1;
+    });
+  });
+  Object.keys(count)
+    .sort((a, b) => count[b] - count[a] || a.localeCompare(b, "ko"))
+    .forEach(k => { if (tags.length < MAX_TAGS && !tags.includes(k)) tags.push(k); });
 
   const mods = [
     { label: "머리말", text: head },
     { label: `이모티콘 목록 ${items.length}줄`, text: names },
     { label: `링크 ${items.length}줄 · 위 목록과 같은 순서`, text: links },
   ];
+
+  // 오늘 나온 것은 위 목록에 [월요일무료]로 적혔으니, 그 밖의 것만 따로 보여줍니다
+  const freeOld = free.filter(i => !items.includes(i));
+  if (freeOld.length){
+    mods.push({ label: `월요일 무료 (오늘 출시 아님) ${freeOld.length}줄`, text: nameLines(freeOld) });
+    mods.push({ label: `위 목록 링크 ${freeOld.length}줄`, text: linkLines(freeOld) });
+  }
 
   mods.push({ label: `태그 ${tags.length}개`, text: tags.map(t => "#" + t).join(", ") });
 

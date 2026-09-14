@@ -90,6 +90,8 @@
   .by{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .by a{color:#63676b;text-decoration:none;font-weight:500}
   .by a:hover{text-decoration:underline}
+  .freetag{font-size:11px;padding:2px 6px;border-radius:4px;background:#eaf4ff;
+    color:#1d5fa8;font-weight:600;white-space:nowrap;margin-left:4px}
   .tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
   .best{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
   .go{color:#b9b7b1;text-decoration:none;font-size:13px;padding:2px 4px}
@@ -168,6 +170,13 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 const dow = s => "일월화수목금토"[new Date(...s.split("-").map((v,i)=>i===1?v-1:+v)).getDay()];
 const fmt = s => { const [y,m,d] = s.split("-"); return `${y}년 ${+m}월 ${+d}일`; };
 const meta = i => D.items[i];   // [slug, 제목, 작가, 작가ID, 구분, 썸네일]
+
+/* 월요일 무료 이벤트 — 항목 번호 → 풀린 날짜들 */
+const FREE = {};
+Object.entries(D.free || {}).forEach(([date, nums]) =>
+  nums.forEach(i => (FREE[i] = FREE[i] || []).push(date)));
+const freeTag = i => FREE[i]
+  ? `<span class="freetag" title="${FREE[i].join(", ")} 무료 이벤트">월요무료</span>` : "";
 
 /* 연령대별로 최고 기록을 모읍니다 */
 const best = {};
@@ -255,7 +264,7 @@ function render(){
       <span class="name">
         <span class="title"><a href="${link}" target="_blank" rel="noopener">${esc(title)}</a></span>
         <span class="by"><a href="https://e.kakao.com/creator/${cid}" target="_blank" rel="noopener">${esc(creator)}</a>
-          ${kindTags(flags)}</span>
+          ${kindTags(flags)}${freeTag(i)}</span>
       </span>
       <span class="best">${bestText(i)}</span>
     </div>`;
