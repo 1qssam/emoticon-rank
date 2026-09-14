@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>주간정리 · 이모티콘 순위</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{--paper:#fcfcfb;--ink:#17181a;--muted:#83878c;--line:#e7e6e1;--panel:#f5f4f0;--mark:#fee500;
+    --up:#d63b2f;--down:#2563c9}
+  *{box-sizing:border-box}
+  html{overflow-y:scroll}
+  html,body{margin:0;padding:0}
+  [hidden]{display:none !important}
+  body{background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 20px 80px}
+
+  header{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+  h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
+  .tools{margin-left:auto;display:flex;gap:12px;flex-wrap:wrap}
+  .tools a{font-size:13px;color:var(--muted);text-decoration:none}
+  .tools a:hover{color:var(--ink);text-decoration:underline}
+  .tools a[aria-current]{color:var(--ink);font-weight:600}
+  .lead{font-size:12.5px;color:var(--muted);margin:0 0 16px;line-height:1.7}
+
+  .weekbar{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+  .daynav{width:30px;height:30px;border:1px solid var(--line);background:#fff;border-radius:7px;
+    cursor:pointer;font-size:14px;color:var(--ink);line-height:1}
+  .daynav:disabled{color:#cfcdc7;cursor:default}
+  .wk{font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .wk small{font-size:12.5px;color:var(--muted);font-weight:400;margin-left:10px;white-space:nowrap}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;
+    padding:6px 13px;font-size:13px;cursor:pointer;font-family:inherit}
+  .btn:hover{border-color:var(--ink)}
+  .btn.solid{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.done{background:var(--mark);color:#3a3400;border-color:var(--mark)}
+  .warn{font-size:12.5px;color:var(--up);margin:0 0 14px}
+
+  section{border:1px solid var(--line);border-radius:10px;background:#fff;
+    padding:14px 16px 16px;margin:0 0 14px}
+  section h2{font-size:14px;font-weight:600;margin:0 0 10px}
+  section h2 small{font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
+  .big{font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .sum{display:flex;gap:22px;flex-wrap:wrap;align-items:baseline;margin-bottom:12px}
+  .sum .u{font-size:12.5px;color:var(--muted);margin-left:3px}
+
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tw table{min-width:520px}
+  table{border-collapse:collapse;font-size:12.5px;width:100%}
+  th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:right;white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  th{background:var(--panel);font-weight:600;color:#43464a}
+  td.num{font-variant-numeric:tabular-nums}
+  tr.now td{background:#fffdf0;font-weight:600}
+  .muted{color:var(--muted)}
+  .none{color:var(--muted);font-size:13px;padding:6px 0}
+  ul.items{list-style:none;margin:8px 0 0;padding:0;font-size:12.5px;line-height:1.9}
+  ul.items b{font-weight:600}
+
+  .out{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+    background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:14px;
+    white-space:pre-wrap;line-height:1.7}
+  .acts{display:flex;gap:8px;margin:12px 0 8px;flex-wrap:wrap}
+  button:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  @media (max-width:640px){ .wrap{padding:20px 12px 60px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>주간정리</h1>
+    <nav class="tools">
+      <a href="index.html">사이트</a>
+      <a href="week.html" aria-current="page">주간정리</a>
+      <a href="post.html">블로그용 텍스트</a>
+      <a href="card.html">캡처용 순위표</a>
+      <a href="db.html">전체 목록</a>
+      <a href="export.html">스프레드시트</a>
+    </nav>
+  </header>
+  <p class="lead">출시는 월~금, 순위는 화~다음 월로 셉니다.
+    순위가 하루 늦게 공개되기 때문에, 그 주 출시분의 성적은 화요일 자부터 나타납니다.</p>
+
+  <div class="weekbar">
+    <button class="daynav" id="prev" aria-label="이전 주">‹</button>
+    <span class="wk" id="wk"></span>
+    <button class="daynav" id="next" aria-label="다음 주">›</button>
+    <button class="btn" id="last">지난주</button>
+  </div>
+  <p class="warn" id="warn" hidden></p>
+
+  <div id="body"></div>
+
+  <div class="acts">
+    <button class="btn solid" id="copy">전부 글로 복사</button>
+    <button class="btn" id="download">파일로 내려받기</button>
+  </div>
+  <div class="out" id="out"></div>
+</div>
+
+<script src="data.js"></script>
+<script src="tags.js"></script>
+<script>
+const D = window.DATA;
+const T = (window.TAGS || {items:{}, creators:{}});
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pad = n => String(n).padStart(2, "0");
+const DOW = "일월화수목금토";
+const BACK = 5;                       // 견줘볼 앞선 주 수
+
+/* ── 날짜 다루기 ─────────────────────────── */
+const toDate = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const toStr = dt => `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+const addDays = (s, n) => { const d = toDate(s); d.setDate(d.getDate() + n); return toStr(d); };
+const mondayOf = s => addDays(s, -((toDate(s).getDay() + 6) % 7));
+const ko = s => { const [y,m,d] = s.split("-"); return `${+m}월 ${+d}일`; };
+
+/* 자료가 있는 날짜 → 번호 */
+const idx = {};
+D.dates.forEach((d, i) => idx[d] = i);
+
+/* 고를 수 있는 주 (월요일 목록) */
+const weeks = [];
+for (let m = mondayOf(D.dates[0]); m <= mondayOf(D.dates.at(-1)); m = addDays(m, 7)) weeks.push(m);
+
+/* 기본은 마지막으로 온전히 끝난 주 */
+let cur = weeks.length - 1;
+(function(){
+  const today = new Date(Date.now() + 9*3600*1000).toISOString().slice(0, 10);
+  for (let k = weeks.length - 1; k >= 0; k--){
+    if (addDays(weeks[k], 7) <= today){ cur = k; break; }   // 다음 주 월요일이 지났으면 끝난 주
+  }
+})();
+
+/* ── 한 주 세기 ──────────────────────────── */
+function kindOf(f){
+  if (f & 2) return "큰티";
+  if (f & 1) return (f & 8) ? "움미" : "멈미";
+  return (f & 8) ? "움티" : "멈티";
+}
+const KIND_ORDER = ["멈티", "움티", "멈미", "움미", "큰티"];
+const isMini = f => !!(f & 1);
+const moves  = f => !!(f & 8) || !!(f & 2);      // 큰티는 모두 움직입니다
+
+function week(monday){
+  /* 출시 월~금 */
+  const days = [0,1,2,3,4].map(n => addDays(monday, n));
+  const items = [];
+  const byDay = {};
+  days.forEach(d => {
+    const k = idx[d];
+    const list = [];
+    if (k !== undefined) D.release.forEach((r, i) => { if (r === k) list.push(i); });
+    byDay[d] = list;
+    items.push(...list);
+  });
+
+  const c = {}, snd = {};
+  items.forEach(i => {
+    const f = D.items[i][4], k = kindOf(f);
+    c[k] = (c[k] || 0) + 1;
+    if (f & 4) snd[k] = (snd[k] || 0) + 1;
+  });
+  const mini = items.filter(i => isMini(D.items[i][4])).length;
+  const normal = items.length - mini;
+  const normalMove = items.filter(i => !isMini(D.items[i][4]) && moves(D.items[i][4])).length;
+
+  /* 순위 화~다음 월 */
+  const rankDays = [1,2,3,4,5,6,7].map(n => addDays(monday, n)).filter(d => idx[d] !== undefined);
+
+  /* 월요 무료 */
+  const free = (D.free && D.free[monday]) || [];
+
+  /* 자료가 모자란 주인지 */
+  const missing = days.filter(d => idx[d] === undefined);
+
+  return { monday, days, byDay, items, c, snd, mini, normal, normalMove,
+           rankDays, free, missing, end: addDays(monday, 4) };
+}
+
+/* 순위 200위 안의 움직임 비율 (연령대별) */
+function moveRatio(rankDays, top){
+  const out = {};
+  D.ages.forEach(a => {
+    let all = 0, mv = 0;
+    rankDays.forEach(d => {
+      const row = D.hot[a][idx[d]] || [];
+      row.slice(0, top).forEach(i => { all++; if (moves(D.items[i][4])) mv++; });
+    });
+    out[a] = all ? { all, mv, pct: Math.round(mv / all * 1000) / 10 } : null;
+  });
+  return out;
+}
+
+/* MD추천 — 그 주 신규 중 딱지가 붙은 것 */
+const mdOf = i => {
+  const v = T.items[D.items[i][0]];
+  return v && v.b ? true : false;
+};
+const mdKnown = i => {
+  const v = T.items[D.items[i][0]];
+  return v && v.b !== undefined;
+};
+
+/* 어떤 이모티콘이 그 주 순위에 든 최고 기록 (연령대별) */
+function bestIn(list, rankDays){
+  const out = {};
+  D.ages.forEach(a => {
+    let hit = 0, best = null;
+    list.forEach(i => {
+      let mine = null;
+      rankDays.forEach(d => {
+        const row = D.hot[a][idx[d]] || [];
+        const r = row.indexOf(i);
+        if (r >= 0 && (mine === null || r + 1 < mine)) mine = r + 1;
+      });
+      if (mine !== null){ hit++; if (best === null || mine < best) best = mine; }
+    });
+    out[a] = { hit, best, of: list.length };
+  });
+  return out;
+}
+
+/* ── 그리기 ──────────────────────────────── */
+function pct(n, d){ return d ? (Math.round(n / d * 1000) / 10).toFixed(1) : "0.0"; }
+
+function render(){
+  const w = week(weeks[cur]);
+  const mon = w.monday;
+
+  $("wk").innerHTML = `${mon.slice(0,4)}년 ${ko(mon)} ~ ${ko(w.end)}` +
+    ` <small>월~금 출시 · 순위 ${addDays(mon,1).slice(5)}~${addDays(mon,7).slice(5)}</small>`;
+  $("prev").disabled = cur === 0;
+  $("next").disabled = cur === weeks.length - 1;
+
+  const notes = [];
+  if (w.missing.length) notes.push(`자료가 없는 날: ${w.missing.map(ko).join(", ")}`);
+  if (w.rankDays.length < 7) notes.push(`순위 자료 ${w.rankDays.length}일치만 있습니다. (7일 기준)`);
+  $("warn").hidden = !notes.length;
+  $("warn").textContent = notes.join(" · ");
+
+  /* 앞선 주들 */
+  const past = [];
+  for (let k = Math.max(0, cur - BACK); k <= cur; k++) past.push(week(weeks[k]));
+
+  const ratio200 = moveRatio(w.rankDays, 200);
+  const ratio50 = moveRatio(w.rankDays, 50);
+
+  const md = w.items.filter(mdOf);
+  const known = w.items.filter(mdKnown).length;
+  const mdBest = md.length ? bestIn(md, w.rankDays) : null;
+  const allBest = bestIn(w.items, w.rankDays);
+
+  /* 1. 그 주 숫자 */
+  const kinds = KIND_ORDER.filter(k => w.c[k])
+    .map(k => `${k} ${w.c[k]}` + (w.snd[k] ? `(소리 ${w.snd[k]})` : "")).join(" · ");
+
+  let html = `
+  <section>
+    <h2>이번 주 신규 <small>${ko(mon)} ~ ${ko(w.end)}</small></h2>
+    <div class="sum">
+      <span><span class="big">${w.items.length}</span><span class="u">개</span></span>
+      <span>일반 <b>${w.normal}</b> · 미니 <b>${w.mini}</b></span>
+      <span>하루 평균 <b>${(w.items.length / 5).toFixed(1)}</b>개</span>
+      <span>일반 중 움직이는 것 <b>${pct(w.normalMove, w.normal)}%</b></span>
+    </div>
+    <div class="muted" style="margin-bottom:10px">${esc(kinds || "없음")}</div>
+    <table>
+      <thead><tr><th>요일</th><th>합계</th>${KIND_ORDER.map(k => `<th>${k}</th>`).join("")}</tr></thead>
+      <tbody>${w.days.map(d => {
+        const list = w.byDay[d];
+        const cc = {};
+        list.forEach(i => { const k = kindOf(D.items[i][4]); cc[k] = (cc[k] || 0) + 1; });
+        return `<tr><td>${ko(d)} ${DOW[toDate(d).getDay()]}</td><td class="num">${list.length}</td>` +
+          KIND_ORDER.map(k => `<td class="num">${cc[k] || ""}</td>`).join("") + `</tr>`;
+      }).join("")}</tbody>
+    </table>
+  </section>`;
+
+  /* 2. 앞선 주와 견주기 */
+  html += `
+  <section>
+    <h2>앞선 주와 견주기 <small>최근 ${past.length}주</small></h2>
+    <table>
+      <thead><tr><th>주</th><th>신규</th><th>하루평균</th><th>일반</th><th>미니</th>
+        ${KIND_ORDER.map(k => `<th>${k}</th>`).join("")}<th>일반 움직임</th><th>월요무료</th></tr></thead>
+      <tbody>${past.map(p => `
+        <tr class="${p.monday === mon ? "now" : ""}">
+          <td>${ko(p.monday)}~${ko(p.end)}${p.missing.length
+            ? `<span class="muted" title="자료 없는 날 ${p.missing.map(ko).join(", ")}"> (일부)</span>` : ""}</td>
+          <td class="num">${p.items.length}</td>
+          <td class="num">${(p.items.length / 5).toFixed(1)}</td>
+          <td class="num">${p.normal}</td><td class="num">${p.mini}</td>
+          ${KIND_ORDER.map(k => `<td class="num">${p.c[k] || ""}</td>`).join("")}
+          <td class="num">${pct(p.normalMove, p.normal)}%</td>
+          <td class="num">${p.free.length || ""}</td>
+        </tr>`).join("")}</tbody>
+    </table>
+  </section>`;
+
+  /* 3. 월요일 무료 */
+  html += `
+  <section>
+    <h2>월요일 무료 <small>${ko(mon)}</small></h2>` +
+    (w.free.length ? (() => {
+      const fc = {};
+      w.free.forEach(i => { const k = kindOf(D.items[i][4]); fc[k] = (fc[k] || 0) + 1; });
+      const fmini = w.free.filter(i => isMini(D.items[i][4])).length;
+      const newToday = w.free.filter(i => w.byDay[mon].includes(i)).length;
+      return `<div class="sum">
+          <span><span class="big">${w.free.length}</span><span class="u">개</span></span>
+          <span>미니 <b>${fmini}</b></span>
+          <span>그날 신규 <b>${newToday}</b></span>
+        </div>
+        <div class="muted">${KIND_ORDER.filter(k => fc[k]).map(k => `${k} ${fc[k]}`).join(" · ")}</div>
+        <ul class="items">${w.free.map(i => {
+          const [slug, t, cr, cid, f] = D.items[i];
+          return `<li><b>${esc(t)}</b>(${esc(cr)}) ${kindOf(f)}</li>`;
+        }).join("")}</ul>`;
+    })() : `<p class="none">자료가 없습니다. (9월 14일부터 모으기 시작했습니다)</p>`) +
+  `</section>`;
+
+  /* 4. 순위 구성 */
+  html += `
+  <section>
+    <h2>순위 안의 움직임 비율 <small>${w.rankDays.length}일치 · 연령대별</small></h2>
+    <table>
+      <thead><tr><th>연령대</th><th>200위 안 움직임</th><th>200위 안 멈춤</th><th>50위 안 움직임</th></tr></thead>
+      <tbody>${D.ages.map(a => {
+        const r = ratio200[a], r5 = ratio50[a];
+        if (!r) return "";
+        return `<tr><td>${a}</td><td class="num">${r.pct}%</td>
+          <td class="num">${(100 - r.pct).toFixed(1)}%</td>
+          <td class="num">${r5 ? r5.pct + "%" : ""}</td></tr>`;
+      }).join("")}</tbody>
+    </table>
+  </section>`;
+
+  /* 5. MD추천 */
+  html += `
+  <section>
+    <h2>MD추천 <small>이번 주 신규 중</small></h2>` +
+    (known === 0
+      ? `<p class="none">아직 확인된 이모티콘이 없습니다. 태그 수집이 끝나면 채워집니다.</p>`
+      : `<div class="sum">
+          <span><span class="big">${md.length}</span><span class="u">개</span></span>
+          <span class="muted">${w.items.length}개 중 ${known}개 확인함</span>
+        </div>` +
+        (md.length ? `
+        <table>
+          <thead><tr><th>연령대</th><th>MD추천 진입</th><th>최고순위</th>
+            <th>전체 신규 진입</th><th>최고순위</th></tr></thead>
+          <tbody>${D.ages.map(a => `
+            <tr><td>${a}</td>
+              <td class="num">${mdBest[a].hit} / ${md.length} (${pct(mdBest[a].hit, md.length)}%)</td>
+              <td class="num">${mdBest[a].best ?? "—"}</td>
+              <td class="num">${allBest[a].hit} / ${w.items.length} (${pct(allBest[a].hit, w.items.length)}%)</td>
+              <td class="num">${allBest[a].best ?? "—"}</td>
+            </tr>`).join("")}</tbody>
+        </table>
+        <ul class="items">${md.map(i => {
+          const [slug, t, cr, cid, f] = D.items[i];
+          return `<li><b>${esc(t)}</b>(${esc(cr)}) ${kindOf(f)}</li>`;
+        }).join("")}</ul>` : "")) +
+  `</section>`;
+
+  $("body").innerHTML = html;
+  // 좁은 화면에서 표가 넘치면 그 표만 옆으로 밀 수 있게 감쌉니다
+  $("body").querySelectorAll("table").forEach(t => {
+    const box = document.createElement("div");
+    box.className = "tw";
+    t.parentNode.insertBefore(box, t);
+    box.appendChild(t);
+  });
+  $("out").textContent = asText(w, past, ratio200, ratio50, md, known, mdBest, allBest);
+}
+
+/* ── 글로 정리 ───────────────────────────── */
+function asText(w, past, r200, r50, md, known, mdBest, allBest){
+  const L = [];
+  const mon = w.monday;
+  L.push(`[${mon.slice(5).replace("-","")}~${addDays(mon,6).slice(5).replace("-","")} 이모티콘 주간정리 자료]`);
+  L.push("");
+  L.push(`■ 이번 주 신규 (${ko(mon)}~${ko(w.end)})`);
+  L.push(`신규 ${w.items.length}개 (일반 ${w.normal} 미니 ${w.mini} / ` +
+         KIND_ORDER.filter(k => w.c[k]).map(k => `${k}${w.c[k]}`).join(" ") + ")");
+  L.push(`하루 평균 ${(w.items.length / 5).toFixed(1)}개 · 일반 중 움직이는 것 ${pct(w.normalMove, w.normal)}%`);
+  L.push("");
+  w.days.forEach(d => {
+    const list = w.byDay[d], cc = {};
+    list.forEach(i => { const k = kindOf(D.items[i][4]); cc[k] = (cc[k] || 0) + 1; });
+    L.push(`${DOW[toDate(d).getDay()]}요일: ${list.length} (` +
+           KIND_ORDER.filter(k => cc[k]).map(k => `${k}${cc[k]}`).join(" ") + ")");
+  });
+
+  L.push("");
+  L.push(`■ 앞선 주`);
+  past.forEach(p => {
+    if (p.monday === w.monday) return;
+    L.push(`${ko(p.monday)}~${ko(p.end)}${p.missing.length ? " (일부)" : ""} ` +
+           `${p.items.length}개 (평균 ${(p.items.length/5).toFixed(1)}) ` +
+           `일반${p.normal} 미니${p.mini} / 일반 움직임 ${pct(p.normalMove, p.normal)}%`);
+  });
+
+  L.push("");
+  L.push(`■ 월요일 무료`);
+  if (w.free.length){
+    const fmini = w.free.filter(i => isMini(D.items[i][4])).length;
+    L.push(`${w.free.length}개 (미니 ${fmini})`);
+    w.free.forEach(i => {
+      const [slug, t, cr, cid, f] = D.items[i];
+      L.push(`  ${t}(${cr}) ${kindOf(f)}`);
+    });
+  } else L.push("자료 없음");
+
+  L.push("");
+  L.push(`■ 순위 안의 움직임 비율 (${w.rankDays.length}일치)`);
+  D.ages.forEach(a => {
+    if (!r200[a]) return;
+    L.push(`${a}: 200위 ${r200[a].pct}% / 50위 ${r50[a] ? r50[a].pct : "-"}%`);
+  });
+
+  L.push("");
+  L.push(`■ MD추천`);
+  if (known === 0) L.push("아직 확인 안 됨");
+  else {
+    L.push(`${md.length}개 (${w.items.length}개 중 ${known}개 확인)`);
+    if (md.length) D.ages.forEach(a => {
+      L.push(`${a}: MD ${mdBest[a].hit}/${md.length} (최고 ${mdBest[a].best ?? "-"}위) · ` +
+             `전체신규 ${allBest[a].hit}/${w.items.length} (최고 ${allBest[a].best ?? "-"}위)`);
+    });
+  }
+
+  L.push("");
+  L.push(`* 출시는 월~금, 순위는 화~다음 월 기준입니다.`);
+  L.push(`* 만든 시각 ${D.generatedAt || ""}`);
+  return L.join("\n");
+}
+
+/* ── 버튼 ───────────────────────────────── */
+$("prev").onclick = () => { cur--; render(); };
+$("next").onclick = () => { cur++; render(); };
+$("last").onclick = () => {
+  const today = new Date(Date.now() + 9*3600*1000).toISOString().slice(0, 10);
+  for (let k = weeks.length - 1; k >= 0; k--)
+    if (addDays(weeks[k], 7) <= today){ cur = k; break; }
+  render();
+};
+$("copy").onclick = async () => {
+  await navigator.clipboard.writeText($("out").textContent);
+  $("copy").textContent = "복사됨"; $("copy").classList.add("done");
+  setTimeout(() => { $("copy").textContent = "전부 글로 복사"; $("copy").classList.remove("done"); }, 1500);
+};
+$("download").onclick = () => {
+  const blob = new Blob(["\uFEFF" + $("out").textContent], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `주간정리-${weeks[cur]}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+render();
+</script>
+</body>
+</html>

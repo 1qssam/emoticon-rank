@@ -16,7 +16,12 @@
   .wrap{max-width:880px;margin:0 auto;padding:24px 20px 80px}
   header{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;flex-wrap:wrap}
   h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
-  header a{margin-left:auto;font-size:13px;color:var(--muted)}
+  header a{font-size:13px;color:var(--muted)}
+  .tools{margin-left:auto;display:flex;gap:12px;flex-wrap:wrap}
+  .tools a{font-size:13px;color:var(--muted);text-decoration:none}
+  .tools a:hover{color:var(--ink);text-decoration:underline}
+  .tools a[aria-current]{color:var(--ink);font-weight:600}
+
 
   .tabs{display:flex;gap:5px;margin-bottom:14px}
   .tab{border:0;background:none;padding:7px 14px;border-radius:8px;font-size:13.5px;
@@ -77,8 +82,14 @@
 <div class="wrap">
   <header>
     <h1>블로그용 텍스트</h1>
-    <a href="card.html">캡처용 순위표</a>
-    <a href="export.html" style="margin-left:12px">스프레드시트</a>
+    <nav class="tools">
+      <a href="index.html">사이트</a>
+      <a href="week.html">주간정리</a>
+      <a href="post.html" aria-current="page">블로그용 텍스트</a>
+      <a href="card.html">캡처용 순위표</a>
+      <a href="db.html">전체 목록</a>
+      <a href="export.html">스프레드시트</a>
+    </nav>
   </header>
 
   <div class="tabs" role="tablist">

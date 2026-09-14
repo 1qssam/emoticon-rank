@@ -17,6 +17,11 @@
   header{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;flex-wrap:wrap}
   h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
   header a{font-size:13px;color:var(--muted)}
+  .tools{margin-left:auto;display:flex;gap:12px;flex-wrap:wrap}
+  .tools a{font-size:13px;color:var(--muted);text-decoration:none}
+  .tools a:hover{color:var(--ink);text-decoration:underline}
+  .tools a[aria-current]{color:var(--ink);font-weight:600}
+
   header .sp{flex:1}
 
   .opts{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:12px;
@@ -55,10 +60,14 @@
 <div class="wrap">
   <header>
     <h1>스프레드시트 내보내기</h1>
-    <span class="sp"></span>
-    <a href="db.html">전체 목록</a>
-    <a href="post.html">블로그용 텍스트</a>
-    <a href="card.html">캡처용 순위표</a>
+    <nav class="tools">
+      <a href="index.html">사이트</a>
+      <a href="week.html">주간정리</a>
+      <a href="post.html">블로그용 텍스트</a>
+      <a href="card.html">캡처용 순위표</a>
+      <a href="db.html">전체 목록</a>
+      <a href="export.html" aria-current="page">스프레드시트</a>
+    </nav>
   </header>
 
   <div class="opts">
