@@ -18,11 +18,6 @@
   h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
   header .sp{flex:1}
   header a{font-size:13px;color:var(--muted)}
-  .tools{margin-left:auto;display:flex;gap:12px;flex-wrap:wrap}
-  .tools a{font-size:13px;color:var(--muted);text-decoration:none}
-  .tools a:hover{color:var(--ink);text-decoration:underline}
-  .tools a[aria-current]{color:var(--ink);font-weight:600}
-
 
   .opts{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px;
     padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
@@ -60,14 +55,9 @@
 <div class="wrap">
   <header>
     <h1>이모티콘 전체 목록</h1>
-    <nav class="tools">
-      <a href="index.html">사이트</a>
-      <a href="week.html">주간정리</a>
-      <a href="post.html">블로그용 텍스트</a>
-      <a href="card.html">캡처용 순위표</a>
-      <a href="db.html" aria-current="page">전체 목록</a>
-      <a href="export.html">스프레드시트</a>
-    </nav>
+    <span class="sp"></span>
+    <a href="export.html">스프레드시트 내보내기</a>
+    <a href="index.html">인기 순위</a>
   </header>
 
   <div class="opts">
@@ -120,11 +110,20 @@ const mdOf = slug => {
 const esc = s => String(s === undefined || s === null ? "" : s)
   .replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
+/* 전체 순위에 든 적 없으면 미니 순위로 적습니다 */
+const rankText = r => r.bestRank ? String(r.bestRank)
+                    : r.miniRank ? `미니 ${r.miniRank}` : "";
+const ageText = r => r.ageBest ? `${AGE(r.ageBest[0])} ${r.ageBest[1]}위`
+                   : r.ageMini ? `미니 ${AGE(r.ageMini[0])} ${r.ageMini[1]}위` : "";
+
 function kindOf(flags){
   if (flags & 2) return "큰티";
   if (flags & 1) return (flags & 8) ? "미니움티" : "미니멈티";
   return (flags & 8) ? "움티" : "멈티";
 }
+
+/* 연령대 이름은 짧게 적습니다 */
+const AGE = a => a === "50대이상" ? "50대" : a;
 
 /* 연령대별 최고 순위 */
 const best = {};
@@ -132,6 +131,15 @@ D.ages.forEach(a => {
   best[a] = {};
   D.hot[a].forEach((row, k) => row.forEach((it, i) => {
     if (!best[a][it] || i + 1 < best[a][it][0]) best[a][it] = [i + 1, k];
+  }));
+});
+
+/* 미니만 따로 본 순위 (2026-09-15부터 모으기 시작했습니다) */
+const bestMini = {};
+D.ages.forEach(a => {
+  bestMini[a] = {};
+  ((D.mini || {})[a] || []).forEach((row, k) => row.forEach((it, i) => {
+    if (!bestMini[a][it] || i + 1 < bestMini[a][it][0]) bestMini[a][it] = [i + 1, k];
   }));
 });
 /* 월요일 무료 이벤트 — 항목 번호 → 풀린 날짜들 */
@@ -156,6 +164,13 @@ const ROWS = D.items.map((m, i) => {
     const r = best[a][i];
     if (r && (!ageBest || r[0] < ageBest[1])) ageBest = [a, r[0]];
   });
+
+  const bm = bestMini["전체"][i];
+  let ageMini = null;
+  D.ages.slice(1).forEach(a => {
+    const r = bestMini[a][i];
+    if (r && (!ageMini || r[0] < ageMini[1])) ageMini = [a, r[0]];
+  });
   return {
     i, slug, title, creator, cid, series: series || "", thumb,
     kind: kindOf(flags),
@@ -171,6 +186,9 @@ const ROWS = D.items.map((m, i) => {
     bestRank: b ? b[0] : null,
     bestDate: b ? D.dates[b[1]] : null,
     ageBest,
+    miniRank: bm ? bm[0] : null,
+    miniDate: bm ? D.dates[bm[1]] : null,
+    ageMini,
     free: FREE[i] ? FREE[i].join(", ") : "",
     first: firstSeen[i] !== undefined ? D.dates[firstSeen[i]] : null,
     last: lastSeen[i] !== undefined ? D.dates[lastSeen[i]] : null,
@@ -197,8 +215,8 @@ const COLS = [
   {k:"count",  label:"개수",    cls:"num", cell:r => r.count ?? ""},
   {k:"price",  label:"가격",    cls:"num", cell:r => r.price ? r.price.toLocaleString() : ""},
   {k:"released",label:"출시일", cls:"num", cell:r => r.released ?? ""},
-  {k:"bestRank",label:"최고순위",cls:"num", cell:r => r.bestRank ?? ""},
-  {k:"ageBest",label:"연령대 최고", cell:r => r.ageBest ? `${r.ageBest[0]} ${r.ageBest[1]}위` : ""},
+  {k:"bestRank",label:"최고순위",cls:"num", cell:r => rankText(r)},
+  {k:"ageBest",label:"연령대 최고", cell:r => ageText(r)},
   {k:"first",  label:"첫 등장", cls:"num", cell:r => r.first ?? ""},
   {k:"last",   label:"마지막 등장", cls:"num", cell:r => r.last ?? ""},
   {k:"md",     label:"MD",      cell:r => r.md},
@@ -211,14 +229,17 @@ function defaultOrder(a, b){
   const ga = a.released ? 1 : 0, gb = b.released ? 1 : 0;
   if (ga !== gb) return ga - gb;
   const x = ga ? a.released : (a.first || ""), y = gb ? b.released : (b.first || "");
-  if (x === y) return (a.bestRank || 9999) - (b.bestRank || 9999);
+  const ra = a.bestRank ?? (a.miniRank ? 1000 + a.miniRank : 9999);
+  const rb = b.bestRank ?? (b.miniRank ? 1000 + b.miniRank : 9999);
+  if (x === y) return ra - rb;
   return x < y ? -1 : 1;
 }
 
 let sortKey = "order", asc = true, filtered = [];
 
 function value(r, k){
-  if (k === "ageBest") return r.ageBest ? r.ageBest[1] : null;
+  if (k === "bestRank") return r.bestRank ?? (r.miniRank ? 1000 + r.miniRank : null);
+  if (k === "ageBest") return r.ageBest ? r.ageBest[1] : (r.ageMini ? 1000 + r.ageMini[1] : null);
   if (k === "tags") return r.tags.join(",");
   if (k === "md") return {"MD":0, "":1, "-":2}[r.md];   // MD가 위로
   return r[k];
@@ -303,8 +324,9 @@ $("copy").onclick = async () => {
                 "출시일","최고순위","최고순위일","연령대최고","첫등장","마지막등장","slug","링크","MD","월요무료"];
   const rows = filtered.map(r => [
     r.title, r.creator, r.series, r.kind, r.sound, r.tags.join(", "),
-    r.count ?? "", r.price ?? "", r.released ?? "", r.bestRank ?? "", r.bestDate ?? "",
-    r.ageBest ? `${r.ageBest[0]} ${r.ageBest[1]}위` : "", r.first ?? "", r.last ?? "",
+    r.count ?? "", r.price ?? "", r.released ?? "",
+    rankText(r), r.bestDate ?? r.miniDate ?? "",
+    ageText(r), r.first ?? "", r.last ?? "",
     r.slug, `https://e.kakao.com/t/${r.slug}`, r.md, r.free,
   ]);
   const lines = ($("withhead").checked ? [head] : []).concat(rows);
