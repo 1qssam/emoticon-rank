@@ -147,12 +147,20 @@ const FREE = {};
 Object.entries(D.free || {}).forEach(([date, nums]) =>
   nums.forEach(i => (FREE[i] = FREE[i] || []).push(date)));
 
-/* 순위에 처음/마지막으로 보인 날 (연령대 포함 어디든) */
+/* 순위에 처음/마지막으로 보인 날 (연령대·미니 포함 어디든) */
 const firstSeen = {}, lastSeen = {};
-D.ages.forEach(a => D.hot[a].forEach((row, k) => row.forEach(it => {
-  if (firstSeen[it] === undefined || k < firstSeen[it]) firstSeen[it] = k;
-  if (lastSeen[it] === undefined || k > lastSeen[it]) lastSeen[it] = k;
-})));
+const mark = row => row.forEach(it => {
+  if (firstSeen[it] === undefined) firstSeen[it] = k;
+  lastSeen[it] = k;
+});
+let k = 0;
+D.dates.forEach((_, day) => {
+  k = day;
+  D.ages.forEach(a => {
+    mark(D.hot[a][day] || []);
+    mark(((D.mini || {})[a] || [])[day] || []);
+  });
+});
 
 /* 한 줄 만들기 */
 const ROWS = D.items.map((m, i) => {
