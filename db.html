@@ -18,6 +18,11 @@
   h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
   header .sp{flex:1}
   header a{font-size:13px;color:var(--muted)}
+  .tools{margin-left:auto;display:flex;gap:12px;flex-wrap:wrap}
+  .tools a{font-size:13px;color:var(--muted);text-decoration:none}
+  .tools a:hover{color:var(--ink);text-decoration:underline}
+  .tools a[aria-current]{color:var(--ink);font-weight:600}
+
 
   .opts{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px;
     padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
@@ -55,9 +60,14 @@
 <div class="wrap">
   <header>
     <h1>이모티콘 전체 목록</h1>
-    <span class="sp"></span>
-    <a href="export.html">스프레드시트 내보내기</a>
-    <a href="index.html">인기 순위</a>
+    <nav class="tools">
+      <a href="index.html">사이트</a>
+      <a href="week.html">주간정리</a>
+      <a href="post.html">블로그용 텍스트</a>
+      <a href="card.html">캡처용 순위표</a>
+      <a href="db.html" aria-current="page">전체 목록</a>
+      <a href="export.html">스프레드시트</a>
+    </nav>
   </header>
 
   <div class="opts">
