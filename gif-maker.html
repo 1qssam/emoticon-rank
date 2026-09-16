@@ -8,7 +8,7 @@
 <style>
   :root{
     --paper:#fcfcfb; --ink:#17181a; --muted:#83878c; --line:#e7e6e1; --panel:#f5f4f0;
-    --accent:#0f8f4d; --warn:#c2564b; --mark:#fee500;
+    --accent:#0f8f4d; --warn:#c2564b; --mark:#fee500; --pick:#2f6fd0;
     --checker:#e9e8e3;
   }
   *{box-sizing:border-box}
@@ -16,36 +16,31 @@
   body{background:var(--paper);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
     font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
-    display:flex;flex-direction:column;min-height:100%}
+    display:flex;flex-direction:column;height:100%;overflow:hidden}
   [hidden]{display:none !important}
 
   /* ── 맨 위 줄 ── */
-  .top{display:flex;align-items:center;gap:12px;padding:12px 18px;
-    border-bottom:1px solid var(--line);background:#fff;flex-wrap:wrap}
+  .top{display:flex;align-items:center;gap:10px;padding:9px 16px;
+    border-bottom:1px solid var(--line);background:#fff;flex-wrap:wrap;flex:none}
   .top h1{font-size:15px;font-weight:700;margin:0;letter-spacing:-.01em}
-  .top .sub{font-size:12.5px;color:var(--muted)}
+  .top .sub{font-size:12px;color:var(--muted)}
   .top .sp{flex:1}
+  .bggroup{display:flex;align-items:center;gap:6px;padding-left:14px;margin-left:4px;
+    border-left:1px solid var(--line)}
+  .bggroup .lb{font-size:12px;color:var(--muted)}
 
   .btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;
-    padding:7px 13px;font-size:13px;cursor:pointer;font-family:inherit}
+    padding:6px 12px;font-size:13px;cursor:pointer;font-family:inherit}
   .btn:hover{border-color:var(--ink)}
   .btn:disabled{opacity:.4;cursor:default;border-color:var(--line)}
   .btn.solid{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
   .btn.solid:hover{filter:brightness(.94)}
+  .btn.solid:disabled{background:#b7c9bf;border-color:#b7c9bf}
   .btn.ghost{border-color:transparent;color:var(--muted);padding:5px 8px;font-size:12.5px}
   .btn.ghost:hover{color:var(--ink)}
   .btn.sm{padding:4px 9px;font-size:12px}
 
-  /* ── 본문 두 칸 ── */
-  .cols{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 380px;min-height:0}
-  .stage{display:flex;flex-direction:column;min-width:0;background:var(--panel)}
-  .side{border-left:1px solid var(--line);background:#fff;display:flex;flex-direction:column;min-height:0}
-
-  /* ── 미리보기 ── */
-  .bgbar{display:flex;align-items:center;gap:10px;padding:10px 16px;flex-wrap:wrap;
-    border-bottom:1px solid var(--line);background:#fff}
-  .bgbar .lb{font-size:12.5px;color:var(--muted)}
-  .swatch{width:24px;height:24px;border-radius:6px;border:1px solid #d8d6d0;cursor:pointer;padding:0}
+  .swatch{width:22px;height:22px;border-radius:6px;border:1px solid #d8d6d0;cursor:pointer;padding:0}
   .swatch[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:1px}
   .checker{background-image:
       linear-gradient(45deg,var(--checker) 25%,transparent 25%),
@@ -55,71 +50,103 @@
     background-size:16px 16px;
     background-position:0 0,0 8px,8px -8px,-8px 0;
     background-color:#fff}
+  .hexin{width:78px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+    border:1px solid var(--line);border-radius:6px;padding:4px 6px;text-transform:uppercase}
+  .rgbin{width:38px;font-size:12px;border:1px solid var(--line);border-radius:6px;
+    padding:4px 4px;text-align:center}
 
-  .canvaswrap{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;min-height:0}
-  #view{max-width:100%;max-height:100%;border:1px solid #cfcdc7;display:block}
+  /* ── 본문 두 칸 ── */
+  .cols{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 500px;min-height:0}
+  .stage{display:flex;flex-direction:column;min-width:0;background:var(--panel);min-height:0}
+  .side{border-left:1px solid var(--line);background:#fff;display:flex;flex-direction:column;min-height:0}
+
+  /* ── 미리보기 ── */
+  .canvaswrap{flex:1;display:flex;align-items:center;justify-content:center;gap:22px;
+    padding:16px;min-height:0;overflow:auto}
+  .viewbox{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .viewbox .cap{font-size:11.5px;color:var(--muted)}
+  #view{border:1px solid #cfcdc7;display:block}
+  #mini{border:1px solid #cfcdc7;display:block;width:185px;height:160px}
   .empty{color:var(--muted);font-size:13.5px;text-align:center;line-height:1.9}
 
-  .player{display:flex;align-items:center;gap:10px;padding:10px 16px;
-    border-top:1px solid var(--line);background:#fff;flex-wrap:wrap}
-  .pbtn{width:34px;height:30px;border:1px solid var(--line);background:#fff;border-radius:7px;
-    cursor:pointer;font-size:13px;line-height:1;color:var(--ink)}
+  .player{display:flex;align-items:center;gap:8px;padding:8px 16px;
+    border-top:1px solid var(--line);background:#fff;flex-wrap:wrap;flex:none}
+  .pbtn{width:32px;height:28px;border:1px solid var(--line);background:#fff;border-radius:7px;
+    cursor:pointer;font-size:12.5px;line-height:1;color:var(--ink)}
   .pbtn:hover{border-color:var(--ink)}
+  .zoom{display:flex;align-items:center;gap:5px;margin-left:6px;font-size:12px;color:var(--muted)}
   .player .info{margin-left:auto;font-size:12.5px;color:var(--muted);
     font-variant-numeric:tabular-nums;display:flex;gap:14px}
 
   /* ── 설정 ── */
-  .opts{border-top:1px solid var(--line);background:#fff;padding:12px 16px 14px}
-  .row{display:flex;align-items:center;gap:9px;margin-bottom:9px;flex-wrap:wrap}
-  .row > label{font-size:12.5px;color:#5c6064;width:96px;flex:none}
+  .opts{border-top:1px solid var(--line);background:#fff;padding:10px 16px 12px;flex:none}
+  .row{display:flex;align-items:center;gap:9px;margin-bottom:8px;flex-wrap:wrap}
+  .row:last-of-type{margin-bottom:0}
+  .row > label{font-size:12.5px;color:#5c6064;width:78px;flex:none}
   input[type=number],input[type=text],select{font-family:inherit;font-size:13px;
     border:1px solid var(--line);border-radius:7px;padding:6px 8px;background:#fff;color:var(--ink)}
-  input[type=number]{width:82px;text-align:center}
-  input[type=range]{accent-color:var(--accent);flex:1;max-width:200px}
+  input[type=number]{width:78px;text-align:center}
   .hint{font-size:12px;color:var(--muted)}
-  .warn{font-size:12.5px;color:var(--warn);margin:4px 0 0}
+  .warn{font-size:12.5px;color:var(--warn)}
 
   /* ── 프레임 목록 ── */
-  .sidehead{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .sidehead{display:flex;align-items:center;gap:8px;padding:10px 14px;
+    border-bottom:1px solid var(--line);flex:none}
   .sidehead h2{font-size:14px;font-weight:600;margin:0;flex:1}
-  .sidehead .cnt{font-size:12.5px;color:var(--muted)}
   .drop{margin:14px;border:1.5px dashed #cfcdc7;border-radius:10px;padding:30px 16px;
     text-align:center;color:var(--muted);font-size:13px;line-height:1.8;cursor:pointer}
   .drop.on{border-color:var(--accent);background:#f2faf5;color:var(--ink)}
   .frames{flex:1;overflow:auto;padding:10px 12px 16px;
-    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start}
-  .card{border:1px solid var(--line);border-radius:9px;background:#fff;padding:7px;position:relative}
-  .card.drag{opacity:.4}
-  .card.over{border-color:var(--accent);box-shadow:0 0 0 2px #d6f0e2}
-  .card.locked{background:#fffdf1;border-color:#ecdfae}
-  .card .no{position:absolute;top:9px;left:9px;background:rgba(23,24,26,.72);color:#fff;
-    font-size:11px;border-radius:5px;padding:1px 5px;font-variant-numeric:tabular-nums}
-  .card .lock{position:absolute;top:7px;right:7px;width:20px;height:20px;cursor:pointer;
-    accent-color:#b58a00;margin:0}
-  .card .th{width:100%;height:92px;border-radius:6px;object-fit:contain;display:block;cursor:grab}
-  .card .dl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px}
-  .card .dl input{width:58px;padding:3px;text-align:center;font-size:12px;
+    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;align-content:start}
+  .card{border:1px solid var(--line);border-radius:9px;background:#fff;padding:6px;
+    position:relative;cursor:grab}
+  .card.drag{opacity:.35}
+  .card .no{position:absolute;top:8px;left:8px;background:rgba(23,24,26,.72);color:#fff;
+    font-size:10.5px;border-radius:5px;padding:1px 5px;font-variant-numeric:tabular-nums}
+  .card .th{width:100%;height:74px;border-radius:6px;object-fit:contain;display:block}
+  .card .dl{display:flex;align-items:center;justify-content:center;gap:3px;margin-top:5px}
+  .card .dl input{width:50px;padding:2px;text-align:center;font-size:11.5px;
     border:1px solid var(--line);border-radius:5px;font-family:inherit}
-  .card .dl input:disabled{background:#f6f4ea;color:#8a8577}
-  .card .tools{display:flex;gap:4px;justify-content:center;margin-top:5px}
+  .card .x{position:absolute;top:5px;right:5px;width:19px;height:19px;border:0;border-radius:5px;
+    background:rgba(255,255,255,.88);color:var(--muted);font-size:11px;line-height:1;cursor:pointer}
+  .card .x:hover{background:var(--warn);color:#fff}
+  .card .bad{outline:2px solid var(--warn);outline-offset:-1px;border-radius:6px}
+  /* 끌어서 옮길 때 들어갈 자리 */
+  .card.before::before,.card.after::after{content:"";position:absolute;top:4px;bottom:4px;width:3px;
+    background:var(--pick);border-radius:2px}
+  .card.before::before{left:-6px}
+  .card.after::after{right:-6px}
 
   /* ── 결과 ── */
-  dialog{border:0;border-radius:14px;padding:0;max-width:560px;width:calc(100% - 32px);
+  dialog{border:0;border-radius:14px;padding:0;max-width:520px;width:calc(100% - 32px);
     box-shadow:0 16px 50px rgba(0,0,0,.22);color:var(--ink)}
-  dialog::backdrop{background:rgba(23,24,26,.4)}
+  dialog::backdrop{background:rgba(23,24,26,.42)}
   .result{padding:20px}
-  .result h3{margin:0 0 2px;font-size:16px}
+  .result h3{margin:0 0 12px;font-size:16px}
+  .facts{background:var(--panel);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px}
+  .facts div{display:flex;justify-content:space-between;padding:3px 0}
+  .facts .b{border-top:1px solid var(--line);margin-top:6px;padding-top:8px;font-weight:600}
+  .facts .ok{color:var(--accent);font-weight:600}
+  .facts .no{color:var(--warn);font-weight:600}
   .bar{height:6px;background:var(--line);border-radius:999px;overflow:hidden;margin:10px 0}
   .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
-  .result img{max-width:100%;max-height:46vh;border:1px solid var(--line);border-radius:8px;display:block}
-  .result .btns{display:flex;gap:8px;margin-top:14px}
-  .result .btns > *{flex:1;text-align:center;text-decoration:none}
+  .result img{max-width:100%;max-height:38vh;border:1px solid var(--line);border-radius:8px;display:block;margin:0 auto}
+  .namerow{display:flex;align-items:center;gap:8px;margin-top:14px}
+  .namerow label{font-size:12.5px;color:#5c6064;flex:none}
+  .namerow input{flex:1;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+  .namerow .ext{font-size:12.5px;color:var(--muted)}
+  .btns{display:flex;gap:8px;margin-top:12px}
+  .btns > *{flex:1;text-align:center;text-decoration:none;
+    display:flex;align-items:center;justify-content:center;padding:9px 0;border-radius:8px}
 
+  @media (max-width:1100px){ .cols{grid-template-columns:minmax(0,1fr) 400px} }
   @media (max-width:900px){
+    body{overflow:auto;height:auto}
     .cols{grid-template-columns:1fr}
     .side{border-left:0;border-top:1px solid var(--line)}
-    .canvaswrap{min-height:260px}
+    .canvaswrap{min-height:240px;flex-wrap:wrap}
     .row > label{width:100%}
+    .frames{grid-template-columns:repeat(3,minmax(0,1fr))}
   }
 </style>
 </head>
@@ -127,31 +154,41 @@
 
 <div class="top">
   <h1>GIF 만들기</h1>
-  <span class="sub">원큐쌤의 이모티콘 클래스 · 수강생용</span>
+  <span class="sub">원큐쌤의 이모티콘 클래스</span>
+
+  <span class="bggroup">
+    <span class="lb">배경</span>
+    <button class="swatch checker" data-bg="checker" aria-pressed="true" title="투명"></button>
+    <button class="swatch" data-bg="#ffffff" style="background:#fff" title="흰색"></button>
+    <button class="swatch" data-bg="#1e1e1e" style="background:#1e1e1e" title="검정"></button>
+    <span class="lb">직접</span>
+    <input type="color" id="bgpick" value="#b2c7d9" title="색 고르기"
+      style="width:24px;height:24px;padding:0;border:1px solid var(--line);border-radius:6px;background:#fff">
+    <input type="text" class="hexin" id="bghex" value="#B2C7D9" maxlength="7" aria-label="HEX">
+    <input type="number" class="rgbin" id="bgr" min="0" max="255" aria-label="R">
+    <input type="number" class="rgbin" id="bgg" min="0" max="255" aria-label="G">
+    <input type="number" class="rgbin" id="bgb" min="0" max="255" aria-label="B">
+  </span>
+
   <span class="sp"></span>
-  <button class="btn" id="reset">처음으로</button>
+  <button class="btn" id="reset">초기화</button>
   <button class="btn solid" id="make" disabled>GIF 만들기</button>
 </div>
 
 <div class="cols">
   <!-- 왼쪽: 미리보기와 설정 -->
   <div class="stage">
-    <div class="bgbar">
-      <span class="lb">미리보기 배경</span>
-      <button class="swatch checker" data-bg="checker" aria-pressed="true" title="투명"></button>
-      <button class="swatch" data-bg="#ffffff" style="background:#fff" title="흰색"></button>
-      <button class="swatch" data-bg="#1e1e1e" style="background:#1e1e1e" title="검정"></button>
-      <button class="swatch" data-bg="#fee500" style="background:#fee500" title="카카오 노랑"></button>
-      <button class="swatch" data-bg="#b2c7d9" style="background:#b2c7d9" title="카톡 배경"></button>
-      <input type="color" id="bgpick" value="#ff9ecd" title="직접 고르기"
-        style="width:28px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:#fff">
-      <span class="hint">배경은 눈으로 보기 위한 것입니다. 만들어진 GIF는 투명합니다.</span>
-    </div>
-
     <div class="canvaswrap" id="canvaswrap">
       <p class="empty" id="stageempty">오른쪽에 PNG 파일을 넣으면 여기에서 움직임을 볼 수 있습니다.<br>
         파일 이름 순서대로 들어갑니다.</p>
-      <canvas id="view" hidden></canvas>
+      <div class="viewbox" id="bigbox" hidden>
+        <canvas id="view"></canvas>
+        <span class="cap" id="bigcap"></span>
+      </div>
+      <div class="viewbox" id="minibox" hidden>
+        <canvas id="mini" width="185" height="160"></canvas>
+        <span class="cap">블로그에서 보이는 크기 185 × 160</span>
+      </div>
     </div>
 
     <div class="player">
@@ -159,6 +196,11 @@
       <button class="pbtn" id="play" title="재생">▶</button>
       <button class="pbtn" id="stop" title="정지">■</button>
       <button class="pbtn" id="last" title="마지막으로">⏭</button>
+      <span class="zoom">
+        <button class="pbtn" id="zout" title="축소">–</button>
+        <b id="zval" style="font-variant-numeric:tabular-nums;color:var(--ink);min-width:38px;text-align:center">맞춤</b>
+        <button class="pbtn" id="zin" title="확대">+</button>
+      </span>
       <span class="info">
         <span id="pos">0 / 0 프레임</span>
         <span id="total">전체 시간 0.00초</span>
@@ -171,39 +213,35 @@
         <input type="number" id="w" value="740" min="1" max="2000"> ×
         <input type="number" id="h" value="640" min="1" max="2000">
         <button class="btn sm" id="ogq">OGQ 기본값</button>
-        <span class="hint">OGQ 애니메이션 스티커는 740 × 640</span>
+        <span class="hint">OGQ 애니메이션 스티커는 740 × 640 · 100프레임 이하 · 1MB 이하</span>
       </div>
       <div class="row">
         <label for="bulk">전체 속도</label>
-        <input type="number" id="bulk" value="10" min="1" max="1000">
-        <span class="hint">1/100초 단위 · <b id="fps">10.0 FPS</b> · 넣으면 잠기지 않은 프레임이 모두 바뀝니다</span>
-      </div>
-      <div class="row">
-        <label for="alpha">반투명 기준</label>
-        <input type="range" id="alpha" min="1" max="254" value="128">
-        <span class="hint"><b id="alphav">128</b> 미만은 투명, 이상은 불투명으로 바뀝니다</span>
+        <input type="number" id="bulk" value="0.10" step="0.01" min="0.01"> <span class="hint">초</span>
+        <span class="hint">넣으면 모든 프레임이 이 속도로 바뀝니다</span>
       </div>
       <div class="row">
         <label for="repeat">반복</label>
         <select id="repeat">
           <option value="0" selected>무한 반복</option>
-          <option value="1">1번만</option>
+          <option value="1">1번</option>
+          <option value="2">2번</option>
           <option value="3">3번</option>
           <option value="4">4번</option>
         </select>
-        <span class="hint">OGQ는 무한 반복입니다</span>
+        <span class="hint">OGQ는 무한 반복입니다. 첫 번째 프레임이 미리보기 이미지로 쓰입니다.</span>
       </div>
-      <p class="warn" id="warn" hidden></p>
+      <div class="row" id="warnrow" hidden>
+        <label></label><span class="warn" id="warn"></span>
+      </div>
     </div>
   </div>
 
   <!-- 오른쪽: 프레임 -->
   <aside class="side">
     <div class="sidehead">
-      <h2>프레임 <span class="cnt" id="fcnt">0</span></h2>
+      <h2>프레임 <span class="hint" id="fcnt">0 / 100</span></h2>
       <button class="btn sm" id="addbtn">이미지 추가</button>
-      <button class="btn ghost" id="lockall">전체 잠금</button>
-      <button class="btn ghost" id="clear">비우기</button>
     </div>
     <div id="dropzone"></div>
     <div class="frames" id="frames"></div>
@@ -223,112 +261,129 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;
 
 /* 투명으로 쓸 색. 그림에 거의 쓰이지 않는 색이라야 합니다. */
 const MAGIC = { r: 254, g: 0, b: 254, hex: 0xfe00fe };
+const ALPHA_CUT = 128;          // GIF는 반투명을 담지 못해 이 값으로 자릅니다
 const MAX_FRAMES = 100;
+const MAX_BYTES = 1024 * 1024;  // OGQ 1MB
 
-let frames = [];      // {id, name, img, delay(ms), locked}
+let frames = [];      // {id, name, img, delay(ms)}
 let seq = 0;
 let bgMode = "checker";
 let playing = false, cursor = 0, timer = null;
+let zoom = 0;         // 0 = 화면에 맞춤
 
 /* ── 파일 넣기 ───────────────────────────── */
 function drawDrop(){
   $("dropzone").innerHTML = frames.length ? "" :
     `<div class="drop" id="drop">PNG 파일을 여기에 끌어다 놓거나<br>눌러서 고르세요
        <div class="hint" style="margin-top:6px">최대 ${MAX_FRAMES}장 · 파일 이름 순서로 들어갑니다</div></div>`;
-  if (!frames.length){
-    const d = $("drop");
-    d.onclick = () => $("file").click();
-    ["dragenter","dragover"].forEach(t => d.addEventListener(t, e => { e.preventDefault(); d.classList.add("on"); }));
-    ["dragleave","drop"].forEach(t => d.addEventListener(t, e => { e.preventDefault(); d.classList.remove("on"); }));
-    d.addEventListener("drop", e => addFiles(e.dataTransfer.files));
-  }
+  if (frames.length) return;
+  const d = $("drop");
+  d.onclick = () => $("file").click();
+  ["dragenter","dragover"].forEach(t => d.addEventListener(t, e => { e.preventDefault(); d.classList.add("on"); }));
+  ["dragleave","drop"].forEach(t => d.addEventListener(t, e => { e.preventDefault(); d.classList.remove("on"); }));
+  d.addEventListener("drop", e => addFiles(e.dataTransfer.files));
 }
 $("addbtn").onclick = () => $("file").click();
 $("file").onchange = e => { addFiles(e.target.files); e.target.value = ""; };
 
-/* 목록 전체에 끌어다 놓기 */
-["dragenter","dragover"].forEach(t => $("frames").addEventListener(t, e => e.preventDefault()));
-$("frames").addEventListener("drop", e => {
-  if (e.dataTransfer.files && e.dataTransfer.files.length){ e.preventDefault(); addFiles(e.dataTransfer.files); }
-});
+const byName = (a, b) => String(a).localeCompare(String(b), "ko", { numeric: true, sensitivity: "base" });
 
-function addFiles(fileList){
+function addFiles(fileList, at){
   const files = [...fileList].filter(f => f.type.startsWith("image/"));
   if (!files.length) return;
-  files.sort((a, b) => a.name.localeCompare(b.name, "ko", { numeric: true }));
+  files.sort((a, b) => byName(a.name, b.name));          // 파일 이름 순서
 
   const room = MAX_FRAMES - frames.length;
   if (room <= 0) return warn(`프레임은 ${MAX_FRAMES}장까지 넣을 수 있습니다.`);
   const use = files.slice(0, room);
   if (files.length > room) warn(`${MAX_FRAMES}장을 넘겨서 앞의 ${room}장만 넣었습니다.`);
 
-  const delay = +$("bulk").value * 10;
+  const delay = Math.max(10, Math.round((+$("bulk").value || 0.1) * 1000));
+  const made = new Array(use.length);
   let left = use.length;
-  use.forEach(f => {
+
+  use.forEach((f, n) => {
     const r = new FileReader();
     r.onload = () => {
       const img = new Image();
-      img.onload = () => {
-        frames.push({ id: ++seq, name: f.name, img, delay, locked: false });
-        if (--left === 0){
-          frames.sort((a, b) => a.name.localeCompare(b.name, "ko", { numeric: true }));
-          afterChange();
-        }
-      };
-      img.onerror = () => { if (--left === 0) afterChange(); };
+      img.onload = () => { made[n] = { id: ++seq, name: f.name, img, delay }; done(); };
+      img.onerror = done;
       img.src = r.result;
     };
     r.readAsDataURL(f);
   });
+
+  function done(){
+    if (--left > 0) return;
+    const add = made.filter(Boolean);
+    if (at === undefined || at === null) frames.push(...add);
+    else frames.splice(at, 0, ...add);
+    if (at === undefined || at === null)
+      frames.sort((a, b) => byName(a.name, b.name));      // 처음 넣을 때만 이름순 정렬
+    afterChange();
+  }
 }
 
 function warn(msg){
   $("warn").textContent = msg || "";
-  $("warn").hidden = !msg;
+  $("warnrow").hidden = !msg;
+}
+
+/* 만들 크기와 다른 이미지가 있으면 알려줍니다 */
+function checkSize(){
+  const W = +$("w").value, H = +$("h").value;
+  const bad = frames.filter(f => f.img.width !== W || f.img.height !== H);
+  if (!bad.length){ warn(""); return new Set(); }
+  const first = bad[0].img;
+  warn(`이미지 사이즈를 확인해주세요. ${bad.length}장이 ${W} × ${H}가 아닙니다. ` +
+       `(예: ${first.width} × ${first.height})`);
+  return new Set(bad.map(f => f.id));
 }
 
 /* ── 프레임 카드 ─────────────────────────── */
 function drawFrames(){
-  $("fcnt").textContent = frames.length ? `${frames.length} / ${MAX_FRAMES}` : "0";
+  $("fcnt").textContent = `${frames.length} / ${MAX_FRAMES}`;
+  const bad = checkSize();
+
   $("frames").innerHTML = frames.map((f, i) => `
-    <div class="card${f.locked ? " locked" : ""}" data-i="${i}" draggable="true">
+    <div class="card" data-i="${i}" draggable="true" title="${esc(f.name)}">
       <span class="no">${i + 1}</span>
-      <input type="checkbox" class="lock" ${f.locked ? "checked" : ""}
-        title="잠그면 전체 속도를 바꿔도 이 프레임은 그대로입니다" data-lock="${i}">
-      <img class="th checker" src="${f.img.src}" alt="" draggable="false">
+      <button class="x" data-del="${i}" title="빼기">✕</button>
+      <img class="th checker${bad.has(f.id) ? " bad" : ""}" src="${f.img.src}" alt="" draggable="false">
       <div class="dl">
-        <input type="number" step="0.01" min="0.01" value="${(f.delay / 1000).toFixed(2)}"
-          data-delay="${i}" ${f.locked ? "" : ""}>
+        <input type="number" step="0.01" min="0.01" value="${(f.delay / 1000).toFixed(2)}" data-delay="${i}">
         <span class="hint">초</span>
-      </div>
-      <div class="tools">
-        <button class="btn ghost" data-copy="${i}">복제</button>
-        <button class="btn ghost" data-del="${i}">삭제</button>
       </div>
     </div>`).join("");
 
   $("frames").querySelectorAll("[data-delay]").forEach(el => el.onchange = () => {
-    const v = Math.max(0.01, +el.value || 0.1);
-    frames[+el.dataset.delay].delay = Math.round(v * 1000);
+    frames[+el.dataset.delay].delay = Math.max(10, Math.round((+el.value || 0.1) * 1000));
     afterChange();
   });
-  $("frames").querySelectorAll("[data-lock]").forEach(el => el.onchange = () => {
-    frames[+el.dataset.lock].locked = el.checked;
-    drawFrames();
-  });
-  $("frames").querySelectorAll("[data-copy]").forEach(b => b.onclick = () => {
-    const i = +b.dataset.copy;
-    if (frames.length >= MAX_FRAMES) return warn(`프레임은 ${MAX_FRAMES}장까지입니다.`);
-    frames.splice(i + 1, 0, { ...frames[i], id: ++seq });
-    afterChange();
-  });
-  $("frames").querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+  $("frames").querySelectorAll("[data-del]").forEach(b => b.onclick = e => {
+    e.stopPropagation();
     frames.splice(+b.dataset.del, 1);
     afterChange();
   });
 
-  /* 끌어서 순서 바꾸기 */
-  let from = null;
+  bindDrag();
+}
+
+/* ── 끌어서 옮기기 ───────────────────────── */
+let from = null, mark = null;
+
+function clearMarks(){
+  $("frames").querySelectorAll(".card").forEach(c => c.classList.remove("before", "after", "drag"));
+}
+
+/* 마우스가 카드의 왼쪽 절반이면 앞, 오른쪽 절반이면 뒤에 넣습니다 */
+function spotOf(card, e){
+  const r = card.getBoundingClientRect();
+  const after = e.clientX > r.left + r.width / 2;
+  return { at: +card.dataset.i + (after ? 1 : 0), after };
+}
+
+function bindDrag(){
   $("frames").querySelectorAll(".card").forEach(card => {
     card.ondragstart = e => {
       from = +card.dataset.i;
@@ -336,94 +391,144 @@ function drawFrames(){
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", String(from));
     };
-    card.ondragend = () => {
-      from = null;
-      $("frames").querySelectorAll(".card").forEach(c => c.classList.remove("drag", "over"));
-    };
+    card.ondragend = () => { from = null; mark = null; clearMarks(); };
     card.ondragover = e => {
-      if (from === null) return;                 // 파일을 끌어온 경우는 건드리지 않습니다
       e.preventDefault();
-      card.classList.add("over");
-    };
-    card.ondragleave = () => card.classList.remove("over");
-    card.ondrop = e => {
-      if (from === null) return;
-      e.preventDefault(); e.stopPropagation();
-      const to = +card.dataset.i;
-      if (from !== to){
-        const [moved] = frames.splice(from, 1);
-        frames.splice(to, 0, moved);
-      }
-      from = null;
-      afterChange();
+      const s = spotOf(card, e);
+      mark = s.at;
+      clearMarksKeepDrag();
+      card.classList.add(s.after ? "after" : "before");
     };
   });
+
+  function clearMarksKeepDrag(){
+    $("frames").querySelectorAll(".card").forEach(c => c.classList.remove("before", "after"));
+  }
 }
 
-/* ── 전체 속도 일괄 적용 ──────────────────── */
-$("bulk").oninput = () => {
-  const cs = Math.max(1, +$("bulk").value || 10);
-  $("fps").textContent = (100 / cs).toFixed(1) + " FPS";
-  frames.forEach(f => { if (!f.locked) f.delay = cs * 10; });
+/* 목록 전체에서 놓기를 받습니다 (빈 곳에 놓으면 맨 뒤로) */
+["dragenter","dragover"].forEach(t => $("frames").addEventListener(t, e => e.preventDefault()));
+$("frames").addEventListener("dragleave", e => {
+  if (e.target === $("frames")) { mark = null; }
+});
+$("frames").addEventListener("drop", e => {
+  e.preventDefault();
+  const at = mark === null ? frames.length : mark;
+
+  if (e.dataTransfer.files && e.dataTransfer.files.length){   // 탐색기에서 끌어온 파일
+    addFiles(e.dataTransfer.files, at);
+    mark = null; clearMarks();
+    return;
+  }
+  if (from !== null){                                          // 순서 바꾸기
+    const to = at > from ? at - 1 : at;
+    const [moved] = frames.splice(from, 1);
+    frames.splice(to, 0, moved);
+  }
+  from = null; mark = null;
   afterChange();
-};
-$("lockall").onclick = () => {
-  const on = frames.some(f => !f.locked);
-  frames.forEach(f => f.locked = on);
-  $("lockall").textContent = on ? "전체 잠금 해제" : "전체 잠금";
-  drawFrames();
-};
-$("clear").onclick = () => {
-  if (frames.length && !confirm("넣은 프레임을 모두 지울까요?")) return;
-  frames = []; afterChange();
+});
+
+/* ── 전체 속도 ── */
+$("bulk").onchange = () => {
+  const s = Math.max(0.01, +$("bulk").value || 0.1);
+  $("bulk").value = s.toFixed(2);
+  frames.forEach(f => f.delay = Math.round(s * 1000));
+  afterChange();
 };
 $("reset").onclick = () => {
   if (frames.length && !confirm("처음 상태로 되돌릴까요?")) return;
   frames = [];
-  $("w").value = 740; $("h").value = 640; $("bulk").value = 10;
-  $("alpha").value = 128; $("alphav").textContent = "128";
-  $("repeat").value = "0"; $("fps").textContent = "10.0 FPS";
+  $("w").value = 740; $("h").value = 640; $("bulk").value = "0.10";
+  $("repeat").value = "0"; zoom = 0;
   $("result").innerHTML = ""; if ($("resdlg").open) $("resdlg").close();
   afterChange();
 };
 $("ogq").onclick = () => { $("w").value = 740; $("h").value = 640; afterChange(); };
-$("alpha").oninput = () => { $("alphav").textContent = $("alpha").value; };
+["w","h"].forEach(id => $(id).onchange = afterChange);
 
-/* ── 미리보기 ─────────────────────────────── */
+/* ── 미리보기 배경 ───────────────────────── */
 document.querySelectorAll("[data-bg]").forEach(b => b.onclick = () => {
   bgMode = b.dataset.bg;
   document.querySelectorAll("[data-bg]").forEach(x => x.setAttribute("aria-pressed", x === b));
   paintBg();
 });
-$("bgpick").oninput = () => {
-  bgMode = $("bgpick").value;
+function useCustom(hex){
+  bgMode = hex;
   document.querySelectorAll("[data-bg]").forEach(x => x.setAttribute("aria-pressed", false));
   paintBg();
+}
+$("bgpick").oninput = () => { syncColor($("bgpick").value); useCustom($("bgpick").value); };
+$("bghex").onchange = () => {
+  const v = "#" + $("bghex").value.trim().replace(/^#/, "");
+  if (!/^#[0-9a-fA-F]{6}$/.test(v)) return syncColor($("bgpick").value);
+  syncColor(v.toLowerCase()); useCustom(v.toLowerCase());
 };
-
+["bgr","bgg","bgb"].forEach(id => $(id).onchange = () => {
+  const n = x => Math.max(0, Math.min(255, +$(x).value || 0));
+  const hex = "#" + [n("bgr"), n("bgg"), n("bgb")].map(v => v.toString(16).padStart(2, "0")).join("");
+  syncColor(hex); useCustom(hex);
+});
+function syncColor(hex){
+  $("bgpick").value = hex;
+  $("bghex").value = hex.toUpperCase();
+  $("bgr").value = parseInt(hex.slice(1, 3), 16);
+  $("bgg").value = parseInt(hex.slice(3, 5), 16);
+  $("bgb").value = parseInt(hex.slice(5, 7), 16);
+}
 function paintBg(){
-  const wrap = $("canvaswrap"), v = $("view");
-  v.classList.toggle("checker", bgMode === "checker");
-  v.style.background = bgMode === "checker" ? "" : bgMode;
+  [$("view"), $("mini")].forEach(v => {
+    v.classList.toggle("checker", bgMode === "checker");
+    v.style.background = bgMode === "checker" ? "" : bgMode;
+  });
 }
 
-function drawFrame(i){
-  const v = $("view"), ctx = v.getContext("2d");
-  const W = +$("w").value || 740, H = +$("h").value || 640;
-  if (v.width !== W || v.height !== H){ v.width = W; v.height = H; }
-  ctx.clearRect(0, 0, W, H);
-  const f = frames[i];
-  if (f) drawFit(ctx, f.img, W, H);
-  $("pos").textContent = `${frames.length ? i + 1 : 0} / ${frames.length} 프레임`;
-}
-
-/* 비율을 지키며 가운데에 그립니다 */
+/* ── 그리기 ─────────────────────────────── */
 function drawFit(ctx, img, W, H){
   const s = Math.min(W / img.width, H / img.height);
   const w = img.width * s, h = img.height * s;
   ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
 }
 
+function drawFrame(i){
+  const W = Math.max(1, +$("w").value || 740), H = Math.max(1, +$("h").value || 640);
+  const v = $("view"), ctx = v.getContext("2d");
+  if (v.width !== W || v.height !== H){ v.width = W; v.height = H; }
+  ctx.clearRect(0, 0, W, H);
+
+  const m = $("mini"), mctx = m.getContext("2d");
+  mctx.clearRect(0, 0, m.width, m.height);
+
+  const f = frames[i];
+  if (f){ drawFit(ctx, f.img, W, H); drawFit(mctx, f.img, m.width, m.height); }
+  $("pos").textContent = `${frames.length ? i + 1 : 0} / ${frames.length} 프레임`;
+  sizeView();
+}
+
+/* 확대·축소 */
+function sizeView(){
+  const W = Math.max(1, +$("w").value || 740), H = Math.max(1, +$("h").value || 640);
+  const box = $("canvaswrap");
+  const availW = box.clientWidth - 185 - 70;         // 작게보기와 여백을 뺀 폭
+  const availH = box.clientHeight - 40;
+  const fit = Math.min(availW / W, availH / H, 1);
+  const s = zoom ? zoom : fit;
+  $("view").style.width = Math.round(W * s) + "px";
+  $("view").style.height = Math.round(H * s) + "px";
+  $("bigcap").textContent = `${W} × ${H} · ${Math.round(s * 100)}%`;
+  $("zval").textContent = zoom ? Math.round(zoom * 100) + "%" : "맞춤";
+}
+$("zin").onclick = () => { zoom = Math.min(2, (zoom || fitNow()) + 0.1); sizeView(); };
+$("zout").onclick = () => { zoom = Math.max(0.1, (zoom || fitNow()) - 0.1); sizeView(); };
+$("zval").onclick = () => { zoom = 0; sizeView(); };
+function fitNow(){
+  const W = +$("w").value || 740, H = +$("h").value || 640;
+  const box = $("canvaswrap");
+  return Math.min((box.clientWidth - 255) / W, (box.clientHeight - 40) / H, 1);
+}
+window.addEventListener("resize", () => { if (frames.length) sizeView(); });
+
+/* ── 재생 ───────────────────────────────── */
 function step(){
   if (!playing || !frames.length) return;
   drawFrame(cursor);
@@ -448,7 +553,8 @@ $("last").onclick = () => { pause(); cursor = Math.max(0, frames.length - 1); dr
 /* ── 바뀔 때마다 ─────────────────────────── */
 function afterChange(){
   const has = frames.length > 0;
-  $("view").hidden = !has;
+  $("bigbox").hidden = !has;
+  $("minibox").hidden = !has;
   $("stageempty").hidden = has;
   $("make").disabled = !has;
   if (!has){ pause(); cursor = 0; }
@@ -459,7 +565,6 @@ function afterChange(){
 
   drawDrop(); drawFrames(); paintBg();
   if (has) drawFrame(cursor);
-  warn("");
 }
 
 /* ── GIF 만들기 ──────────────────────────── */
@@ -480,7 +585,8 @@ $("make").onclick = async () => {
 
   pause();
   const W = Math.max(1, +$("w").value || 740), H = Math.max(1, +$("h").value || 640);
-  const cut = +$("alpha").value;
+  const rep = +$("repeat").value;
+  const total = frames.reduce((s, f) => s + f.delay, 0) / 1000;
 
   $("result").innerHTML = `<h3>GIF를 만드는 중입니다…</h3>
     <div class="bar"><i id="pbar"></i></div>
@@ -492,7 +598,7 @@ $("make").onclick = async () => {
     const worker = await getWorker();
     const gif = new GIF({
       workers: 2, quality: 10, width: W, height: H,
-      repeat: +$("repeat").value,
+      repeat: rep,
       transparent: MAGIC.hex,
       workerScript: worker,
     });
@@ -507,7 +613,7 @@ $("make").onclick = async () => {
       const d = ctx.getImageData(0, 0, W, H);
       const px = d.data;
       for (let i = 0; i < px.length; i += 4){
-        if (px[i + 3] < cut){                 // 투명하게 둘 점
+        if (px[i + 3] < ALPHA_CUT){           // 투명하게 둘 점
           px[i] = MAGIC.r; px[i + 1] = MAGIC.g; px[i + 2] = MAGIC.b;
         }
         px[i + 3] = 255;                      // GIF는 반투명을 담지 못합니다
@@ -520,23 +626,7 @@ $("make").onclick = async () => {
       $("pbar").style.width = Math.round(p * 100) + "%";
       $("pmsg").textContent = `굽는 중 ${Math.round(p * 100)}%`;
     });
-    gif.on("finished", blob => {
-      const url = URL.createObjectURL(blob);
-      const kb = blob.size / 1024;
-      $("result").innerHTML = `
-        <h3>다 됐습니다.</h3>
-        <div class="hint" style="margin:0 0 12px">
-          ${W} × ${H} · ${frames.length}프레임 · ${kb > 1024 ? (kb/1024).toFixed(1) + "MB" : Math.round(kb) + "KB"}
-          · ${$("repeat").value === "0" ? "무한 반복" : $("repeat").value + "번 반복"}
-        </div>
-        <img class="checker" src="${url}" alt="만들어진 GIF">
-        <div class="btns">
-          <button class="btn" id="resclose">닫기</button>
-          <a class="btn solid" href="${url}" download="animation.gif">GIF 내려받기</a>
-        </div>`;
-      $("resclose").onclick = () => $("resdlg").close();
-      $("make").disabled = false;
-    });
+    gif.on("finished", blob => showResult(blob, W, H, rep, total));
     gif.render();
   } catch (e) {
     $("result").innerHTML = `<h3 style="color:var(--warn)">만들지 못했습니다.</h3>
@@ -547,9 +637,55 @@ $("make").onclick = async () => {
   }
 };
 
+function showResult(blob, W, H, rep, total){
+  const url = URL.createObjectURL(blob);
+  const kb = blob.size / 1024;
+  const size = kb > 1024 ? (kb / 1024).toFixed(2) + "MB" : Math.round(kb) + "KB";
+  const over = blob.size > MAX_BYTES;
+
+  $("result").innerHTML = `
+    <h3>다 됐습니다.</h3>
+    <div class="facts">
+      <div><span>만든 크기</span><b>${W} × ${H}</b></div>
+      <div><span>프레임 수</span><b>${frames.length}개</b></div>
+      <div><span>전체 시간</span><b>${total.toFixed(2)}초 ${rep ? `(${rep}번 반복)` : "(무한 반복)"}</b></div>
+      <div class="b"><span>최종 파일 크기</span><b class="${over ? "no" : "ok"}">${size}</b></div>
+      ${over ? `<div class="hint" style="color:var(--warn);display:block;padding-top:6px">
+        OGQ는 1MB 이하만 올릴 수 있습니다. 프레임을 줄이거나 색을 단순하게 해보세요.</div>` : ""}
+    </div>
+    <img class="checker" src="${url}" alt="만들어진 GIF">
+    <div class="namerow">
+      <label for="fname">파일명</label>
+      <input type="text" id="fname" placeholder="파일명을 입력하세요" autocomplete="off">
+      <span class="ext">.gif</span>
+    </div>
+    <div class="btns">
+      <button class="btn" id="resclose">닫기</button>
+      <a class="btn solid" id="dl" href="${url}" download>내려받기</a>
+    </div>`;
+
+  const dl = $("dl");
+  const sync = () => {
+    const v = $("fname").value.trim().replace(/[\\/:*?"<>|]/g, "");
+    if (v){
+      dl.setAttribute("download", v + ".gif");
+      dl.style.pointerEvents = ""; dl.style.opacity = "";
+    } else {
+      dl.removeAttribute("download");
+      dl.style.pointerEvents = "none"; dl.style.opacity = ".45";
+    }
+  };
+  $("fname").oninput = sync;
+  sync();
+  $("fname").focus();
+  $("resclose").onclick = () => $("resdlg").close();
+  $("make").disabled = false;
+}
+
 /* 바깥을 누르면 닫습니다 */
 $("resdlg").onclick = e => { if (e.target === $("resdlg")) $("resdlg").close(); };
 
+syncColor("#b2c7d9");
 afterChange();
 </script>
 </body>
