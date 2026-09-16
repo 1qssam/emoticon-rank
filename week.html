@@ -378,11 +378,84 @@ function render(){
   $("out").textContent = asText(w, past, ratio200, ratio50, md, known, mdBest, allBest);
 }
 
+/* ── 기록 시작일 ─────────────────────────── */
+// 항목마다 모으기 시작한 날이 다릅니다. 이 날짜 앞은 '없음'이 아니라 '기록 없음'입니다.
+// 새 항목을 모으기 시작하면 여기에 한 줄 더하면 됩니다.
+const START = {
+  rank: D.dates[0],          // 순위·신규 (첫 수집일, 2026-08-20)
+  md:   "2026-09-13",        // MD추천
+  free: "2026-09-14",        // 월요 무료
+  mini: "2026-09-15",        // 미니 순위
+};
+// 첫 수집일 신규 중 '그날 출시'로 확정한 수 (make_site.py의 FIRST_DAY_NEW_COUNT 결과)
+const FIRST_DAY_KNOWN = D.release.filter(r => r === 0).length;
+const sd = s => `${+s.slice(5,7)}/${+s.slice(8)}`;
+const LAST = D.dates.at(-1);
+
+/* 빠진 날을 '기록 시작 전 / 아직 안 온 날 / 수집 누락'으로 나눕니다 */
+function splitGone(list, start){
+  return {
+    pre:    list.filter(d => d < start),
+    future: list.filter(d => d > LAST),
+    skip:   list.filter(d => d >= start && d <= LAST),
+  };
+}
+
+/* AI가 숫자를 잘못 읽지 않도록 맨 앞에 붙는 안내 */
+function guideText(w, past, known){
+  const G = [];
+  G.push(`■ 이 자료를 읽는 법 (분석 전에 먼저 읽을 것)`);
+  G.push(`기록 시작일: 순위·신규 ${sd(START.rank)} · MD추천 ${sd(START.md)} · 월요무료 ${sd(START.free)} · 미니 순위 ${sd(START.mini)}`);
+  G.push(`- 시작일 이전은 '없음'이 아니라 '기록 없음'이다. 0이나 빈칸을 감소나 부재로 해석하지 말 것.`);
+  G.push(`- 시작일에는 '처음 본 날'이 몰린다. 그 전부터 팔리던 것들이 한꺼번에 처음 잡히기 때문이다. ` +
+         `함께 올린 CSV에서도 처음 본 날·첫 진입일이 시작일이면 출시일이나 급상승으로 보지 말 것. ` +
+         `(미니 순위도 같다. ${sd(START.mini)}에 처음 잡힌 미니 이모티콘은 그날 뜬 게 아니다)`);
+  G.push(`- ${sd(START.rank)} 신규 목록 중 그날 출시가 확실한 것은 ${FIRST_DAY_KNOWN}건뿐이다. 이 자료의 출시 수는 출시일을 아는 것만 센다.`);
+  G.push(`- 순위는 전날까지의 판매를 집계해 다음 날 새벽 공개된다. 순위 날짜의 하루 전 성적이다. 그래서 출시는 월~금, 순위는 화~다음 월로 묶었다.`);
+
+  const C = [];
+  /* 출시 쪽 빠진 날 */
+  past.forEach(p => {
+    const g = splitGone(p.missing, START.rank);
+    if (g.pre.length)
+      C.push(`- ${ko(p.monday)} 주는 ${ko(START.rank)}부터 기록해서 ${g.pre.map(ko).join(", ")} 출시분이 없다. 이 주 신규 수가 작은 것은 실제로 적게 나온 게 아니다. 추이 비교에서 빼거나 따로 표시할 것.`);
+    if (g.skip.length)
+      C.push(`- ${ko(p.monday)} 주는 ${g.skip.map(ko).join(", ")} 수집이 빠졌다(기록 누락).`);
+    if (g.future.length)
+      C.push(`- ${ko(p.monday)} 주는 아직 끝나지 않았다. ${g.future.map(ko).join(", ")} 자료가 없다.`);
+  });
+  /* 순위 쪽 빠진 날 */
+  if (w.rankDays.length < 7){
+    const all = [1,2,3,4,5,6,7].map(n => addDays(w.monday, n)).filter(d => idx[d] === undefined);
+    const g = splitGone(all, START.rank);
+    const why = [];
+    if (g.pre.length)    why.push(`${g.pre.map(ko).join(", ")}은 기록 시작 전`);
+    if (g.skip.length)   why.push(`${g.skip.map(ko).join(", ")}은 수집 누락`);
+    if (g.future.length) why.push(`${g.future.map(ko).join(", ")}은 아직 안 온 날`);
+    C.push(`- 순위는 ${w.rankDays.length}일치만 있다(7일 기준). ${why.join(", ")}. 다른 주와 순위 숫자를 그대로 견주지 말 것.`);
+  }
+  /* 월요 무료 */
+  if (w.monday < START.free)
+    C.push(`- 월요무료는 ${sd(START.free)}부터 기록했다. 이 주는 기록이 없을 뿐, 무료가 없었다는 뜻이 아니다.`);
+  /* MD추천 */
+  if (w.items.length && known < w.items.length)
+    C.push(`- MD추천은 이번 주 신규 ${w.items.length}개 중 ${known ? known + "개만 확인됐다. 나머지 " + (w.items.length - known) + "개는" : "아직 하나도 확인되지 않았다. 전부"} 'MD 아님'이 아니라 '아직 모름'이다(옛 자료를 따라잡는 중). MD추천 수는 최소치로 볼 것.`);
+
+  if (C.length){
+    G.push("");
+    G.push(`■ 이번 자료에서 조심할 것`);
+    G.push(...C);
+  }
+  return G;
+}
+
 /* ── 글로 정리 ───────────────────────────── */
 function asText(w, past, r200, r50, md, known, mdBest, allBest){
   const L = [];
   const mon = w.monday;
   L.push(`[${mon.slice(5).replace("-","")}~${addDays(mon,6).slice(5).replace("-","")} 이모티콘 주간정리 자료]`);
+  L.push("");
+  L.push(...guideText(w, past, known));
   L.push("");
   L.push(`■ 이번 주 신규 (${ko(mon)}~${ko(w.end)})`);
   L.push(`신규 ${w.items.length}개 (일반 ${w.normal} 미니 ${w.mini} / ` +
@@ -414,7 +487,7 @@ function asText(w, past, r200, r50, md, known, mdBest, allBest){
       const [slug, t, cr, cid, f] = D.items[i];
       L.push(`  ${t}(${cr}) ${kindOf(f)}`);
     });
-  } else L.push("자료 없음");
+  } else L.push(mon < START.free ? `기록 시작 전 (${sd(START.free)}부터 기록)` : "자료 없음");
 
   L.push("");
   L.push(`■ 순위 안의 움직임 비율 (${w.rankDays.length}일치)`);
@@ -435,7 +508,6 @@ function asText(w, past, r200, r50, md, known, mdBest, allBest){
   }
 
   L.push("");
-  L.push(`* 출시는 월~금, 순위는 화~다음 월 기준입니다.`);
   L.push(`* 만든 시각 ${D.generatedAt || ""}`);
   return L.join("\n");
 }
