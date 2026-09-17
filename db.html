@@ -108,6 +108,9 @@
 <script src="tags.js"></script>
 <script>
 const D = window.DATA;
+/* 날짜 번호 → 그날 출시 수 */
+const DAY_COUNT = {};
+D.release.forEach(r => { if (r >= 0) DAY_COUNT[r] = (DAY_COUNT[r] || 0) + 1; });
 const T = (window.TAGS || {items:{}, creators:{}});
 
 const $ = id => document.getElementById(id);
@@ -201,6 +204,8 @@ const ROWS = D.items.map((m, i) => {
     // 첫 수집일의 신규 목록에는 그 전에 나온 것들이 섞여 있어서,
     // 태그 파일의 '처음 본 날'을 출시일로 쓰면 안 됩니다.
     released: D.release[i] >= 0 ? D.dates[D.release[i]] : null,
+    no: D.release[i] >= 0 && (D.releaseNo || [])[i] ? D.releaseNo[i] : null,   // 그날 진열 순번
+    dayCount: D.release[i] >= 0 ? DAY_COUNT[D.release[i]] : null,            // 그날 출시 수
     bestRank: b ? b[0] : null,
     bestDate: b ? D.dates[b[1]] : null,
     ageBest,
@@ -233,6 +238,8 @@ const COLS = [
   {k:"count",  label:"개수",    cls:"num", cell:r => r.count ?? ""},
   {k:"price",  label:"가격",    cls:"num", cell:r => r.price ? r.price.toLocaleString() : ""},
   {k:"released",label:"출시일", cls:"num", cell:r => r.released ?? ""},
+  {k:"no",     label:"순번",    cls:"num", cell:r => r.no ?? ""},
+  {k:"dayCount",label:"일건",   cls:"num", cell:r => r.dayCount ?? ""},
   {k:"bestRank",label:"최고순위",cls:"num", cell:r => rankText(r)},
   {k:"ageBest",label:"연령대 최고", cell:r => ageText(r)},
   {k:"first",  label:"첫 등장", cls:"num", cell:r => r.first ?? ""},
@@ -249,7 +256,7 @@ function defaultOrder(a, b){
   const x = ga ? a.released : (a.first || ""), y = gb ? b.released : (b.first || "");
   const ra = a.bestRank ?? (a.miniRank ? 1000 + a.miniRank : 9999);
   const rb = b.bestRank ?? (b.miniRank ? 1000 + b.miniRank : 9999);
-  if (x === y) return ra - rb;
+  if (x === y) return ga ? (a.no ?? 1e9) - (b.no ?? 1e9) : ra - rb;   // 같은 출시일은 진열 순번대로
   return x < y ? -1 : 1;
 }
 
@@ -259,6 +266,7 @@ function value(r, k){
   if (k === "bestRank") return r.bestRank ?? (r.miniRank ? 1000 + r.miniRank : null);
   if (k === "ageBest") return r.ageBest ? r.ageBest[1] : (r.ageMini ? 1000 + r.ageMini[1] : null);
   if (k === "tags") return r.tags.join(",");
+  if (k === "released" || k === "no") return r.released ? r.released + String(r.no ?? 999).padStart(3, "0") : null;  // 같은 날은 순번대로
   if (k === "md") return {"MD":0, "":1, "-":2}[r.md];   // MD가 위로
   return r[k];
 }
@@ -339,10 +347,10 @@ function render(){
 
 $("copy").onclick = async () => {
   const head = ["상품명","작가","시리즈","유형","소리","태그","개수","가격",
-                "출시일","최고순위","최고순위일","연령대최고","첫등장","마지막등장","slug","링크","MD","월요무료"];
+                "출시일","순번","일건","최고순위","최고순위일","연령대최고","첫등장","마지막등장","slug","링크","MD","월요무료"];
   const rows = filtered.map(r => [
     r.title, r.creator, r.series, r.kind, r.sound, r.tags.join(", "),
-    r.count ?? "", r.price ?? "", r.released ?? "",
+    r.count ?? "", r.price ?? "", r.released ?? "", r.no ?? "", r.dayCount ?? "",
     rankText(r), r.bestDate ?? r.miniDate ?? "",
     ageText(r), r.first ?? "", r.last ?? "",
     r.slug, `https://e.kakao.com/t/${r.slug}`, r.md, r.free,

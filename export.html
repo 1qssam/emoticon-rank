@@ -111,10 +111,10 @@
   <div class="tablewrap"><table id="tbl"></table></div>
 
   <p class="tip">
-    날짜는 최근 것이 위로, 순번은 작은 것이 위로 정렬됩니다.<br>
+    날짜는 최근 것이 위로, 순번은 작은 것이 위로 정렬됩니다.<br>순번은 그날 카카오 신규 목록에 진열된 순서, 일건은 그날 출시된 수입니다.<br>
     <b>복사해서 시트에 붙여넣기</b>는 탭으로 나눠 복사하므로 구글 시트나 엑셀에 바로 붙습니다.
     <b>CSV 내려받기</b>는 파일로 저장됩니다.<br>
-    노란 칸(무료·메모)은 비어 있습니다. 시트에서 직접 채우시면 됩니다.<br>MD 칸은 MD추천이면 MD, 아니면 빈칸, 아직 확인 전이면 - 로 표시됩니다.<br>태그·개수·가격은 수집이 끝난 이모티콘만 채워집니다.
+    노란 칸(메모)은 비어 있습니다. 시트에서 직접 채우시면 됩니다.<br>MD 칸은 MD추천이면 MD, 아니면 빈칸, 아직 확인 전이면 - 로 표시됩니다.<br>태그·개수·가격은 수집이 끝난 이모티콘만 채워집니다.
   </p>
 </div>
 
@@ -122,6 +122,13 @@
 <script src="tags.js"></script>
 <script>
 const D = window.DATA;
+/* 그날 출시분을 카카오 신규 목록의 진열 순서대로 돌려줍니다.
+   items 번호 순서는 '처음 본 순서'라 쓰면 안 됩니다. */
+const releasedOn = k => {
+  const no = D.releaseNo || [], out = [];
+  D.release.forEach((r, i) => { if (r === k) out.push(i); });
+  return out.sort((a, b) => (no[a] || 1e9) - (no[b] || 1e9) || a - b);
+};
 const T = (window.TAGS || {items:{}, creators:{}});
 
 /* 월요일 무료 이벤트 — 항목 번호 → 풀린 날짜들 */
@@ -186,7 +193,7 @@ D.ages.forEach(a => {
 
 ["kind","from","to","age","topn","memo"].forEach(id => $(id).onchange = render);
 
-const BLANK = ["무료", "메모"];
+const BLANK = ["메모"];
 
 const MAX_DAYS = 90;
 
@@ -216,17 +223,16 @@ function build(){
   const withMemo = $("memo").checked;
 
   if ($("kind").value === "new"){
-    const head = ["날짜","요일","순번","상품명","작가명","시리즈","유형","소리",
+    const head = ["날짜","요일","순번","일건","상품명","작가명","시리즈","유형","소리",
                   "태그","개수","가격","전체최고순위","최고순위일","slug","링크","MD","월요무료"];
     const rows = [];
     for (let k = to; k >= from; k--){          // 날짜는 내림차순
-      const items = [];
-      D.release.forEach((r, i) => { if (r === k) items.push(i); });
-      items.forEach((i, n) => {                 // 순번은 오름차순
+      const items = releasedOn(k);             // 순번 = 그날 진열 순서, 일건 = 그날 출시 수
+      items.forEach((i, n) => {
         const [slug, title, creator, cid, flags] = D.items[i];
         const b = best["전체"][i];
         rows.push([
-          D.dates[k], dow(D.dates[k]), n + 1, title, creator,
+          D.dates[k], dow(D.dates[k]), n + 1, items.length, title, creator,
           D.items[i][6] || "", kindOf(flags), (flags & 4) ? "Y" : "",
           tagText(slug), info(slug)?.n ?? "", info(slug)?.p ?? "",
           b ? b[0] : "", b ? D.dates[b[1]] : "",

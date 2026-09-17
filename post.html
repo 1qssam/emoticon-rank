@@ -135,6 +135,13 @@
 <script src="common.js"></script>
 <script>
 const D = window.DATA;
+/* 그날 출시분을 카카오 신규 목록의 진열 순서대로 돌려줍니다.
+   items 번호 순서는 '처음 본 순서'라 쓰면 안 됩니다. */
+const releasedOn = k => {
+  const no = D.releaseNo || [], out = [];
+  D.release.forEach((r, i) => { if (r === k) out.push(i); });
+  return out.sort((a, b) => (no[a] || 1e9) - (no[b] || 1e9) || a - b);
+};
 const T = (window.TAGS || {items:{}, creators:{}});
 const SITE = "https://1qssam.github.io/emoticon-rank/";
 const MAX_TAGS = 30;               // 블로그 태그는 30개까지
@@ -221,8 +228,7 @@ ${SITE}
 /* ── 신규 이모티콘 글 ── */
 function newModules(date){
   const d = fmt(date), w = dow(date);
-  const items = [];
-  D.release.forEach((r, i) => { if (r === dateIdx) items.push(i); });
+  const items = releasedOn(dateIdx);
 
   const free = freeOn(date);
   const freeSet = new Set(free);
