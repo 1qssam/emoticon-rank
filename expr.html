@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>표현 키워드 · 이모티콘 순위</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{--paper:#fcfcfb;--ink:#17181a;--muted:#83878c;--line:#e7e6e1;--panel:#f5f4f0;--mark:#fee500}
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html{overflow-y:scroll}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px 20px 80px}
+  header{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
+  .tools{margin-left:auto;display:flex;gap:12px;flex-wrap:wrap}
+  .tools a{font-size:13px;color:var(--muted);text-decoration:none}
+  .tools a:hover{color:var(--ink);text-decoration:underline}
+  .tools a[aria-current]{color:var(--ink);font-weight:600}
+
+  .opts{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:14px;
+    padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+  .opts label{display:flex;align-items:center;gap:6px;font-size:13px}
+  .opts input[type=search]{font-family:inherit;font-size:13px;border:1px solid var(--line);
+    border-radius:7px;padding:6px 9px;background:#fff;color:var(--ink);width:180px}
+  .opts select{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;
+    padding:5px 7px;background:#fff;color:var(--ink)}
+  input[type=checkbox]{width:14px;height:14px;accent-color:#17181a;cursor:pointer}
+  .cnt{font-size:12.5px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+
+  .blocks{display:flex;flex-wrap:wrap;gap:7px}
+  .kw{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 13px;
+    font-size:13.5px;cursor:pointer;font-family:inherit;color:var(--ink);line-height:1.3}
+  .kw:hover{border-color:var(--ink)}
+  .kw[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .kw b{font-weight:600}
+  .kw .n{font-variant-numeric:tabular-nums;color:var(--muted);margin-left:4px;font-size:12px}
+  .kw[aria-pressed="true"] .n{color:#c9c7c1}
+  .kw.chr{background:#fbf8ee}
+  .kw.chr[aria-pressed="true"]{background:var(--ink)}
+
+  .panel{border:1px solid var(--line);border-radius:10px;background:#fff;padding:16px 18px;margin-bottom:18px}
+  .panel h2{font-size:15px;margin:0 0 3px;font-weight:600}
+  .panel .sub{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+  .panel .close{float:right;border:1px solid var(--line);background:#fff;border-radius:7px;
+    padding:4px 10px;font-size:12.5px;cursor:pointer;font-family:inherit;color:var(--muted)}
+  .panel .close:hover{border-color:var(--ink);color:var(--ink)}
+  .panel h3{font-size:12.5px;color:var(--muted);margin:14px 0 6px;font-weight:600}
+  .use{font-size:13px;line-height:1.85;margin:0}
+  .use .t{font-weight:500}
+  .use .t a{color:inherit;text-decoration:none}
+  .use .t a:hover{text-decoration:underline}
+  .use .no{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12.5px;margin-left:5px}
+  .co{display:flex;flex-wrap:wrap;gap:6px}
+  .co .kw{padding:4px 10px;font-size:12.5px}
+
+  .empty{padding:40px 0;text-align:center;color:var(--muted);font-size:13.5px}
+  .tip{font-size:12.5px;color:var(--muted);line-height:1.75;margin-top:20px;
+    padding-top:14px;border-top:1px solid var(--line)}
+  button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>표현 키워드</h1>
+    <nav class="tools">
+      <a href="index.html">사이트</a>
+      <a href="week.html">주간정리</a>
+      <a href="post.html">포스팅</a>
+      <a href="card.html">캡처용 순위표</a>
+      <a href="expr.html" aria-current="page">표현 키워드</a>
+      <a href="db.html">전체 목록</a>
+      <a href="export.html">스프레드시트</a>
+    </nav>
+  </header>
+
+  <div class="opts">
+    <label><input type="checkbox" id="hideChr" checked> 캐릭터 빼기</label>
+    <label><input type="checkbox" id="multi"> 두 종 이상에서 나온 것만</label>
+    <label>정렬
+      <select id="sort">
+        <option value="expr" selected>표현 수</option>
+        <option value="set">종 수</option>
+        <option value="name">가나다</option>
+      </select>
+    </label>
+    <label><input type="search" id="q" placeholder="키워드 찾기" aria-label="키워드 찾기"></label>
+    <span class="cnt" id="cnt"></span>
+  </div>
+
+  <div id="detail"></div>
+  <div class="blocks" id="blocks"></div>
+
+  <p class="tip">
+    괄호 안은 <b>표현 수</b>이고, 그 옆은 <b>몇 종에서 나왔는지</b>입니다. 예: 12 · 5종<br>
+    키워드를 누르면 그 키워드를 쓴 이모티콘과, 같은 표현에 함께 있던 키워드를 볼 수 있습니다.<br>
+    캐릭터 이름(강아지·고양이 등)은 한 세트 안에서 계속 반복되어 수가 부풀기 때문에 기본으로 숨깁니다.
+  </p>
+</div>
+
+<script src="data.js"></script>
+<script src="expr.js"></script>
+<script>
+const D = window.DATA;
+const E = window.EXPR || {};
+
+/* ── 캐릭터 이름 ────────────────────────────────
+   '캐릭터 빼기'를 켜면 여기 적힌 키워드가 목록에서 빠집니다.
+   새 동물이 나오면 여기에 한 줄 더하면 됩니다. */
+const CHARS = new Set([
+  "강아지", "고양이", "토끼", "쥐", "햄스터", "병아리", "닭", "곰", "돼지", "원숭이",
+  "펭귄", "여우", "너구리", "오리", "양", "기린", "두더지", "나무늘보", "요정", "원시인",
+]);
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* slug → 이모티콘 정보 (data.js에 있는 것만) */
+const BY_SLUG = {};
+D.items.forEach(m => { BY_SLUG[m[0]] = m; });
+const titleOf = slug => (BY_SLUG[slug] ? BY_SLUG[slug][1] : slug);
+const creatorOf = slug => (BY_SLUG[slug] ? BY_SLUG[slug][2] : "");
+
+/* ── 키워드 모으기 ──
+   STAT[키워드] = { expr: 표현 수, sets: Set(slug), use: [[slug, 표현번호], ...] } */
+const STAT = {};
+Object.entries(E).forEach(([slug, exprs]) => {
+  exprs.forEach((words, n) => {
+    new Set(words).forEach(w => {               // 한 표현 안의 같은 키워드는 한 번만
+      const v = STAT[w] || (STAT[w] = { expr: 0, sets: new Set(), use: [] });
+      v.expr++;
+      v.sets.add(slug);
+      v.use.push([slug, n + 1]);
+    });
+  });
+});
+const KEYS = Object.keys(STAT);
+const SET_TOTAL = Object.keys(E).length;
+const EXPR_TOTAL = Object.values(E).reduce((a, v) => a + v.length, 0);
+
+let picked = null;
+
+function visible(){
+  const q = $("q").value.trim().toLowerCase();
+  const hideChr = $("hideChr").checked;
+  const multi = $("multi").checked;
+  let list = KEYS.filter(w => {
+    if (hideChr && CHARS.has(w)) return false;
+    if (multi && STAT[w].sets.size < 2) return false;
+    if (q && !w.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const by = $("sort").value;
+  list.sort((a, b) =>
+    by === "name" ? a.localeCompare(b, "ko")
+    : by === "set" ? STAT[b].sets.size - STAT[a].sets.size || STAT[b].expr - STAT[a].expr || a.localeCompare(b, "ko")
+    : STAT[b].expr - STAT[a].expr || STAT[b].sets.size - STAT[a].sets.size || a.localeCompare(b, "ko"));
+  return list;
+}
+
+const chip = (w, small) => {
+  const v = STAT[w];
+  return `<button class="kw${CHARS.has(w) ? " chr" : ""}" data-w="${esc(w)}"
+    aria-pressed="${picked === w}"><b>${esc(w)}</b><span class="n">${v.expr} · ${v.sets.size}종</span></button>`;
+};
+
+/* 고른 키워드와 같은 표현에 함께 있던 키워드 */
+function together(w){
+  const c = {};
+  Object.entries(E).forEach(([slug, exprs]) => exprs.forEach(words => {
+    if (!words.includes(w)) return;
+    new Set(words).forEach(x => { if (x !== w) c[x] = (c[x] || 0) + 1; });
+  }));
+  return Object.keys(c).sort((a, b) => c[b] - c[a] || a.localeCompare(b, "ko"))
+    .map(x => [x, c[x]]);
+}
+
+function drawDetail(){
+  if (!picked){ $("detail").innerHTML = ""; return; }
+  const v = STAT[picked];
+
+  /* 이모티콘별로 표현 번호를 모읍니다 */
+  const bySlug = {};
+  v.use.forEach(([slug, n]) => (bySlug[slug] = bySlug[slug] || []).push(n));
+  const uses = Object.entries(bySlug).map(([slug, nos]) =>
+    `<span class="t"><a href="https://e.kakao.com/t/${slug}" target="_blank" rel="noopener">${esc(titleOf(slug))}</a></span>` +
+    `<span class="no">${esc(creatorOf(slug))} · ${nos.join(", ")}번</span>`).join("<br>");
+
+  const co = together(picked);
+  const coHtml = co.length
+    ? co.map(([x, n]) => `<button class="kw" data-w="${esc(x)}"><b>${esc(x)}</b><span class="n">${n}</span></button>`).join("")
+    : `<span class="sub">함께 쓰인 키워드가 없습니다.</span>`;
+
+  $("detail").innerHTML = `<div class="panel">
+    <button class="close" id="closeDetail">닫기</button>
+    <h2>${esc(picked)}</h2>
+    <p class="sub">표현 ${v.expr}개 · ${v.sets.size}종에서 사용 (전체 ${EXPR_TOTAL}표현 / ${SET_TOTAL}종)</p>
+    <h3>쓰인 곳</h3>
+    <p class="use">${uses}</p>
+    <h3>같은 표현에 함께 있던 키워드 ${co.length}개</h3>
+    <div class="co">${coHtml}</div>
+  </div>`;
+  $("closeDetail").onclick = () => { picked = null; render(); };
+  bind($("detail"));
+}
+
+function bind(host){
+  host.querySelectorAll("button[data-w]").forEach(b => b.onclick = () => {
+    const w = b.dataset.w;
+    picked = (picked === w) ? null : w;
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+}
+
+function render(){
+  const list = visible();
+  $("cnt").textContent =
+    `키워드 ${list.length.toLocaleString()}개 · 전체 ${KEYS.length.toLocaleString()}개 / ${SET_TOTAL}종 ${EXPR_TOTAL}표현`;
+  $("blocks").innerHTML = list.length
+    ? list.map(w => chip(w)).join("")
+    : `<div class="empty">맞는 키워드가 없습니다.</div>`;
+  bind($("blocks"));
+  drawDetail();
+}
+
+["hideChr", "multi", "sort"].forEach(id => $(id).onchange = render);
+$("q").oninput = render;
+
+if (!Object.keys(E).length){
+  $("blocks").innerHTML = `<div class="empty">아직 키워드 자료가 없습니다. (expr.js)</div>`;
+} else {
+  render();
+}
+</script>
+</body>
+</html>
