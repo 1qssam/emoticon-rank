@@ -84,6 +84,7 @@
     <label>태그 <select id="tag"><option value="">전체</option></select></label>
     <label><input type="checkbox" id="onlyNew"> 수집 이후 출시분만</label>
     <label><input type="checkbox" id="onlyFree"> 월요무료만</label>
+    <label><input type="checkbox" id="onlyKw"> 키워드 있는 것만</label>
     <label>날짜
       <select id="basis">
         <option value="">전체</option>
@@ -108,9 +109,11 @@
 
 <script src="data.js"></script>
 <script src="tags.js"></script>
+<script src="expr.js"></script>
 <script>
 const D = window.DATA;
 /* 날짜 번호 → 그날 출시 수 */
+const EXPR = window.EXPR || {};   // 표현별 키워드 (expr.js). 없으면 빈 칸으로 둡니다
 const DAY_COUNT = {};
 D.release.forEach(r => { if (r >= 0) DAY_COUNT[r] = (DAY_COUNT[r] || 0) + 1; });
 const T = (window.TAGS || {items:{}, creators:{}});
@@ -218,6 +221,7 @@ const ROWS = D.items.map((m, i) => {
     first: firstSeen[i] !== undefined ? D.dates[firstSeen[i]] : null,
     last: lastSeen[i] !== undefined ? D.dates[lastSeen[i]] : null,
     md: mdOf(slug),
+    kw: EXPR[slug] ? EXPR[slug].length : 0,      // 키워드를 적어둔 표현 수 (0이면 아직 안 함)
   };
 });
 
@@ -247,6 +251,7 @@ const COLS = [
   {k:"first",  label:"첫 등장", cls:"num", cell:r => r.first ?? ""},
   {k:"last",   label:"마지막 등장", cls:"num", cell:r => r.last ?? ""},
   {k:"md",     label:"MD",      cell:r => r.md},
+  {k:"kw",     label:"키워드",  cls:"num", cell:r => r.kw ? r.kw : ""},
   {k:"free",   label:"월요무료", cls:"num", cell:r => r.free},
 ];
 
@@ -279,6 +284,7 @@ function apply(){
   const tag = $("tag").value;
   const onlyNew = $("onlyNew").checked;
   const onlyFree = $("onlyFree").checked;
+  const onlyKw = $("onlyKw").checked;
 
   const basis = $("basis").value;
   const dfrom = $("dfrom").value, dto = $("dto").value;
@@ -300,6 +306,7 @@ function apply(){
     if (tag && !r.tags.includes(tag)) return false;
     if (onlyNew && !r.released) return false;
     if (onlyFree && !r.free) return false;
+    if (onlyKw && !r.kw) return false;
     if (q && !(r.title.toLowerCase().includes(q) || r.creator.toLowerCase().includes(q)
                || r.series.toLowerCase().includes(q))) return false;
     return true;
@@ -349,13 +356,13 @@ function render(){
 
 $("copy").onclick = async () => {
   const head = ["상품명","작가","시리즈","유형","소리","태그","개수","가격",
-                "출시일","순번","일건","최고순위","최고순위일","연령대최고","첫등장","마지막등장","slug","링크","MD","월요무료"];
+                "출시일","순번","일건","최고순위","최고순위일","연령대최고","첫등장","마지막등장","slug","링크","MD","월요무료","키워드표현수"];
   const rows = filtered.map(r => [
     r.title, r.creator, r.series, r.kind, r.sound, r.tags.join(", "),
     r.count ?? "", r.price ?? "", r.released ?? "", r.no ?? "", r.dayCount ?? "",
     rankText(r), r.bestDate ?? r.miniDate ?? "",
     ageText(r), r.first ?? "", r.last ?? "",
-    r.slug, `https://e.kakao.com/t/${r.slug}`, r.md, r.free,
+    r.slug, `https://e.kakao.com/t/${r.slug}`, r.md, r.free, r.kw || "",
   ]);
   const lines = ($("withhead").checked ? [head] : []).concat(rows);
   await navigator.clipboard.writeText(lines.map(x => x.join("\t")).join("\n"));
@@ -363,7 +370,7 @@ $("copy").onclick = async () => {
   setTimeout(() => { $("copy").textContent = "시트로 복사"; $("copy").classList.remove("done"); }, 1500);
 };
 
-["q","kind","tag","onlyNew","onlyFree","basis","dfrom","dto"].forEach(id => {
+["q","kind","tag","onlyNew","onlyFree","onlyKw","basis","dfrom","dto"].forEach(id => {
   $(id).oninput = apply; $(id).onchange = apply;
 });
 $("resort").onclick = () => { sortKey = "order"; asc = true; apply(); };
