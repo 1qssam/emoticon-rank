@@ -90,26 +90,26 @@
      1280x720 그대로 그립니다. 아래 값만 바꾸면 모양이 바뀝니다. */
   .yt{
     --yt-border: 26px;        /* 테두리 두께 */
-    --yt-pad: 88px;           /* 왼쪽 여백 */
-    --yt-dow: 215px;          /* 요일 글자 크기 */
+    --yt-pad: 50px;           /* 왼쪽 여백 */
+    --yt-dow: 220px;          /* 요일 글자 크기 */
     --yt-count: 96px;         /* 신규 n종 글자 크기 */
-    --yt-date: 58px;          /* 날짜 글자 크기 */
-    --yt-series: 46px;        /* 원큐쌤 라이브 해설 글자 크기 */
+    --yt-date: 60px;          /* 날짜 글자 크기 */
+    --yt-series: 58px;        /* 원큐쌤 라이브 해설 글자 크기 */
     --yt-char: 330px;         /* 캐릭터 크기 */
     width:1280px;height:720px;background:#fff;position:relative;overflow:hidden;
     border:var(--yt-border) solid var(--edge);margin:0 auto 22px;
     font-family:'Paperozi',-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif}
-  .yt .series{position:absolute;left:var(--yt-pad);top:62px;
+  .yt .series{position:absolute;left:var(--yt-pad);top:32px;
     font-size:var(--yt-series);font-weight:600;color:#6f7377;letter-spacing:-.01em}
   .yt .dowbig{position:absolute;left:var(--yt-pad);top:120px;line-height:1.25;
     font-family:'A2z','Paperozi',sans-serif;font-weight:900;
     font-size:var(--yt-dow);color:var(--edge);letter-spacing:-.02em}
   .yt .cnt{position:absolute;left:var(--yt-pad);top:410px;line-height:1.25;
-    font-family:'A2z','Paperozi',sans-serif;font-weight:900;
+    font-family:'A2z','Paperozi',sans-serif;font-weight:800;
     font-size:var(--yt-count);color:#17181a;letter-spacing:-.02em}
   .yt .date{position:absolute;left:var(--yt-pad);top:558px;
     font-size:var(--yt-date);font-weight:600;color:#5a5f64}
-  .yt .char{position:absolute;right:56px;bottom:0;width:var(--yt-char);height:var(--yt-char)}
+  .yt .char{position:absolute;right:6px;bottom:0;width:var(--yt-char);height:var(--yt-char)}
   @media (max-width:1000px){ .yt{transform-origin:top left} }
 
   /* ── 인스타 카드뉴스 표지 ──────────────────────────────
