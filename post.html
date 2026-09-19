@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>블로그용 텍스트 · 이모티콘 순위</title>
+<title>포스팅 · 이모티콘 순위</title>
 <meta name="robots" content="noindex">
 <style>
   :root{--paper:#fcfcfb;--ink:#17181a;--muted:#83878c;--line:#e7e6e1;--panel:#f5f4f0;--mark:#fee500}
   *{box-sizing:border-box}
+  [hidden]{display:none !important}
   html{overflow-y:scroll}
   html,body{margin:0;padding:0}
   body{background:var(--paper);color:var(--ink);
@@ -81,11 +82,11 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>블로그용 텍스트</h1>
+    <h1>포스팅</h1>
     <nav class="tools">
       <a href="index.html">사이트</a>
       <a href="week.html">주간정리</a>
-      <a href="post.html" aria-current="page">블로그용 텍스트</a>
+      <a href="post.html" aria-current="page">포스팅</a>
       <a href="card.html">캡처용 순위표</a>
       <a href="db.html">전체 목록</a>
       <a href="export.html">스프레드시트</a>
@@ -95,6 +96,8 @@
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="tab-rank" aria-selected="true">인기순위 글</button>
     <button class="tab" role="tab" id="tab-new" aria-selected="false">신규 이모티콘 글</button>
+    <button class="tab" role="tab" id="tab-insta" aria-selected="false">인스타그램</button>
+    <button class="tab" role="tab" id="tab-youtube" aria-selected="false">유튜브</button>
   </div>
 
   <div class="datebar">
@@ -112,9 +115,9 @@
     </div>
   </div>
 
-  <div class="block">
+  <div class="block" id="titleBlock">
     <div class="blockhead">
-      <h2>제목</h2>
+      <h2 id="titleLabel">제목</h2>
       <button class="btn solid" id="copyTitle">복사</button>
     </div>
     <textarea id="title" class="title-box" readonly></textarea>
@@ -196,10 +199,54 @@ $("prev").onclick = () => { dateIdx--; render(); };
 $("next").onclick = () => { dateIdx++; render(); };
 $("tab-rank").onclick = () => { mode = "rank"; render(); };
 $("tab-new").onclick = () => { mode = "new"; render(); };
+$("tab-insta").onclick = () => { mode = "insta"; render(); };
+$("tab-youtube").onclick = () => { mode = "youtube"; render(); };
 initDatePicker({
   dates: D.dates, button: "todaybtn", picker: "picker",
   get: () => dateIdx, set: k => { dateIdx = k; render(); },
 });
+
+/* ── 인스타그램 글 ──────────────────────────────
+   줄바꿈 위치까지 그대로 복사됩니다. 문구를 바꾸려면 아래 따옴표 안을 고치세요. */
+function instaModules(date){
+  const d = fmt(date), w = dow(date);
+  const text =
+`${d} ${w}요일 기준,
+카카오톡 이모티콘 인기순위를
+전체 및 연령대별
+(10대/20대/30대/40대/50대 이상)
+로 정리해드립니다.
+인기순위는 매일 바뀌기 때문에,
+오늘의 순위를 기록으로 남겨둡니다.
+예비 작가님, 이모티콘 지망생이라면
+요즘 어떤 스타일이 인기 있는지
+참고하시고 트렌드를 확인해보세요.
+
+* 당일 출시된 이모티콘은
+순위에 집계되지 않습니다.
+* 신규 이모티콘은 출시 다음날부터
+인기 순위에 집계됩니다.
+
+전체 200위까지의 순위와
+이모티콘별 순위 변동 그래프는
+프로필 링크의 '이모티콘 순위'에서
+더 많은 정보를 확인하실 수 있습니다.`;
+  return { title: null, mods: [{ label: "본문", text }] };
+}
+
+/* ── 유튜브 제목·설명 ──────────────────────────
+   제목은 라이브 해설 영상 제목 형식입니다. */
+function youtubeModules(date){
+  const d = fmt(date), w = dow(date);
+  const n = releasedOn(dateIdx).length;
+  const [, m, day] = date.split("-");
+  const title = `카카오 신규 이모티콘 ${n}종 원큐쌤 라이브 해설(${+m}/${+day} ${w})`;
+  const text =
+`${d} ${w}요일 라이브 방송 다시보기
+
+0:00 라이브 시작`;
+  return { title, mods: [{ label: "설명", text }] };
+}
 
 /* ── 인기순위 글 ── */
 function rankModules(date){
@@ -326,11 +373,16 @@ function render(){
   $("todaybtn").innerHTML = `${fmt(date)}<span class="dow">${dow(date)}</span>`;
   $("prev").disabled = dateIdx === 0;
   $("next").disabled = dateIdx === D.dates.length - 1;
-  $("tab-rank").setAttribute("aria-selected", mode === "rank");
-  $("tab-new").setAttribute("aria-selected", mode === "new");
+  ["rank","new","insta","youtube"].forEach(k =>
+    $("tab-" + k).setAttribute("aria-selected", mode === k));
 
-  const post = mode === "rank" ? rankModules(date) : newModules(date);
-  $("title").value = post.title;
+  const post = mode === "rank" ? rankModules(date)
+             : mode === "new" ? newModules(date)
+             : mode === "insta" ? instaModules(date)
+             : youtubeModules(date);
+  // 인스타그램 글에는 제목이 없어서 제목 칸을 숨깁니다
+  $("titleBlock").hidden = !post.title;
+  $("title").value = post.title || "";
 
   $("modules").innerHTML = post.mods.map((m, k) => `
     <div class="mod">

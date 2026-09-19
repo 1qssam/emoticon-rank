@@ -8,6 +8,15 @@
 <!-- 아랫줄(날짜·원큐쌤의 이모티콘 클래스) 글꼴: Pretendard 웹폰트 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
 <style>
+/* 눈누 웹폰트 — 유튜브 썸네일에 씁니다 (둘 다 SIL 오픈폰트 라이선스) */
+@font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-5Medium.woff2') format('woff2');font-weight:500;font-display:swap}
+@font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-6SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}
+@font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-7Bold.woff2') format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:'A2z';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-6@1.0/에이투지체-7Bold.woff2') format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:'A2z';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-6@1.0/에이투지체-8ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}
+@font-face{font-family:'A2z';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-6@1.0/에이투지체-9Black.woff2') format('woff2');font-weight:900;font-display:swap}
+</style>
+<style>
   :root{--ink:#17181a;--muted:#8b8f93;--line:#e7e6e1;--panel:#f5f4f0}
   *{box-sizing:border-box}
   [hidden]{display:none !important}
@@ -76,6 +85,33 @@
   .ngrid{display:grid;grid-template-columns:repeat(4,148px);grid-auto-rows:200px;gap:18px}
   .ncard .mark{height:38px}
 
+
+  /* ── 유튜브 썸네일 ─────────────────────────────
+     1280x720 그대로 그립니다. 아래 값만 바꾸면 모양이 바뀝니다. */
+  .yt{
+    --yt-border: 26px;        /* 테두리 두께 */
+    --yt-pad: 88px;           /* 왼쪽 여백 */
+    --yt-dow: 215px;          /* 요일 글자 크기 */
+    --yt-count: 96px;         /* 신규 n종 글자 크기 */
+    --yt-date: 58px;          /* 날짜 글자 크기 */
+    --yt-series: 46px;        /* 원큐쌤 라이브 해설 글자 크기 */
+    --yt-char: 330px;         /* 캐릭터 크기 */
+    width:1280px;height:720px;background:#fff;position:relative;overflow:hidden;
+    border:var(--yt-border) solid var(--edge);margin:0 auto 22px;
+    font-family:'Paperozi',-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif}
+  .yt .series{position:absolute;left:var(--yt-pad);top:62px;
+    font-size:var(--yt-series);font-weight:600;color:#6f7377;letter-spacing:-.01em}
+  .yt .dowbig{position:absolute;left:var(--yt-pad);top:120px;line-height:1.25;
+    font-family:'A2z','Paperozi',sans-serif;font-weight:900;
+    font-size:var(--yt-dow);color:var(--edge);letter-spacing:-.02em}
+  .yt .cnt{position:absolute;left:var(--yt-pad);top:410px;line-height:1.25;
+    font-family:'A2z','Paperozi',sans-serif;font-weight:900;
+    font-size:var(--yt-count);color:#17181a;letter-spacing:-.02em}
+  .yt .date{position:absolute;left:var(--yt-pad);top:558px;
+    font-size:var(--yt-date);font-weight:600;color:#5a5f64}
+  .yt .char{position:absolute;right:56px;bottom:0;width:var(--yt-char);height:var(--yt-char)}
+  @media (max-width:1000px){ .yt{transform-origin:top left} }
+
   /* ── 인스타 카드뉴스 표지 ──────────────────────────────
      아래 값만 바꾸면 표지 모양이 바뀝니다. (20위까지 기준)       */
   .cover{
@@ -127,6 +163,7 @@
   </div>
   <button id="tab-hot" class="modebtn on">인기순위</button>
   <button id="tab-new" class="modebtn">신규 이모티콘</button>
+  <button id="tab-yt" class="modebtn">유튜브 썸네일</button>
   <label style="font-size:13px" id="topWrap">
     <select id="topn">
       <option value="10">10위까지</option>
@@ -190,6 +227,34 @@ const COVER_COLORS = {
 };
 let coverDate = null;
 
+/* ── 유튜브 썸네일 ─────────────────────────────
+   요일마다 테두리·요일 글자 색이 바뀝니다. 여기 색만 고치면 됩니다. */
+const YT_COLORS = {
+  "월":"#d63e49", "화":"#de7124", "수":"#20915f",
+  "목":"#1f63a6", "금":"#664aaa", "토":"#3b7f8c", "일":"#8a5a3c",
+};
+/* 캐릭터 그림 파일. 날짜에 따라 하나가 뽑힙니다(같은 날은 늘 같은 그림) */
+const YT_CHARS = ["1qssam-character-1.png", "1qssam-character-2.png",
+                  "1qssam-character-3.png", "1qssam-character-4.png"];
+const charOf = date => {
+  const n = +date.replaceAll("-", "");
+  return YT_CHARS[(n * 2654435761) % YT_CHARS.length];   // 날짜로 정해지는 무작위
+};
+
+function ytCard(){
+  const date = D.dates[dateIdx];
+  const w = dow(date);
+  const n = releasedOn(dateIdx).length;
+  const [y, m, d] = date.split("-");
+  return `<div class="yt" style="--edge:${YT_COLORS[w]}">
+    <div class="series">원큐쌤 라이브 해설</div>
+    <div class="dowbig">${w}요일</div>
+    <div class="cnt">신규 이모티콘 ${n}종</div>
+    <div class="date">${y}년 ${+m}월 ${+d}일</div>
+    <img class="char" src="${charOf(date)}" alt="">
+  </div>`;
+}
+
 $("prev").onclick = () => { dateIdx--; render(); };
 $("next").onclick = () => { dateIdx++; render(); };
 $("topn").onchange = render;
@@ -198,6 +263,7 @@ $("coverAlpha").onchange = render;
 let mode = "hot";
 $("tab-hot").onclick = () => { mode = "hot"; render(); };
 $("tab-new").onclick = () => { mode = "new"; render(); };
+$("tab-yt").onclick = () => { mode = "yt"; render(); };
 initDatePicker({
   dates: D.dates, button: "todaybtn", picker: "picker",
   get: () => dateIdx, set: k => { dateIdx = k; render(); },
@@ -275,6 +341,7 @@ function render(){
   $("next").disabled = dateIdx === D.dates.length - 1;
   $("tab-hot").classList.toggle("on", mode === "hot");
   $("tab-new").classList.toggle("on", mode === "new");
+  $("tab-yt").classList.toggle("on", mode === "yt");
   $("topWrap").hidden = mode !== "hot";
   $("coverWrap").hidden = mode !== "hot";
   if (coverDate !== date){                 // 날짜가 바뀌면 그 요일 색으로
@@ -284,6 +351,10 @@ function render(){
 
   if (mode === "new"){
     $("shots").innerHTML = newCard();
+    return;
+  }
+  if (mode === "yt"){
+    $("shots").innerHTML = ytCard();
     return;
   }
   const n = +$("topn").value;
