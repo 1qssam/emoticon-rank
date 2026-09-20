@@ -115,6 +115,7 @@ const E = window.EXPR || {};
 const CHARS = new Set([
   "강아지", "고양이", "토끼", "쥐", "햄스터", "병아리", "닭", "곰", "돼지", "원숭이",
   "펭귄", "여우", "너구리", "오리", "양", "기린", "두더지", "나무늘보", "요정", "원시인",
+  "비버", "고라니", "비숑", "한복",
 ]);
 
 const $ = id => document.getElementById(id);
@@ -191,7 +192,8 @@ function drawDetail(){
     `<span class="t"><a href="https://e.kakao.com/t/${slug}" target="_blank" rel="noopener">${esc(titleOf(slug))}</a></span>` +
     `<span class="no">${esc(creatorOf(slug))} · ${nos.join(", ")}번</span>`).join("<br>");
 
-  const co = together(picked);
+  // '캐릭터 빼기'를 켜면 함께 있던 키워드에서도 캐릭터를 뺍니다
+  const co = together(picked).filter(([x]) => !($("hideChr").checked && CHARS.has(x)));
   const coHtml = co.length
     ? co.map(([x, n]) => `<button class="kw" data-w="${esc(x)}"><b>${esc(x)}</b><span class="n">${n}</span></button>`).join("")
     : `<span class="sub">함께 쓰인 키워드가 없습니다.</span>`;
