@@ -96,6 +96,7 @@
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="tab-rank" aria-selected="true">인기순위 글</button>
     <button class="tab" role="tab" id="tab-new" aria-selected="false">신규 이모티콘 글</button>
+    <button class="tab" role="tab" id="tab-plus" aria-selected="false">플러스 키워드 글</button>
     <button class="tab" role="tab" id="tab-insta" aria-selected="false">인스타그램</button>
     <button class="tab" role="tab" id="tab-youtube" aria-selected="false">유튜브</button>
   </div>
@@ -199,12 +200,42 @@ $("prev").onclick = () => { dateIdx--; render(); };
 $("next").onclick = () => { dateIdx++; render(); };
 $("tab-rank").onclick = () => { mode = "rank"; render(); };
 $("tab-new").onclick = () => { mode = "new"; render(); };
+$("tab-plus").onclick = () => { mode = "plus"; render(); };
 $("tab-insta").onclick = () => { mode = "insta"; render(); };
 $("tab-youtube").onclick = () => { mode = "youtube"; render(); };
 initDatePicker({
   dates: D.dates, button: "todaybtn", picker: "picker",
   get: () => dateIdx, set: k => { dateIdx = k; render(); },
 });
+
+/* ── 플러스 키워드 글 ──────────────────────────
+   이모티콘 스튜디오의 블루오션 / 어제 많이 찾은 키워드 기록용 글입니다.
+   문구와 태그를 바꾸려면 아래 따옴표 안을 고치세요. */
+const PLUS_TAGS = [
+  "이모티콘블루오션키워드", "카카오이모티콘플러스", "이모티콘키워드", "이모티콘기획",
+  "이모티콘아이디어", "이모티콘승인키워드", "이모티콘트렌드키워드", "이모티콘인기검색어",
+  "이모티콘어제많이찾은키워드", "이모티콘창작", "이모티콘제작", "이모티콘만들기", "왕초보이모티콘",
+];
+function plusModules(date){
+  const d = fmt(date), w = dow(date);
+  const title = `${d} ${w}요일 블루오션 키워드 & 어제 많이 찾은 키워드`;
+  const text =
+`${d} ${w}요일 기준,
+카카오 이모티콘 스튜디오에서 공개한
+"블루오션 키워드"와
+(사용량 대비 이모티콘 수가 적은 키워드)
+"어제 많이 찾은 키워드"를
+(평소보다 어제 사용량이 크게 늘어난 키워드)
+기록합니다.
+
+이모티콘 구성을 기획중이시라면,
+아직 경쟁이 적은 키워드를 적극 활용해보시고
+키워드 사용량의 변화에서 힌트도 얻어보세요.`;
+  return { title, mods: [
+    { label: "본문", text },
+    { label: `태그 ${PLUS_TAGS.length}개`, text: PLUS_TAGS.map(t => "#" + t).join(", ") },
+  ] };
+}
 
 /* ── 인스타그램 글 ──────────────────────────────
    줄바꿈 위치까지 그대로 복사됩니다. 문구를 바꾸려면 아래 따옴표 안을 고치세요. */
@@ -245,7 +276,11 @@ function youtubeModules(date){
 `${d} ${w}요일 라이브 방송 다시보기
 
 0:00 라이브 시작`;
-  return { title, mods: [{ label: "설명", text }] };
+  const mods = [{ label: "설명", text }];
+  // 태그는 신규 이모티콘 글의 것을 그대로 씁니다
+  const tagMod = newModules(date).mods.find(m => m.label.startsWith("태그"));
+  if (tagMod) mods.push(tagMod);
+  return { title, mods };
 }
 
 /* ── 인기순위 글 ── */
@@ -373,11 +408,12 @@ function render(){
   $("todaybtn").innerHTML = `${fmt(date)}<span class="dow">${dow(date)}</span>`;
   $("prev").disabled = dateIdx === 0;
   $("next").disabled = dateIdx === D.dates.length - 1;
-  ["rank","new","insta","youtube"].forEach(k =>
+  ["rank","new","plus","insta","youtube"].forEach(k =>
     $("tab-" + k).setAttribute("aria-selected", mode === k));
 
   const post = mode === "rank" ? rankModules(date)
              : mode === "new" ? newModules(date)
+             : mode === "plus" ? plusModules(date)
              : mode === "insta" ? instaModules(date)
              : youtubeModules(date);
   // 인스타그램 글에는 제목이 없어서 제목 칸을 숨깁니다
