@@ -500,7 +500,15 @@ function drawFrame(i){
   mctx.clearRect(0, 0, m.width, m.height);
 
   const f = frames[i];
-  if (f){ drawFit(ctx, f.img, W, H); drawFit(mctx, f.img, m.width, m.height); }
+  if (f){
+    drawFit(ctx, f.img, W, H);
+    // GIF와 똑같이: 반투명은 투명 아니면 불투명으로
+    const d = ctx.getImageData(0, 0, W, H), px = d.data;
+    for (let k = 3; k < px.length; k += 4) px[k] = px[k] < ALPHA_CUT ? 0 : 255;
+    ctx.putImageData(d, 0, 0);
+    // 작게 보기는 잘라낸 큰 그림을 줄여서 그림
+    mctx.drawImage(v, 0, 0, W, H, 0, 0, m.width, m.height);
+  }
   $("pos").textContent = `${frames.length ? i + 1 : 0} / ${frames.length} 프레임`;
   sizeView();
 }
