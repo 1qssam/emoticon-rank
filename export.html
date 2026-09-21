@@ -63,7 +63,7 @@
     <nav class="tools">
       <a href="index.html">사이트</a>
       <a href="week.html">주간정리</a>
-      <a href="post.html">블로그용 텍스트</a>
+      <a href="post.html">포스팅</a>
       <a href="card.html">캡처용 순위표</a>
       <a href="db.html">전체 목록</a>
       <a href="export.html" aria-current="page">스프레드시트</a>
@@ -98,6 +98,8 @@
         <option value="200" selected>200위 전부</option>
       </select>
     </label>
+    <label><input type="checkbox" id="noMini"> 미니 제외</label>
+    <label><input type="checkbox" id="noKw"> 키워드 한 것 제외</label>
     <label><input type="checkbox" id="memo" checked> 직접 적을 칸 추가</label>
   </div>
 
@@ -114,12 +116,13 @@
     날짜는 최근 것이 위로, 순번은 작은 것이 위로 정렬됩니다.<br>순번은 그날 카카오 신규 목록에 진열된 순서, 일건은 그날 출시된 수입니다.<br>
     <b>복사해서 시트에 붙여넣기</b>는 탭으로 나눠 복사하므로 구글 시트나 엑셀에 바로 붙습니다.
     <b>CSV 내려받기</b>는 파일로 저장됩니다.<br>
-    노란 칸(메모)은 비어 있습니다. 시트에서 직접 채우시면 됩니다.<br>MD 칸은 MD추천이면 MD, 아니면 빈칸, 아직 확인 전이면 - 로 표시됩니다.<br>태그·개수·가격은 수집이 끝난 이모티콘만 채워집니다.
+    미니 제외·키워드 한 것 제외를 켜도 순번·일건·순위는 원래 값 그대로 둡니다(그 자리만 빠짐).<br>노란 칸(메모)은 비어 있습니다. 시트에서 직접 채우시면 됩니다.<br>MD 칸은 MD추천이면 MD, 아니면 빈칸, 아직 확인 전이면 - 로 표시됩니다.<br>태그·개수·가격은 수집이 끝난 이모티콘만 채워집니다.
   </p>
 </div>
 
 <script src="data.js"></script>
 <script src="tags.js"></script>
+<script src="expr.js"></script>
 <script>
 const D = window.DATA;
 /* 그날 출시분을 카카오 신규 목록의 진열 순서대로 돌려줍니다.
@@ -191,7 +194,7 @@ D.ages.forEach(a => {
   $("age").appendChild(o);
 });
 
-["kind","from","to","age","topn","memo"].forEach(id => $(id).onchange = render);
+["kind","from","to","age","topn","noMini","noKw","memo"].forEach(id => $(id).onchange = render);
 
 const BLANK = ["메모"];
 
@@ -221,6 +224,11 @@ function build(){
   clampRange();
   let from = +$("from").value, to = +$("to").value;
   const withMemo = $("memo").checked;
+  const noMini = $("noMini").checked;           // 미니(미니멈티·미니움티)는 줄에서 뺍니다
+  const isMini = i => (D.items[i][4] & 1) !== 0;
+  const noKw = $("noKw").checked;               // 표현 키워드(expr.js)를 이미 적은 것은 뺍니다
+  const EXPR = window.EXPR || {};
+  const hasKw = i => !!EXPR[D.items[i][0]];
 
   if ($("kind").value === "new"){
     const head = ["날짜","요일","순번","일건","상품명","작가명","시리즈","유형","소리",
@@ -229,6 +237,8 @@ function build(){
     for (let k = to; k >= from; k--){          // 날짜는 내림차순
       const items = releasedOn(k);             // 순번 = 그날 진열 순서, 일건 = 그날 출시 수
       items.forEach((i, n) => {
+        if (noMini && isMini(i)) return;       // 순번·일건은 그날 진열 그대로 둡니다
+        if (noKw && hasKw(i)) return;
         const [slug, title, creator, cid, flags] = D.items[i];
         const b = best["전체"][i];
         rows.push([
@@ -248,6 +258,8 @@ function build(){
   const rows = [];
   for (let k = to; k >= from; k--){
     D.hot[age][k].slice(0, n).forEach((it, i) => {
+      if (noMini && isMini(it)) return;         // 순위 숫자는 원래 순위 그대로 둡니다
+      if (noKw && hasKw(it)) return;
       const [slug, title, creator, cid, flags] = D.items[it];
       rows.push([
         D.dates[k], dow(D.dates[k]), age, i + 1, title, creator,
