@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>방송 대기화면 · 이모티콘 순위</title>
+<meta name="robots" content="noindex">
+<!--
+  OBS '브라우저 소스'용 방송 대기화면입니다.
+  OBS에서: 소스 추가 → 브라우저 → 주소에 이 페이지, 너비 1920 / 높이 1080
+           '보이지 않을 때 소스 종료'를 켜두면 눈을 켤 때마다 그날 자료로 새로 그려집니다.
+  문구 고치기: 소스 우클릭 → 상호작용 → 오른쪽 위 문구를 클릭해 고치고 Enter
+              (고친 문구는 OBS 안에 저장되어 다음에도 그대로 나옵니다)
+  다른 날짜로 보기: 주소 끝에 ?date=2026-09-21
+-->
+<style>
+/* 눈누 웹폰트 (둘 다 SIL 오픈폰트 라이선스) */
+@font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-5Medium.woff2') format('woff2');font-weight:500;font-display:swap}
+@font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-6SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}
+@font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-7Bold.woff2') format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:'A2z';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-6@1.0/에이투지체-7Bold.woff2') format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:'A2z';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-6@1.0/에이투지체-8ExtraBold.woff2') format('woff2');font-weight:800;font-display:swap}
+@font-face{font-family:'A2z';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-6@1.0/에이투지체-9Black.woff2') format('woff2');font-weight:900;font-display:swap}
+
+  html,body{margin:0;padding:0;background:#fff;overflow:hidden}
+  *{box-sizing:border-box}
+
+  /* ── 대기화면 ─────────────────────────────────
+     유튜브 썸네일(1280x720)과 같은 모양을 1.5배로 키운 1920x1080입니다.
+     아래 값만 바꾸면 모양이 바뀝니다. */
+  .live{
+    --border: 39px;          /* 테두리 두께 */
+    --pad: 75px;             /* 왼쪽 여백 */
+    --dow: 330px;            /* 요일 글자 크기 */
+    --count: 144px;          /* 신규 n종 글자 크기 */
+    --date: 90px;            /* 날짜 글자 크기 */
+    --series: 87px;          /* 원큐쌤 라이브 해설 글자 크기 */
+    --char: 495px;           /* 캐릭터 크기 */
+    --notice: 56px;          /* 'OO에 라이브가 시작됩니다' 글자 크기 */
+    --clock: 96px;           /* 현재 시각 글자 크기 */
+    --right: 75px;           /* 오른쪽 위 묶음의 오른쪽 여백 */
+    width:1920px;height:1080px;background:#fff;position:relative;overflow:hidden;
+    border:var(--border) solid var(--edge);
+    font-family:'Paperozi',-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif}
+  .live .series{position:absolute;left:var(--pad);top:48px;
+    font-size:var(--series);font-weight:600;color:#6f7377;letter-spacing:-.01em}
+  .live .dowbig{position:absolute;left:var(--pad);top:180px;line-height:1.25;
+    font-family:'A2z','Paperozi',sans-serif;font-weight:900;
+    font-size:var(--dow);color:var(--edge);letter-spacing:-.02em}
+  .live .cnt{position:absolute;left:var(--pad);top:615px;line-height:1.25;
+    font-family:'A2z','Paperozi',sans-serif;font-weight:800;
+    font-size:var(--count);color:#17181a;letter-spacing:-.02em}
+  .live .date{position:absolute;left:var(--pad);top:837px;
+    font-size:var(--date);font-weight:600;color:#5a5f64}
+  .live .char{position:absolute;right:9px;bottom:0;width:var(--char);height:var(--char)}
+
+  /* 오른쪽 위: 시작 안내 + 현재 시각 */
+  .live .side{position:absolute;right:var(--right);top:60px;
+    display:flex;flex-direction:column;align-items:flex-end;gap:14px}
+  .live .notice{font-size:var(--notice);font-weight:600;color:#17181a;
+    outline:none;border-radius:10px;padding:2px 8px;cursor:text;white-space:nowrap}
+  .live .notice:focus{background:#fff6c7}
+  .live .clock{font-family:'A2z','Paperozi',sans-serif;font-weight:800;
+    font-size:var(--clock);color:var(--edge);font-variant-numeric:tabular-nums;letter-spacing:.01em}
+</style>
+</head>
+<body>
+<div class="live" id="live">
+  <div class="series">원큐쌤 라이브 해설</div>
+  <div class="dowbig" id="dow"></div>
+  <div class="cnt" id="cnt"></div>
+  <div class="date" id="date"></div>
+  <div class="side">
+    <div class="notice" id="notice" contenteditable="true" spellcheck="false"></div>
+    <div class="clock" id="clock"></div>
+  </div>
+  <img class="char" id="char" alt="">
+</div>
+
+<script src="data.js"></script>
+<script>
+const D = window.DATA;
+const $ = id => document.getElementById(id);
+
+/* 요일마다 테두리·요일 글자·시계 색 (card.html의 유튜브 썸네일과 같게 맞춰두세요) */
+const YT_COLORS = {
+  "월":"#d63e49", "화":"#de7124", "수":"#20915f",
+  "목":"#1f63a6", "금":"#664aaa", "토":"#3b7f8c", "일":"#8a5a3c",
+};
+/* 캐릭터 — 썸네일과 같은 계산이라 같은 날짜면 같은 그림입니다 */
+const YT_CHARS = ["1qssam-character-1.png", "1qssam-character-2.png",
+                  "1qssam-character-3.png", "1qssam-character-4.png"];
+const charOf = date => {
+  let h = 2166136261;
+  for (const ch of date) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  return YT_CHARS[Math.abs(h >> 8) % YT_CHARS.length];
+};
+const dowOf = s => "일월화수목금토"[new Date(...s.split("-").map((v,i)=>i===1?v-1:+v)).getDay()];
+
+/* ── 날짜 정하기: 주소에 ?date= 가 있으면 그 날, 없으면 오늘(없으면 자료의 마지막 날) ── */
+const today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);   // 한국 날짜
+const want = new URLSearchParams(location.search).get("date") || today;
+let k = D.dates.indexOf(want);
+if (k < 0) k = D.dates.length - 1;
+const date = D.dates[k];
+
+/* 그날 출시 수 */
+const count = D.release.filter(r => r === k).length;
+
+const w = dowOf(date);
+const [y, m, d] = date.split("-");
+$("live").style.setProperty("--edge", YT_COLORS[w]);
+$("dow").textContent = `${w}요일`;
+$("cnt").textContent = count ? `신규 이모티콘 ${count}종` : "신규 이모티콘";
+$("date").textContent = `${y}년 ${+m}월 ${+d}일`;
+$("char").src = charOf(date);
+
+/* ── 시작 안내 문구: 클릭해서 고치고 Enter. OBS 안에 저장됩니다 ── */
+const KEY = "live-notice";
+const DEFAULT_NOTICE = "10:30에 라이브가 시작됩니다";
+let saved = null;
+try { saved = localStorage.getItem(KEY); } catch (e) {}
+$("notice").textContent = saved || DEFAULT_NOTICE;
+$("notice").addEventListener("keydown", e => {
+  if (e.key === "Enter"){ e.preventDefault(); $("notice").blur(); }
+});
+$("notice").addEventListener("blur", () => {
+  const t = $("notice").textContent.trim() || DEFAULT_NOTICE;   // 다 지우면 기본 문구로
+  $("notice").textContent = t;
+  try { localStorage.setItem(KEY, t); } catch (e) {}
+});
+
+/* ── 현재 시각 (이 컴퓨터 시계 기준, 1초마다) ── */
+const pad2 = n => String(n).padStart(2, "0");
+function tick(){
+  const t = new Date();
+  $("clock").textContent = `${pad2(t.getHours())}:${pad2(t.getMinutes())}:${pad2(t.getSeconds())}`;
+}
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
