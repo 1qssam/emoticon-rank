@@ -31,6 +31,10 @@
     padding:5px 7px;background:#fff;color:var(--ink)}
   input[type=checkbox]{width:14px;height:14px;accent-color:#17181a;cursor:pointer}
   .cnt{font-size:12.5px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+  .opts .grp{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .opts .grp b{font-size:12.5px;font-weight:600;color:var(--muted)}
+  .opts .sep{flex-basis:100%;height:0}
+  .use .age{color:var(--muted);font-size:12px;margin-left:6px}
 
   .blocks{display:flex;flex-wrap:wrap;gap:7px}
   .kw{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 13px;
@@ -91,6 +95,32 @@
     </label>
     <label><input type="search" id="q" placeholder="키워드 찾기" aria-label="키워드 찾기"></label>
     <span class="cnt" id="cnt"></span>
+    <span class="sep"></span>
+    <span class="grp" id="ageGrp"><b>연령대</b></span>
+    <label>비율
+      <select id="share">
+        <option value="0.2">20% 이상</option>
+        <option value="0.3" selected>30% 이상</option>
+        <option value="0.4">40% 이상</option>
+        <option value="0.5">50% 이상</option>
+      </select>
+    </label>
+    <label class="grp"><b>기간</b>
+      <select id="from"></select> – <select id="to"></select>
+    </label>
+    <span class="sep"></span>
+    <label>스타일 태그
+      <select id="tag"><option value="">전체</option></select>
+    </label>
+    <label>유형
+      <select id="kind">
+        <option value="">전체</option>
+        <option value="멈티">멈티</option>
+        <option value="움티">움티</option>
+        <option value="큰티">큰티</option>
+      </select>
+    </label>
+    <span class="cnt" id="setcnt"></span>
   </div>
 
   <div id="detail"></div>
@@ -99,11 +129,16 @@
   <p class="tip">
     괄호 안은 <b>표현 수</b>이고, 그 옆은 <b>몇 종에서 나왔는지</b>입니다. 예: 12 · 5종<br>
     키워드를 누르면 그 키워드를 쓴 이모티콘과, 같은 표현에 함께 있던 키워드를 볼 수 있습니다.<br>
-    캐릭터 이름(강아지·고양이 등)은 한 세트 안에서 계속 반복되어 수가 부풀기 때문에 기본으로 숨깁니다.
+    캐릭터 이름(강아지·고양이 등)은 한 세트 안에서 계속 반복되어 수가 부풀기 때문에 기본으로 숨깁니다.<br>
+    <b>연령대</b>는 기간 안에 10대~50대 순위(200위)에 든 날 중 그 연령대가 차지한 비율로 나눕니다.
+    예: 10대 순위에만 주로 보인 세트는 10대 비율이 높고, 전 연령에 고루 든 세트는 어느 연령도 높지 않습니다.
+    연령대를 고르면 순위 기록이 없는 세트는 빠집니다.<br>
+    <b>스타일 태그·유형·연령대</b>는 함께 걸리며, 걸러진 세트의 키워드만 셉니다.
   </p>
 </div>
 
 <script src="data.js"></script>
+<script src="tags.js"></script>
 <script src="expr.js"></script>
 <script>
 const D = window.DATA;
@@ -115,35 +150,108 @@ const E = window.EXPR || {};
 const CHARS = new Set([
   "강아지", "고양이", "토끼", "쥐", "햄스터", "병아리", "닭", "곰", "돼지", "원숭이",
   "펭귄", "여우", "너구리", "오리", "양", "기린", "두더지", "나무늘보", "요정", "원시인",
-  "비버", "고라니", "비숑", "한복", "리트리버", "말티즈", "물개", "개구리", "천사", "호랑이",
-  "푸들", "거북이", "나비", "벌", "우파루파",
+  "비버", "고라니", "비숑", "한복",
 ]);
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 /* slug → 이모티콘 정보 (data.js에 있는 것만) */
-const BY_SLUG = {};
-D.items.forEach(m => { BY_SLUG[m[0]] = m; });
+const BY_SLUG = {}, IDX = {};
+D.items.forEach((m, i) => { BY_SLUG[m[0]] = m; IDX[m[0]] = i; });
+const T = (window.TAGS || {items:{}});
 const titleOf = slug => (BY_SLUG[slug] ? BY_SLUG[slug][1] : slug);
 const creatorOf = slug => (BY_SLUG[slug] ? BY_SLUG[slug][2] : "");
+const kindOf = slug => {
+  const f = BY_SLUG[slug] ? BY_SLUG[slug][4] : 0;
+  if (f & 2) return "큰티";
+  if (f & 1) return (f & 8) ? "미니움티" : "미니멈티";
+  return (f & 8) ? "움티" : "멈티";
+};
+const tagsOf = slug => (T.items[slug] ? T.items[slug].t.map(x => x[0]) : []);
 
-/* ── 키워드 모으기 ──
-   STAT[키워드] = { expr: 표현 수, sets: Set(slug), use: [[slug, 표현번호], ...] } */
-const STAT = {};
-Object.entries(E).forEach(([slug, exprs]) => {
-  exprs.forEach((words, n) => {
-    new Set(words).forEach(w => {               // 한 표현 안의 같은 키워드는 한 번만
-      const v = STAT[w] || (STAT[w] = { expr: 0, sets: new Set(), use: [] });
-      v.expr++;
-      v.sets.add(slug);
-      v.use.push([slug, n + 1]);
+const AGES = D.ages.slice(1);                        // 10대~50대이상 (전체 제외)
+const AGE = a => a === "50대이상" ? "50대" : a;
+
+/* 기간 안에 연령대별 200위 안에 든 날 수 → 비율 { "10대": 0.4, ... } (기록 없으면 null) */
+function sharesOf(slug, from, to){
+  const i = IDX[slug];
+  if (i === undefined) return null;
+  const days = {}; let total = 0;
+  AGES.forEach(a => {
+    let n = 0;
+    for (let k = from; k <= to; k++) if ((D.hot[a][k] || []).includes(i)) n++;
+    days[a] = n; total += n;
+  });
+  if (!total) return null;
+  const out = {};
+  AGES.forEach(a => out[a] = days[a] / total);
+  return out;
+}
+const mainAge = sh => sh ? AGES.reduce((b, a) => sh[a] > sh[b] ? a : b) : null;
+/* 상세 목록 옆 표시 — 한 연령이 30%를 못 넘으면 '고루 분포' (5개 연령이면 고르게 나뉠 때 20%씩) */
+const ageNote = sh => {
+  if (!sh) return `<span class="age">순위 기록 없음</span>`;
+  const a = mainAge(sh), p = Math.round(sh[a] * 100);
+  return `<span class="age">${p < 30 ? "고루 분포" : `${AGE(a)} ${p}%`}</span>`;
+};
+
+/* 선택칸 채우기 */
+AGES.forEach(a => {
+  const l = document.createElement("label");
+  l.innerHTML = `<input type="checkbox" data-age="${a}"> ${AGE(a)}`;
+  $("ageGrp").appendChild(l);
+});
+D.dates.forEach((d, i) => ["from","to"].forEach(id => {
+  const o = document.createElement("option"); o.value = i; o.textContent = d; $(id).appendChild(o);
+}));
+$("from").value = 0; $("to").value = D.dates.length - 1;
+(function(){
+  const c = {};
+  Object.keys(E).forEach(slug => tagsOf(slug).forEach(t => c[t] = (c[t] || 0) + 1));
+  Object.keys(c).sort((a, b) => c[b] - c[a] || a.localeCompare(b, "ko")).forEach(t => {
+    const o = document.createElement("option"); o.value = t; o.textContent = `${t} (${c[t]})`; $("tag").appendChild(o);
+  });
+})();
+
+/* 조건에 맞는 세트 */
+let SH = {};                                          // slug → 연령 비율 (현재 기간)
+function activeSets(){
+  let from = +$("from").value, to = +$("to").value;
+  if (from > to){ [from, to] = [to, from]; $("from").value = from; $("to").value = to; }
+  const ages = [...document.querySelectorAll("#ageGrp input:checked")].map(x => x.dataset.age);
+  const min = +$("share").value, tag = $("tag").value, kind = $("kind").value;
+  SH = {};
+  return Object.keys(E).filter(slug => {
+    SH[slug] = sharesOf(slug, from, to);
+    if (tag && !tagsOf(slug).includes(tag)) return false;
+    if (kind && kindOf(slug) !== kind) return false;
+    if (ages.length){
+      const sh = SH[slug];
+      if (!sh || !ages.some(a => sh[a] >= min)) return false;
+    }
+    return true;
+  });
+}
+
+/* 키워드 모으기 — STAT[키워드] = { expr, sets: Set(slug), use: [[slug, 표현번호]] } */
+let STAT = {}, KEYS = [], SETS = [], EXPR_ACTIVE = 0;
+function collect(){
+  SETS = activeSets();
+  STAT = {}; EXPR_ACTIVE = 0;
+  SETS.forEach(slug => {
+    EXPR_ACTIVE += E[slug].length;
+    E[slug].forEach((words, n) => {
+      new Set(words).forEach(w => {               // 한 표현 안의 같은 키워드는 한 번만
+        const v = STAT[w] || (STAT[w] = { expr: 0, sets: new Set(), use: [] });
+        v.expr++; v.sets.add(slug); v.use.push([slug, n + 1]);
+      });
     });
   });
-});
-const KEYS = Object.keys(STAT);
+  KEYS = Object.keys(STAT);
+  if (picked && !STAT[picked]) picked = null;       // 걸러져서 사라진 키워드는 닫습니다
+}
 const SET_TOTAL = Object.keys(E).length;
-const EXPR_TOTAL = Object.values(E).reduce((a, v) => a + v.length, 0);
 
 let picked = null;
 
@@ -174,7 +282,7 @@ const chip = (w, small) => {
 /* 고른 키워드와 같은 표현에 함께 있던 키워드 */
 function together(w){
   const c = {};
-  Object.entries(E).forEach(([slug, exprs]) => exprs.forEach(words => {
+  SETS.forEach(slug => E[slug].forEach(words => {
     if (!words.includes(w)) return;
     new Set(words).forEach(x => { if (x !== w) c[x] = (c[x] || 0) + 1; });
   }));
@@ -191,7 +299,8 @@ function drawDetail(){
   v.use.forEach(([slug, n]) => (bySlug[slug] = bySlug[slug] || []).push(n));
   const uses = Object.entries(bySlug).map(([slug, nos]) =>
     `<span class="t"><a href="https://e.kakao.com/t/${slug}" target="_blank" rel="noopener">${esc(titleOf(slug))}</a></span>` +
-    `<span class="no">${esc(creatorOf(slug))} · ${nos.join(", ")}번</span>`).join("<br>");
+    `<span class="no">${esc(creatorOf(slug))} · ${nos.join(", ")}번</span>` +
+    ageNote(SH[slug])).join("<br>");
 
   // '캐릭터 빼기'를 켜면 함께 있던 키워드에서도 캐릭터를 뺍니다
   const co = together(picked).filter(([x]) => !($("hideChr").checked && CHARS.has(x)));
@@ -202,7 +311,7 @@ function drawDetail(){
   $("detail").innerHTML = `<div class="panel">
     <button class="close" id="closeDetail">닫기</button>
     <h2>${esc(picked)}</h2>
-    <p class="sub">표현 ${v.expr}개 · ${v.sets.size}종에서 사용 (전체 ${EXPR_TOTAL}표현 / ${SET_TOTAL}종)</p>
+    <p class="sub">표현 ${v.expr}개 · ${v.sets.size}종에서 사용 (조건에 맞는 ${SETS.length}종 ${EXPR_ACTIVE}표현 중)</p>
     <h3>쓰인 곳</h3>
     <p class="use">${uses}</p>
     <h3>같은 표현에 함께 있던 키워드 ${co.length}개</h3>
@@ -222,9 +331,11 @@ function bind(host){
 }
 
 function render(){
+  collect();
+  $("setcnt").textContent = `조건에 맞는 세트 ${SETS.length} / ${SET_TOTAL}종`;
   const list = visible();
   $("cnt").textContent =
-    `키워드 ${list.length.toLocaleString()}개 · 전체 ${KEYS.length.toLocaleString()}개 / ${SET_TOTAL}종 ${EXPR_TOTAL}표현`;
+    `키워드 ${list.length.toLocaleString()}개 · 전체 ${KEYS.length.toLocaleString()}개 / ${EXPR_ACTIVE}표현`;
   $("blocks").innerHTML = list.length
     ? list.map(w => chip(w)).join("")
     : `<div class="empty">맞는 키워드가 없습니다.</div>`;
@@ -232,7 +343,8 @@ function render(){
   drawDetail();
 }
 
-["hideChr", "multi", "sort"].forEach(id => $(id).onchange = render);
+["hideChr", "multi", "sort", "share", "from", "to", "tag", "kind"].forEach(id => $(id).onchange = render);
+document.querySelectorAll("#ageGrp input").forEach(x => x.onchange = render);
 $("q").oninput = render;
 
 if (!Object.keys(E).length){
