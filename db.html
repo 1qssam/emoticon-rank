@@ -158,6 +158,14 @@ D.ages.forEach(a => {
   }));
 });
 
+/* 연령대별 200위 안에 든 날 수 — DAYS[연령대][항목 번호] */
+const DAYS = {};
+D.ages.forEach(a => {
+  DAYS[a] = {};
+  D.hot[a].forEach(row => row.forEach(it => { DAYS[a][it] = (DAYS[a][it] || 0) + 1; }));
+});
+const DAY_COLS = D.ages.map(a => ({ a, k: "days_" + a, label: AGE(a) + "일" }));
+
 /* 미니만 따로 본 순위 (2026-09-15부터 모으기 시작했습니다) */
 const bestMini = {};
 D.ages.forEach(a => {
@@ -227,7 +235,8 @@ const ROWS = D.items.map((m, i) => {
     first: firstSeen[i] !== undefined ? D.dates[firstSeen[i]] : null,
     last: lastSeen[i] !== undefined ? D.dates[lastSeen[i]] : null,
     md: mdOf(slug),
-    kw: EXPR[slug] ? EXPR[slug].length : 0,      // 키워드를 적어둔 표현 수 (0이면 아직 안 함)
+    kw: EXPR[slug] ? EXPR[slug].length : 0,
+    ...Object.fromEntries(DAY_COLS.map(c => [c.k, DAYS[c.a][i] || 0])),   // 200위 안에 든 날 수      // 키워드를 적어둔 표현 수 (0이면 아직 안 함)
   };
 });
 
@@ -256,6 +265,8 @@ const COLS = [
   {k:"ageBest",label:"연령대 최고", cell:r => ageText(r)},
   {k:"first",  label:"첫 등장", cls:"num", cell:r => r.first ?? ""},
   {k:"last",   label:"마지막 등장", cls:"num", cell:r => r.last ?? ""},
+  ...DAY_COLS.map(c => ({k:c.k, label:c.label, cls:"num", desc:true, tip:`${AGE(c.a)} 순위 200위 안에 든 날 수`,
+                         cell:r => r[c.k] || ""})),
   {k:"md",     label:"MD",      cell:r => r.md},
   {k:"kw",     label:"키워드",  cls:"num", cell:r => r.kw ? r.kw : ""},
   {k:"free",   label:"월요무료", cls:"num", cell:r => r.free},
@@ -338,7 +349,7 @@ function apply(){
 
 function render(){
   const head = COLS.map(c =>
-    `<th data-k="${c.k}">${c.label}${sortKey === c.k ? `<span class="ar">${asc ? "▲" : "▼"}</span>` : ""}</th>`).join("");
+    `<th data-k="${c.k}"${c.tip ? ` title="${c.tip}"` : ""}>${c.label}${sortKey === c.k ? `<span class="ar">${asc ? "▲" : "▼"}</span>` : ""}</th>`).join("");
 
   const body = filtered.slice(0, 500).map(r =>
     "<tr>" + COLS.map(c => `<td class="${c.cls || ""}">${c.cell(r)}</td>`).join("") + "</tr>").join("");
@@ -352,8 +363,9 @@ function render(){
 
   $("tbl").querySelectorAll("th[data-k]").forEach(th => th.onclick = () => {
     const k = th.dataset.k;
-    if (COLS.find(c => c.k === k).nosort) return;
-    if (sortKey === k) asc = !asc; else { sortKey = k; asc = true; }
+    const col = COLS.find(c => c.k === k);
+    if (col.nosort) return;
+    if (sortKey === k) asc = !asc; else { sortKey = k; asc = !col.desc; }   // 일수는 많은 것부터
     apply();
   });
   $("tbl").querySelectorAll(".chip").forEach(c => c.onclick = () => {
@@ -363,12 +375,12 @@ function render(){
 
 $("copy").onclick = async () => {
   const head = ["상품명","작가","시리즈","유형","소리","태그","개수","가격",
-                "출시일","순번","일건","최고순위","최고순위일","연령대최고","첫등장","마지막등장","slug","링크","MD","월요무료","키워드표현수"];
+                "출시일","순번","일건","최고순위","최고순위일","연령대최고","첫등장","마지막등장",...DAY_COLS.map(c => c.label),"slug","링크","MD","월요무료","키워드표현수"];
   const rows = filtered.map(r => [
     r.title, r.creator, r.series, r.kind, r.sound, r.tags.join(", "),
     r.count ?? "", r.price ?? "", r.released ?? "", r.no ?? "", r.dayCount ?? "",
     rankText(r), r.bestDate ?? r.miniDate ?? "",
-    ageText(r), r.first ?? "", r.last ?? "",
+    ageText(r), r.first ?? "", r.last ?? "", ...DAY_COLS.map(c => r[c.k] || ""),
     r.slug, `https://e.kakao.com/t/${r.slug}`, r.md, r.free, r.kw || "",
   ]);
   const lines = ($("withhead").checked ? [head] : []).concat(rows);
