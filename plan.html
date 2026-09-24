@@ -64,9 +64,17 @@
   /* 오른쪽 미리보기(화면용) — 실제 이미지와 같은 비율로 줄인 모양 */
   .grid-wrap{padding:18px;overflow:auto;max-height:calc(100vh - 150px);background:#fff;border-radius:0 0 10px 10px}
   .grid{display:grid;gap:4.5% 1.2%;grid-template-columns:repeat(var(--cols),minmax(0,1fr))}
-  .cell .lb{font-weight:600;color:#000;font-size:14px;line-height:1.2;margin-bottom:6px;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .cell .sq{aspect-ratio:1/1;border:1px solid #000}
+  .cell{border-radius:4px}
+  .cell .lb{display:flex;align-items:baseline;gap:4px;font-weight:600;color:#000;font-size:14px;line-height:1.2;margin-bottom:6px;min-width:0}
+  .cell .lb input{flex:1;min-width:0;border:0;border-bottom:1px dashed transparent;background:none;padding:0;
+    font:inherit;color:inherit}
+  .cell .lb input:hover{border-bottom-color:#ccc}
+  .cell .lb input:focus{outline:none;border-bottom-color:#000;background:#fff6c7}
+  .cell .sq{aspect-ratio:1/1;border:1px solid #000;cursor:grab}
+  .cell .sq:hover{background:#faf9f6}
+  .cell.dragging{opacity:.35}
+  .cell.before{box-shadow:-5px 0 0 -1px #000}
+  .cell.after{box-shadow:5px 0 0 -1px #000}
   .size{font-size:12px;color:var(--muted)}
   .tip{font-size:12.5px;color:var(--muted);line-height:1.75;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
   button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
@@ -141,8 +149,8 @@
 
   <p class="tip">
     칸마다 안쪽이 <b>640×640px</b>이고 선은 <b>1px</b>입니다. 받은 이미지를 그림 프로그램에 불러와 칸 안에 스케치하시면 됩니다.<br>
-    손잡이(⋮⋮)를 끌거나 ↑↓로 순서를 바꿀 수 있고, 번호는 알아서 다시 붙습니다.
-    한 칸에서 Enter를 누르면 아래에 새 칸이 생깁니다.<br>
+    손잡이(⋮⋮)를 끌거나 ↑↓로 순서를 바꿀 수 있고, 번호는 알아서 다시 붙습니다. 오른쪽 미리보기에서도 칸을 끌어 옮기거나 번호 옆 글자를 눌러 바로 고칠 수 있습니다(Enter·Tab: 다음 칸).
+    Enter는 아래 칸으로(맨 끝 칸이면 새 칸 만들기), Shift+Enter는 위 칸으로 옮겨갑니다. 중간에 칸을 끼우려면 끝에 만든 뒤 끌어 옮기세요.<br>
     '이미지 미리보기'를 누르면 화면 위에 실제 이미지가 떠서 확대·축소해 보고 받을 수 있습니다(Esc로 닫기). 파일 이름은 '제목_이모티콘시트.png'입니다.<br>
     적은 내용은 이 브라우저에만 저장되며 어디로도 전송되지 않습니다.
   </p>
@@ -206,7 +214,18 @@ function drawList(focusAt){
     const i = +inp.dataset.i;
     inp.oninput = () => { ITEMS[i] = inp.value; save(); drawCanvas(); $("cnt").textContent = `${ITEMS.filter(x => x.trim()).length}개`; };
     inp.onkeydown = e => {
-      if (e.key === "Enter"){ e.preventDefault(); ITEMS.splice(i + 1, 0, ""); save(); drawList(i + 1); drawCanvas(); }
+      if (e.key === "Enter" && e.shiftKey){                        // Shift+Enter: 위 칸으로
+        e.preventDefault();
+        const up = $("list").querySelector(`input[data-i="${i - 1}"]`);
+        if (up){ up.focus(); up.setSelectionRange(up.value.length, up.value.length); }
+        return;
+      }
+      if (e.key === "Enter"){                                      // Enter: 아래 칸으로, 맨 끝이면 새 칸
+        e.preventDefault();
+        const down = $("list").querySelector(`input[data-i="${i + 1}"]`);
+        if (down){ down.focus(); down.setSelectionRange(down.value.length, down.value.length); return; }
+        ITEMS.push(""); save(); drawList(i + 1); drawCanvas();
+      }
       if (e.key === "Backspace" && !inp.value && ITEMS.length > 1){ e.preventDefault(); ITEMS.splice(i, 1); save(); drawList(Math.max(0, i - 1)); drawCanvas(); }
     };
     /* 여러 줄을 한 칸에 붙여넣으면 그 자리부터 나눠서 채웁니다 */
@@ -311,10 +330,65 @@ function drawCanvas(){
   const list = trimmed();
   $("grid").style.setProperty("--cols", cols);
   $("grid").innerHTML = list.map((w, i) =>
-    `<div class="cell"><div class="lb">${i + 1}. ${esc(w.trim())}</div><div class="sq"></div></div>`).join("");
+    `<div class="cell" data-i="${i}"><div class="lb"><span>${i + 1}.</span><input value="${esc(w)}" data-i="${i}"
+      aria-label="${i + 1}번 키워드"></div><div class="sq" draggable="true" title="끌어서 순서 바꾸기"></div></div>`).join("");
+  bindGrid();
   const L = layout(list.length, cols);
   $("size").textContent = `${L.width.toLocaleString()} × ${L.height.toLocaleString()}px`;
 }
+/* 미리보기에서 바로 적기·끌어서 옮기기 */
+function bindGrid(){
+  $("grid").querySelectorAll(".lb input").forEach(inp => {
+    const i = +inp.dataset.i;
+    inp.oninput = () => {                           // 미리보기는 그대로 두고 왼쪽 칸만 맞춥니다(입력 중 커서 유지)
+      ITEMS[i] = inp.value; save();
+      const left = $("list").querySelector(`input[data-i="${i}"]`);
+      if (left) left.value = inp.value;
+      $("cnt").textContent = `${ITEMS.filter(x => x.trim()).length}개`;
+    };
+    inp.onkeydown = e => {
+      if (e.key === "Enter" || e.key === "Tab"){
+        e.preventDefault();
+        const next = $("grid").querySelector(`.lb input[data-i="${i + (e.shiftKey ? -1 : 1)}"]`);
+        if (next) next.focus(); else inp.blur();
+      }
+    };
+  });
+  $("grid").querySelectorAll(".sq").forEach(sq => {
+    const cell = sq.closest(".cell");
+    sq.ondragstart = e => { e.dataTransfer.setData("text/x-plan", cell.dataset.i); e.dataTransfer.effectAllowed = "move"; cell.classList.add("dragging"); };
+    sq.ondragend = () => cell.classList.remove("dragging");
+  });
+}
+/* 격자에서 놓을 자리: 가리킨 칸의 왼쪽 절반이면 앞, 오른쪽 절반이면 뒤 */
+function gridAt(e){
+  const cells = [...$("grid").querySelectorAll(".cell")];
+  let best = null, bd = Infinity;
+  cells.forEach((c, i) => {
+    const b = c.getBoundingClientRect();
+    const dx = Math.max(b.left - e.clientX, 0, e.clientX - b.right), dy = Math.max(b.top - e.clientY, 0, e.clientY - b.bottom);
+    const d = dx * dx + dy * dy;
+    if (d < bd){ bd = d; best = { i, left: e.clientX < b.left + b.width / 2 }; }
+  });
+  if (!best) return { at: 0, i: -1, left: true };
+  return { at: best.left ? best.i : best.i + 1, i: best.i, left: best.left };
+}
+const clearGrid = () => $("grid").querySelectorAll(".cell").forEach(c => c.classList.remove("before", "after"));
+$("grid").addEventListener("dragover", e => {
+  if (!e.dataTransfer.types.includes("text/x-plan")) return;
+  e.preventDefault(); clearGrid();
+  const g = gridAt(e);
+  if (g.i >= 0) $("grid").querySelectorAll(".cell")[g.i].classList.add(g.left ? "before" : "after");
+});
+$("grid").addEventListener("dragleave", e => { if (!$("grid").contains(e.relatedTarget)) clearGrid(); });
+$("grid").addEventListener("drop", e => {
+  const f = e.dataTransfer.getData("text/x-plan");
+  if (f === "") return;
+  e.preventDefault(); clearGrid();
+  const from = +f, at = gridAt(e).at, to = from < at ? at - 1 : at;
+  if (to !== from){ const [v] = ITEMS.splice(from, 1); ITEMS.splice(to, 0, v); save(); drawList(); drawCanvas(); }
+});
+
 /* 끝의 빈칸은 그리지 않습니다 */
 function trimmed(){
   const list = ITEMS.slice();
