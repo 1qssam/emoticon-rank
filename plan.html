@@ -6,17 +6,16 @@
 <title>키워드 기획표 · 원큐쌤</title>
 <link rel="icon" type="image/png" sizes="32x32" href="1qssam-32.png">
 <meta name="description" content="이모티콘 키워드를 적으면 번호와 640×640 칸이 그려진 기획표 이미지로 받을 수 있습니다.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
 <style>
-/* 눈누 웹폰트 (SIL 오픈폰트 라이선스) — 기획표 번호·키워드 글씨 */
-@font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-5Medium.woff2') format('woff2');font-weight:500;font-display:swap}
-@font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-6SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}
+/* 글꼴: Pretendard (SIL 오픈폰트 라이선스) — 위 <link>로 불러옵니다 */
 
   :root{--paper:#fcfcfb;--ink:#17181a;--muted:#83878c;--line:#e7e6e1;--panel:#f5f4f0;--mark:#fee500}
   *{box-sizing:border-box}
   [hidden]{display:none !important}
   html,body{margin:0;padding:0}
   body{background:var(--paper);color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
+    font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
     font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
   .wrap{max-width:1380px;margin:0 auto;padding:24px 20px 80px}
   header{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;flex-wrap:wrap}
@@ -59,11 +58,33 @@
 
   .prev .bh label{font-size:13px;display:flex;align-items:center;gap:5px}
   .prev .bh select{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:#fff}
-  .canvas-wrap{padding:14px;overflow:auto;max-height:calc(100vh - 150px);background:#f4f3ef;border-radius:0 0 10px 10px}
-  canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .title{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+  .title label{font-size:13px;font-weight:600;white-space:nowrap}
+  .title input{flex:1;font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+  /* 오른쪽 미리보기(화면용) — 실제 이미지와 같은 비율로 줄인 모양 */
+  .grid-wrap{padding:18px;overflow:auto;max-height:calc(100vh - 150px);background:#fff;border-radius:0 0 10px 10px}
+  .grid{display:grid;gap:4.5% 1.2%;grid-template-columns:repeat(var(--cols),minmax(0,1fr))}
+  .cell .lb{font-weight:600;color:#000;font-size:14px;line-height:1.2;margin-bottom:6px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cell .sq{aspect-ratio:1/1;border:1px solid #000}
   .size{font-size:12px;color:var(--muted)}
   .tip{font-size:12.5px;color:var(--muted);line-height:1.75;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
   button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+  /* ── 이미지 미리보기 (페이지 위에 덮는 창) ── */
+  .ov{position:fixed;inset:0;z-index:100;background:rgba(20,20,20,.72);overflow:auto}
+  .ov .bar{position:fixed;top:12px;right:14px;z-index:101;display:flex;align-items:center;gap:6px;
+    background:#fff;border:1px solid #ddd;border-radius:10px;padding:6px 8px;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+  .ov .bar button{border:1px solid #ddd;background:#fff;border-radius:7px;min-width:32px;height:30px;
+    font-size:14px;cursor:pointer;font-family:inherit;color:#111}
+  .ov .bar button:hover{border-color:#111}
+  .ov .bar .pct{min-width:52px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
+  .ov .bar .get{background:#111;color:#fff;border-color:#111;padding:0 12px}
+  .ov .bar .ico{font-size:15px;padding:0 4px}
+  .ov .stage{padding:64px 30px 40px}
+  .ov .msg{color:#fff;text-align:center;padding-top:30vh;font-size:14px}
+  /* 투명한 곳이 보이도록 바둑판 무늬 위에 올립니다 */
+  .ov img{display:block;margin:0 auto;background:conic-gradient(#fff 25%,#e6e6e6 0 50%,#fff 0 75%,#e6e6e6 0) 0 0/24px 24px}
 </style>
 </head>
 <body>
@@ -80,8 +101,12 @@
         <h2>키워드<span class="n" id="cnt"></span></h2>
         <button class="btn" id="clear">비우기</button>
       </div>
+      <div class="title">
+        <label for="title">제목</label>
+        <input id="title" placeholder="비우면 파일 이름이 '이모티콘시트'가 됩니다">
+      </div>
       <div class="paste">
-        <textarea id="bulk" placeholder="여러 줄을 한꺼번에 붙여넣으세요.&#10;한 줄이 한 칸이 됩니다.&#10;(앞의 번호는 알아서 지웁니다)"></textarea>
+        <textarea id="bulk" placeholder="여러 줄을 한꺼번에 붙여넣으세요.&#10;한 줄이 한 칸이 됩니다."></textarea>
         <div class="row">
           <span class="hint">붙여넣은 내용을</span>
           <button class="btn" id="bulkAdd">뒤에 추가</button>
@@ -106,10 +131,11 @@
             <option value="8">8칸</option>
           </select>
         </label>
+        <label><input type="checkbox" id="clear-bg" checked> 투명 배경</label>
         <span class="size" id="size"></span>
-        <button class="btn solid" id="png">PNG 받기</button>
+        <button class="btn solid" id="view">이미지 미리보기</button>
       </div>
-      <div class="canvas-wrap"><canvas id="cv"></canvas></div>
+      <div class="grid-wrap"><div class="grid" id="grid"></div></div>
     </section>
   </div>
 
@@ -117,8 +143,20 @@
     칸마다 안쪽이 <b>640×640px</b>이고 선은 <b>1px</b>입니다. 받은 이미지를 그림 프로그램에 불러와 칸 안에 스케치하시면 됩니다.<br>
     손잡이(⋮⋮)를 끌거나 ↑↓로 순서를 바꿀 수 있고, 번호는 알아서 다시 붙습니다.
     한 칸에서 Enter를 누르면 아래에 새 칸이 생깁니다.<br>
+    '이미지 미리보기'를 누르면 화면 위에 실제 이미지가 떠서 확대·축소해 보고 받을 수 있습니다(Esc로 닫기). 파일 이름은 '제목_이모티콘시트.png'입니다.<br>
     적은 내용은 이 브라우저에만 저장되며 어디로도 전송되지 않습니다.
   </p>
+</div>
+
+<div class="ov" id="ov" hidden role="dialog" aria-label="이미지 미리보기">
+  <div class="bar">
+    <span class="ico" aria-hidden="true">🔍</span>
+    <button id="zout" title="축소">−</button><span class="pct" id="pct"></span><button id="zin" title="확대">+</button>
+    <button class="get" id="get">이미지 다운받기</button>
+    <button id="ovclose" title="닫기 (Esc)">×</button>
+  </div>
+  <div class="msg" id="ovmsg">이미지를 만드는 중…</div>
+  <div class="stage"><img id="ovimg" alt="기획표 이미지"></div>
 </div>
 
 <script>
@@ -134,7 +172,8 @@ const G = {
   margin: 40,       // 바깥 여백
   label: 56,        // 번호·키워드 글자 크기
   labelGap: 22,     // 글자와 칸 사이
-  font: "'Paperozi', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif",
+  font: "Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif",
+  color: "#000000",
 };
 
 /* ── 입력 목록 (브라우저에 저장) ── */
@@ -266,55 +305,97 @@ function fitText(ctx, text, max){
   return t + "…";
 }
 
+/* 화면용 미리보기 (HTML) */
 function drawCanvas(){
   const cols = +$("cols").value;
+  const list = trimmed();
+  $("grid").style.setProperty("--cols", cols);
+  $("grid").innerHTML = list.map((w, i) =>
+    `<div class="cell"><div class="lb">${i + 1}. ${esc(w.trim())}</div><div class="sq"></div></div>`).join("");
+  const L = layout(list.length, cols);
+  $("size").textContent = `${L.width.toLocaleString()} × ${L.height.toLocaleString()}px`;
+}
+/* 끝의 빈칸은 그리지 않습니다 */
+function trimmed(){
   const list = ITEMS.slice();
-  while (list.length > 1 && !list[list.length - 1].trim()) list.pop();   // 끝의 빈칸은 그리지 않음
-  const n = Math.max(1, list.length);
-  const L = layout(n, cols);
-  const cv = $("cv"), ctx = cv.getContext("2d");
-  cv.width = L.width; cv.height = L.height;
-  ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, L.width, L.height);
-  ctx.textBaseline = "alphabetic";
+  while (list.length > 1 && !list[list.length - 1].trim()) list.pop();
+  return list.length ? list : [""];
+}
 
+/* 실제 이미지(캔버스) 만들기 */
+async function makeImage(){
+  const cols = +$("cols").value, list = trimmed(), n = list.length;
+  const L = layout(n, cols);
+  const labels = list.map((w, i) => `${i + 1}. ${w.trim()}`);
+  /* Pretendard는 글자별로 나눠 받는 방식이라, 쓸 글자를 먼저 불러둡니다 */
+  if (document.fonts){
+    try { await document.fonts.load(`600 ${G.label}px Pretendard`, labels.join("") + "…"); } catch (e) {}
+  }
+  const cv = document.createElement("canvas"), ctx = cv.getContext("2d");
+  cv.width = L.width; cv.height = L.height;
+  if (!$("clear-bg").checked){ ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, L.width, L.height); }
+  ctx.textBaseline = "alphabetic";
   for (let i = 0; i < n; i++){
     const c = i % cols, r = Math.floor(i / cols);
     const x = G.margin + c * (L.cell + G.gapX);
     const y = G.margin + r * (L.head + L.cell + G.gapY);
-    /* 번호 + 키워드 */
-    const word = (list[i] || "").trim();
-    const text = fitText(ctx, `${i + 1}. ${word}`, L.cell);
-    ctx.fillStyle = "#111";
-    ctx.fillText(text, x, y + G.label * 0.86);
-    /* 칸: 선 1px, 안쪽 640 */
-    ctx.strokeStyle = "#111"; ctx.lineWidth = G.line;
+    ctx.fillStyle = G.color;
+    ctx.fillText(fitText(ctx, labels[i], L.cell), x, y + G.label * 0.86);
+    ctx.strokeStyle = G.color; ctx.lineWidth = G.line;
     ctx.strokeRect(x + G.line / 2, y + L.head + G.line / 2, G.inner + G.line, G.inner + G.line);
   }
-  $("size").textContent = `${L.width.toLocaleString()} × ${L.height.toLocaleString()}px`;
+  return new Promise(res => cv.toBlob(res, "image/png"));
 }
-$("cols").onchange = () => { try { localStorage.setItem(KEY + "-cols", $("cols").value); } catch (e) {} drawCanvas(); };
 
-/* PNG 받기 */
-$("png").onclick = () => {
-  drawCanvas();
-  const d = new Date(), p = n => String(n).padStart(2, "0");
-  const name = `키워드기획표-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}.png`;
-  $("cv").toBlob(blob => {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob); a.download = name; a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    const b = $("png"); b.textContent = "받았어요"; b.classList.add("done");
-    setTimeout(() => { b.textContent = "PNG 받기"; b.classList.remove("done"); }, 1500);
-  }, "image/png");
+const fileName = () => {
+  const t = $("title").value.trim().replace(/[\\/:*?"<>|]/g, "").trim();
+  return (t ? `${t}_` : "") + "이모티콘시트.png";
 };
+
+/* 이미지 미리보기 (페이지 위에 덮는 창): 확대·축소, 받기 */
+const STEPS = [10, 15, 25, 33, 50, 67, 75, 100, 150, 200];
+let zoom = STEPS.indexOf(50), ovUrl = null;
+function showZoom(){
+  const img = $("ovimg");
+  if (img.naturalWidth) img.style.width = Math.round(img.naturalWidth * STEPS[zoom] / 100) + "px";
+  $("pct").textContent = STEPS[zoom] + "%";
+}
+async function openView(){
+  $("ov").hidden = false; document.body.style.overflow = "hidden";
+  $("ovmsg").hidden = false; $("ovimg").hidden = true;
+  const blob = await makeImage();
+  if (ovUrl) URL.revokeObjectURL(ovUrl);
+  ovUrl = URL.createObjectURL(blob);
+  $("ovimg").onload = () => { $("ovmsg").hidden = true; $("ovimg").hidden = false; showZoom(); };
+  $("ovimg").src = ovUrl;
+}
+function closeView(){ $("ov").hidden = true; document.body.style.overflow = ""; }
+$("view").onclick = openView;
+$("ovclose").onclick = closeView;
+$("ov").onclick = e => { if (e.target === $("ov") || e.target.classList.contains("stage")) closeView(); };   // 바깥 누르면 닫기
+document.addEventListener("keydown", e => {
+  if ($("ov").hidden) return;
+  if (e.key === "Escape") closeView();
+  if (e.key === "+" || e.key === "=") $("zin").click();
+  if (e.key === "-") $("zout").click();
+});
+$("zout").onclick = () => { if (zoom > 0){ zoom--; showZoom(); } };
+$("zin").onclick = () => { if (zoom < STEPS.length - 1){ zoom++; showZoom(); } };
+$("get").onclick = () => {
+  if (!ovUrl) return;
+  const a = document.createElement("a");
+  a.href = ovUrl; a.download = fileName();
+  document.body.appendChild(a); a.click(); a.remove();
+};
+
+$("title").oninput = () => { try { localStorage.setItem(KEY + "-title", $("title").value); } catch (e) {} };
+try { $("title").value = localStorage.getItem(KEY + "-title") || ""; } catch (e) {}
+$("clear-bg").onchange = () => { try { localStorage.setItem(KEY + "-bg", $("clear-bg").checked ? "1" : "0"); } catch (e) {} };
+try { const b = localStorage.getItem(KEY + "-bg"); if (b) $("clear-bg").checked = b === "1"; } catch (e) {}
+$("cols").onchange = () => { try { localStorage.setItem(KEY + "-cols", $("cols").value); } catch (e) {} drawCanvas(); };
 
 drawList();
 drawCanvas();
-/* 글꼴이 늦게 도착하면 다시 그립니다 */
-if (document.fonts){
-  document.fonts.load(`600 ${G.label}px Paperozi`).then(drawCanvas).catch(() => {});
-  document.fonts.ready.then(drawCanvas);
-}
 </script>
 </body>
 </html>

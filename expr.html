@@ -188,7 +188,7 @@
     패널 안에서 체크를 풀면 그 한 개만 빠집니다.
     블록을 다른 번호 <b>한가운데</b>에 놓으면 그 번호에 붙고(노란 표시), 번호 <b>사이</b>에 놓으면 새 번호로 끼워집니다(검은 선).
     <b>Alt</b>를 누른 채 끌면 옮기지 않고 복제됩니다. 손잡이(⋮⋮)나 ↑↓로 번호 순서를 바꿉니다.
-    복사하면 '번호 탭 키워드, 키워드'로 줄마다 복사되고, 담은 목록은 이 브라우저에 저장됩니다.
+    복사하면 '번호 탭 키워드 / 키워드'로 줄마다 복사되고, 담은 목록은 이 브라우저에 저장됩니다.
   </p>
 </div>
 
@@ -425,7 +425,7 @@ function render(){
    · 패널 블록의 체크 해제: 그 한 개만 뺌
    · 끌어다 놓기: 줄 한가운데 → 그 줄에 붙이기 / 줄 사이 → 새 번호로 끼우기
    · Alt를 누른 채 끌면 옮기지 않고 복제 (같은 키워드를 여러 번호에 붙일 때)
-   · 복사: '번호 탭 키워드, 키워드' — 표현 수·종 수는 화면에서만 */
+   · 복사: '번호 탭 키워드 / 키워드' — 표현 수·종 수는 화면에서만 */
 const PICK_KEY = "expr-picks2";
 let ROWS = [];
 try {
@@ -575,7 +575,7 @@ $("plist").addEventListener("drop", e => {
 
 $("pickCopy").onclick = async () => {
   if (!ROWS.length) return;
-  await navigator.clipboard.writeText(ROWS.map((r, i) => `${i + 1}\t${r.join(", ")}`).join("\n"));
+  await navigator.clipboard.writeText(ROWS.map((r, i) => `${i + 1}\t${r.join(" / ")}`).join("\n"));
   const b = $("pickCopy"); b.textContent = "복사됨"; b.classList.add("done");
   setTimeout(() => { b.textContent = "복사"; b.classList.remove("done"); }, 1500);
 };
