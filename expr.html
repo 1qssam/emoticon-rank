@@ -14,7 +14,38 @@
   body{background:var(--paper);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
     font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:1100px;margin:0 auto;padding:24px 20px 80px}
+  .wrap{max-width:1380px;margin:0 auto;padding:24px 20px 80px}
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:22px;align-items:start}
+  @media (max-width:900px){ .layout{grid-template-columns:1fr} }
+
+  /* ── 오른쪽: 모은 키워드 ── */
+  .pick{position:sticky;top:14px;border:1px solid var(--line);border-radius:10px;background:#fff;
+    display:flex;flex-direction:column;max-height:calc(100vh - 28px)}
+  .pick .ph{display:flex;align-items:center;gap:6px;padding:12px 12px 10px;border-bottom:1px solid var(--line)}
+  .pick .ph h2{font-size:14px;margin:0;font-weight:600;flex:1}
+  .pick .ph .n{font-size:12px;color:var(--muted);font-weight:400;margin-left:4px}
+  .pbtn{border:1px solid var(--line);background:#fff;border-radius:7px;padding:5px 10px;font-size:12.5px;
+    cursor:pointer;font-family:inherit;color:var(--ink)}
+  .pbtn:hover{border-color:var(--ink)}
+  .pbtn.solid{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .pbtn.done{background:var(--mark);color:#3a3400;border-color:var(--mark)}
+  .plist{list-style:none;margin:0;padding:6px;overflow-y:auto;flex:1;min-height:120px}
+  .plist.over{background:#fbf8ee}
+  .plist .empty{padding:26px 10px;text-align:center;color:var(--muted);font-size:12.5px;line-height:1.6}
+  .pi{display:grid;grid-template-columns:16px 26px 1fr auto;align-items:center;gap:6px;
+    padding:5px 6px;border-radius:7px;font-size:13.5px}
+  .pi:hover{background:#faf9f6}
+  .pi.dragging{opacity:.4}
+  .pi.before{box-shadow:inset 0 2px 0 var(--ink)}
+  .pi .hd{cursor:grab;color:#b9b7b1;font-size:13px;line-height:1;user-select:none;text-align:center}
+  .pi .no{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
+  .pi .w{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pi .w small{color:var(--muted);font-size:11.5px;margin-left:5px}
+  .pi .act{display:flex;gap:1px}
+  .pi .act button{border:0;background:none;cursor:pointer;color:#a5a39d;font-size:12px;padding:2px 4px;border-radius:4px}
+  .pi .act button:hover{color:var(--ink);background:#f0efea}
+  .kw[draggable=true]{cursor:grab}
+  .panel .addpick{float:right;margin-right:6px}
   header{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;flex-wrap:wrap}
   h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
   .tools{margin-left:auto;display:flex;gap:12px;flex-wrap:wrap}
@@ -123,8 +154,20 @@
     <span class="cnt" id="setcnt"></span>
   </div>
 
-  <div id="detail"></div>
-  <div class="blocks" id="blocks"></div>
+  <div class="layout">
+    <div>
+      <div id="detail"></div>
+      <div class="blocks" id="blocks"></div>
+    </div>
+    <aside class="pick" aria-label="모은 키워드">
+      <div class="ph">
+        <h2>모은 키워드<span class="n" id="pickCnt"></span></h2>
+        <button class="pbtn solid" id="pickCopy">복사</button>
+        <button class="pbtn" id="pickClear">비우기</button>
+      </div>
+      <ol class="plist" id="plist"></ol>
+    </aside>
+  </div>
 
   <p class="tip">
     괄호 안은 <b>표현 수</b>이고, 그 옆은 <b>몇 종에서 나왔는지</b>입니다. 예: 12 · 5종<br>
@@ -133,7 +176,10 @@
     <b>연령대</b>는 기간 안에 10대~50대 순위(200위)에 든 날 중 그 연령대가 차지한 비율로 나눕니다.
     예: 10대 순위에만 주로 보인 세트는 10대 비율이 높고, 전 연령에 고루 든 세트는 어느 연령도 높지 않습니다.
     연령대를 고르면 순위 기록이 없는 세트는 빠집니다.<br>
-    <b>스타일 태그·유형·연령대</b>는 함께 걸리며, 걸러진 세트의 키워드만 셉니다.
+    <b>스타일 태그·유형·연령대</b>는 함께 걸리며, 걸러진 세트의 키워드만 셉니다.<br>
+    <b>모은 키워드</b>: 키워드 블록을 오른쪽으로 끌어다 놓거나, 키워드를 눌러 연 뒤 '담기'를 누르면 담깁니다.
+    손잡이(⋮⋮)를 끌거나 ↑↓로 순서를 바꿀 수 있고, 복사하면 '번호 탭 키워드'로 줄마다 하나씩 복사됩니다.
+    담은 목록은 이 브라우저에 저장됩니다.
   </p>
 </div>
 
@@ -148,11 +194,9 @@ const E = window.EXPR || {};
    '캐릭터 빼기'를 켜면 여기 적힌 키워드가 목록에서 빠집니다.
    새 동물이 나오면 여기에 한 줄 더하면 됩니다. */
 const CHARS = new Set([
-  "강아지", "고양이", "토끼", "쥐", "햄스터", "병아리", "닭", "곰", "돼지", "원숭이",// 10
-  "펭귄", "여우", "너구리", "오리", "양", "기린", "두더지", "나무늘보", "요정", "원시인",// 10
-  "비버", "고라니", "비숑", "한복", "리트리버", "말티즈", "물개", "개구리", "천사", "호랑이",// 10
-  "푸들", "거북이", "나비", "벌", "우파루파", "늑대", "오리너구리", "갈매기", "공룡", "요크셔 테리어",// 10
-  "포메라니안", "치와와", "새", "비둘기", "다람쥐", "외계인", "앵무새", "쿼카", "도마뱀",// 9
+  "강아지", "고양이", "토끼", "쥐", "햄스터", "병아리", "닭", "곰", "돼지", "원숭이",
+  "펭귄", "여우", "너구리", "오리", "양", "기린", "두더지", "나무늘보", "요정", "원시인",
+  "비버", "고라니", "비숑", "한복",
 ]);
 
 const $ = id => document.getElementById(id);
@@ -277,7 +321,7 @@ function visible(){
 
 const chip = (w, small) => {
   const v = STAT[w];
-  return `<button class="kw${CHARS.has(w) ? " chr" : ""}" data-w="${esc(w)}"
+  return `<button class="kw${CHARS.has(w) ? " chr" : ""}" data-w="${esc(w)}" draggable="true"
     aria-pressed="${picked === w}"><b>${esc(w)}</b><span class="n">${v.expr} · ${v.sets.size}종</span></button>`;
 };
 
@@ -312,6 +356,7 @@ function drawDetail(){
 
   $("detail").innerHTML = `<div class="panel">
     <button class="close" id="closeDetail">닫기</button>
+    <button class="close addpick" id="addPick">${PICKS.includes(picked) ? "담김" : "담기"}</button>
     <h2>${esc(picked)}</h2>
     <p class="sub">표현 ${v.expr}개 · ${v.sets.size}종에서 사용 (조건에 맞는 ${SETS.length}종 ${EXPR_ACTIVE}표현 중)</p>
     <h3>쓰인 곳</h3>
@@ -320,10 +365,16 @@ function drawDetail(){
     <div class="co">${coHtml}</div>
   </div>`;
   $("closeDetail").onclick = () => { picked = null; render(); };
+  $("addPick").onclick = () => addPick(picked);
   bind($("detail"));
 }
 
 function bind(host){
+  host.querySelectorAll("button[data-w]").forEach(b => b.ondragstart = e => {
+    e.dataTransfer.setData("text/x-kw", b.dataset.w);
+    e.dataTransfer.setData("text/plain", b.dataset.w);
+    e.dataTransfer.effectAllowed = "copy";
+  });
   host.querySelectorAll("button[data-w]").forEach(b => b.onclick = () => {
     const w = b.dataset.w;
     picked = (picked === w) ? null : w;
@@ -343,7 +394,118 @@ function render(){
     : `<div class="empty">맞는 키워드가 없습니다.</div>`;
   bind($("blocks"));
   drawDetail();
+  drawPicks();
 }
+
+/* ── 모은 키워드 (오른쪽 목록) ────────────────────
+   끌어다 놓거나 '담기'로 추가, 손잡이로 끌거나 ↑↓로 순서 변경.
+   복사할 때는 '번호 탭 키워드'만 (표현 수·종 수는 화면에서만 보입니다) */
+const PICK_KEY = "expr-picks";
+let PICKS = [];
+try { PICKS = JSON.parse(localStorage.getItem(PICK_KEY) || "[]"); } catch (e) { PICKS = []; }
+const savePicks = () => { try { localStorage.setItem(PICK_KEY, JSON.stringify(PICKS)); } catch (e) {} };
+
+function addPick(w, at){
+  if (!w) return;
+  const old = PICKS.indexOf(w);
+  if (old >= 0){                                   // 이미 있으면 그 자리로 옮기기만
+    if (at === undefined) return flashPick(old);
+    PICKS.splice(old, 1);
+    if (old < at) at--;
+  }
+  if (at === undefined || at > PICKS.length) at = PICKS.length;
+  PICKS.splice(at, 0, w);
+  savePicks(); render();
+}
+function movePick(from, to){
+  if (to < 0 || to >= PICKS.length || from === to) return;
+  const [w] = PICKS.splice(from, 1);
+  PICKS.splice(to, 0, w);
+  savePicks(); drawPicks();
+}
+function flashPick(i){
+  const li = $("plist").children[i];
+  if (li){ li.style.background = "#fee500"; setTimeout(() => li.style.background = "", 600); }
+}
+
+function drawPicks(){
+  $("pickCnt").textContent = PICKS.length ? `${PICKS.length}개` : "";
+  if (!PICKS.length){
+    $("plist").innerHTML = `<li class="empty">키워드 블록을 여기로 끌어다 놓으세요.<br>순서대로 번호가 붙습니다.</li>`;
+    return;
+  }
+  $("plist").innerHTML = PICKS.map((w, i) => {
+    const v = STAT[w];
+    const n = v ? `${v.expr} · ${v.sets.size}종` : "–";
+    return `<li class="pi" draggable="true" data-i="${i}">
+      <span class="hd" title="끌어서 순서 바꾸기">⋮⋮</span>
+      <span class="no">${i + 1}.</span>
+      <span class="w">${esc(w)}<small>${n}</small></span>
+      <span class="act">
+        <button data-up="${i}" title="위로">↑</button>
+        <button data-down="${i}" title="아래로">↓</button>
+        <button data-del="${i}" title="빼기">×</button>
+      </span>
+    </li>`;
+  }).join("");
+  $("plist").querySelectorAll("[data-up]").forEach(b => b.onclick = () => movePick(+b.dataset.up, +b.dataset.up - 1));
+  $("plist").querySelectorAll("[data-down]").forEach(b => b.onclick = () => movePick(+b.dataset.down, +b.dataset.down + 1));
+  $("plist").querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+    PICKS.splice(+b.dataset.del, 1); savePicks(); render();
+  });
+  $("plist").querySelectorAll(".pi").forEach(li => {
+    li.ondragstart = e => {
+      e.dataTransfer.setData("text/x-pick", li.dataset.i);
+      e.dataTransfer.effectAllowed = "move";
+      li.classList.add("dragging");
+    };
+    li.ondragend = () => li.classList.remove("dragging");
+  });
+}
+
+/* 놓는 자리: 가리킨 줄의 위쪽 절반이면 그 앞, 아래쪽 절반이면 그 뒤 */
+function dropIndex(e){
+  const items = [...$("plist").querySelectorAll(".pi")];
+  for (let i = 0; i < items.length; i++){
+    const r = items[i].getBoundingClientRect();
+    if (e.clientY < r.top + r.height / 2) return i;
+  }
+  return items.length;
+}
+function markDrop(i){
+  $("plist").querySelectorAll(".pi").forEach((li, k) => li.classList.toggle("before", k === i));
+}
+$("plist").addEventListener("dragover", e => {
+  e.preventDefault();
+  $("plist").classList.add("over");
+  markDrop(dropIndex(e));
+});
+$("plist").addEventListener("dragleave", e => {
+  if (!$("plist").contains(e.relatedTarget)){ $("plist").classList.remove("over"); markDrop(-1); }
+});
+$("plist").addEventListener("drop", e => {
+  e.preventDefault();
+  $("plist").classList.remove("over"); markDrop(-1);
+  const at = dropIndex(e);
+  const from = e.dataTransfer.getData("text/x-pick");
+  if (from !== ""){                                // 목록 안에서 옮기기
+    const f = +from;
+    movePick(f, f < at ? at - 1 : at);
+    return;
+  }
+  addPick(e.dataTransfer.getData("text/x-kw") || e.dataTransfer.getData("text/plain").trim(), at);
+});
+
+$("pickCopy").onclick = async () => {
+  if (!PICKS.length) return;
+  await navigator.clipboard.writeText(PICKS.map((w, i) => `${i + 1}\t${w}`).join("\n"));
+  const b = $("pickCopy"); b.textContent = "복사됨"; b.classList.add("done");
+  setTimeout(() => { b.textContent = "복사"; b.classList.remove("done"); }, 1500);
+};
+$("pickClear").onclick = () => {
+  if (!PICKS.length || !confirm(`모은 키워드 ${PICKS.length}개를 모두 비울까요?`)) return;
+  PICKS = []; savePicks(); render();
+};
 
 ["hideChr", "multi", "sort", "share", "from", "to", "tag", "kind"].forEach(id => $(id).onchange = render);
 document.querySelectorAll("#ageGrp input").forEach(x => x.onchange = render);
