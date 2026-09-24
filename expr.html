@@ -15,12 +15,21 @@
     font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
     font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
   .wrap{max-width:1380px;margin:0 auto;padding:24px 20px 80px}
-  .layout{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:22px;align-items:start}
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) var(--pw,290px);gap:22px;align-items:start}
   @media (max-width:900px){ .layout{grid-template-columns:1fr} }
 
   /* ── 오른쪽: 모은 키워드 ── */
   .pick{position:sticky;top:14px;border:1px solid var(--line);border-radius:10px;background:#fff;
-    display:flex;flex-direction:column;max-height:calc(100vh - 28px)}
+    display:flex;flex-direction:column;height:var(--ph,calc(100vh - 28px));max-height:calc(100vh - 28px)}
+  /* 크기 조절 손잡이: 왼쪽 가장자리(너비), 아래 가장자리(높이) */
+  .rz-l{position:absolute;left:-7px;top:10px;bottom:10px;width:10px;cursor:ew-resize;z-index:2}
+  .rz-b{position:absolute;left:10px;right:10px;bottom:-7px;height:10px;cursor:ns-resize;z-index:2}
+  .rz-l::after{content:"";position:absolute;left:3px;top:50%;width:4px;height:36px;margin-top:-18px;
+    border-radius:4px;background:#d9d7d1}
+  .rz-b::after{content:"";position:absolute;top:3px;left:50%;height:4px;width:36px;margin-left:-18px;
+    border-radius:4px;background:#d9d7d1}
+  .rz-l:hover::after,.rz-b:hover::after,.pick.resizing .rz-l::after,.pick.resizing .rz-b::after{background:var(--ink)}
+  .pick.resizing{user-select:none}
   .pick .ph{display:flex;align-items:center;gap:6px;padding:12px 12px 10px;border-bottom:1px solid var(--line)}
   .pick .ph h2{font-size:14px;margin:0;font-weight:600;flex:1}
   .pick .ph .n{font-size:12px;color:var(--muted);font-weight:400;margin-left:4px}
@@ -29,7 +38,8 @@
   .pbtn:hover{border-color:var(--ink)}
   .pbtn.solid{background:var(--ink);color:#fff;border-color:var(--ink)}
   .pbtn.done{background:var(--mark);color:#3a3400;border-color:var(--mark)}
-  .plist{list-style:none;margin:0;padding:6px;overflow-y:auto;flex:1;min-height:120px}
+  .plist{list-style:none;margin:0;padding:6px;overflow-y:auto;flex:1;min-height:120px;
+    overscroll-behavior:contain}   /* 패널 안에서 굴리면 패널만 스크롤되고 페이지로 넘어가지 않습니다 */
   .plist.over{background:#fbf8ee}
   .plist .empty{padding:26px 10px;text-align:center;color:var(--muted);font-size:12.5px;line-height:1.6}
   .prow{display:grid;grid-template-columns:16px 24px 1fr auto;align-items:center;gap:6px;
@@ -166,7 +176,9 @@
       <div id="detail"></div>
       <div class="blocks" id="blocks"></div>
     </div>
-    <aside class="pick" aria-label="모은 키워드">
+    <aside class="pick" id="pick" aria-label="모은 키워드">
+      <div class="rz-l" id="rzL" title="끌어서 패널 너비 조절 (두 번 누르면 처음 크기)"></div>
+      <div class="rz-b" id="rzB" title="끌어서 패널 높이 조절 (두 번 누르면 처음 크기)"></div>
       <div class="ph">
         <h2>모은 키워드<span class="n" id="pickCnt"></span></h2>
         <button class="pbtn solid" id="pickCopy">복사</button>
@@ -583,6 +595,49 @@ $("pickClear").onclick = () => {
   if (!ROWS.length || !confirm(`모은 키워드 ${ROWS.length}개 번호를 모두 비울까요?`)) return;
   ROWS = []; done();
 };
+
+/* ── 오른쪽 패널 크기 조절 (브라우저에 기억) ── */
+(function(){
+  const layout = document.querySelector(".layout"), pick = $("pick");
+  const W = [220, 720];                                     // 너비 범위
+  const setW = w => layout.style.setProperty("--pw", Math.round(Math.min(W[1], Math.max(W[0], w))) + "px");
+  const setH = h => pick.style.setProperty("--ph", Math.round(Math.min(window.innerHeight - 28, Math.max(200, h))) + "px");
+  try {
+    const sz = JSON.parse(localStorage.getItem("expr-panel") || "{}");
+    if (sz.w) setW(sz.w);
+    if (sz.h) setH(sz.h);
+  } catch (e) {}
+  const remember = () => {
+    try { localStorage.setItem("expr-panel", JSON.stringify({ w: pick.offsetWidth, h: pick.offsetHeight })); } catch (e) {}
+  };
+  function drag(handle, onMove){
+    handle.addEventListener("pointerdown", e => {
+      e.preventDefault();
+      handle.setPointerCapture(e.pointerId);
+      pick.classList.add("resizing");
+      const sx = e.clientX, sy = e.clientY, sw = pick.offsetWidth, sh = pick.offsetHeight;
+      const move = ev => onMove(ev.clientX - sx, ev.clientY - sy, sw, sh);
+      const up = () => {
+        handle.removeEventListener("pointermove", move);
+        handle.removeEventListener("pointerup", up);
+        pick.classList.remove("resizing");
+        remember();
+      };
+      handle.addEventListener("pointermove", move);
+      handle.addEventListener("pointerup", up);
+    });
+  }
+  drag($("rzL"), (dx, dy, sw) => setW(sw - dx));             // 왼쪽으로 끌면 넓어짐
+  drag($("rzB"), (dx, dy, sw, sh) => setH(sh + dy));         // 아래로 끌면 길어짐
+  $("rzL").ondblclick = () => { layout.style.removeProperty("--pw"); remember(); };
+  $("rzB").ondblclick = () => { pick.style.removeProperty("--ph"); remember(); };
+  /* 패널 머리 부분에서 굴려도 페이지가 아니라 패널 목록이 스크롤되게 */
+  pick.addEventListener("wheel", e => {
+    if ($("plist").contains(e.target)) return;
+    e.preventDefault();
+    $("plist").scrollTop += e.deltaY;
+  }, { passive: false });
+})();
 
 ["hideChr", "multi", "onlyPicked", "sort", "share", "from", "to", "tag", "kind"].forEach(id => $(id).onchange = render);
 document.querySelectorAll("#ageGrp input").forEach(x => x.onchange = render);
