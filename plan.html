@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>키워드 기획표 · 원큐쌤</title>
+<link rel="icon" type="image/png" sizes="32x32" href="1qssam-32.png">
+<meta name="description" content="이모티콘 키워드를 적으면 번호와 640×640 칸이 그려진 기획표 이미지로 받을 수 있습니다.">
+<style>
+/* 눈누 웹폰트 (SIL 오픈폰트 라이선스) — 기획표 번호·키워드 글씨 */
+@font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-5Medium.woff2') format('woff2');font-weight:500;font-display:swap}
+@font-face{font-family:'Paperozi';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-6SemiBold.woff2') format('woff2');font-weight:600;font-display:swap}
+
+  :root{--paper:#fcfcfb;--ink:#17181a;--muted:#83878c;--line:#e7e6e1;--panel:#f5f4f0;--mark:#fee500}
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1380px;margin:0 auto;padding:24px 20px 80px}
+  header{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  h1{font-size:17px;font-weight:600;margin:0}
+  header .by{font-size:12.5px;color:var(--muted)}
+  header .by a{color:var(--muted)}
+  .layout{display:grid;grid-template-columns:380px minmax(0,1fr);gap:22px;align-items:start}
+  @media (max-width:900px){ .layout{grid-template-columns:1fr} }
+
+  .box{border:1px solid var(--line);border-radius:10px;background:#fff}
+  .bh{display:flex;align-items:center;gap:6px;padding:12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .bh h2{font-size:14px;margin:0;font-weight:600;flex:1}
+  .bh .n{font-size:12px;color:var(--muted);font-weight:400;margin-left:4px}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 11px;font-size:13px;
+    cursor:pointer;font-family:inherit;color:var(--ink)}
+  .btn:hover{border-color:var(--ink)}
+  .btn.solid{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.done{background:var(--mark);color:#3a3400;border-color:var(--mark)}
+  .btn:disabled{opacity:.5;cursor:default}
+
+  .paste{padding:10px 12px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .paste textarea{width:100%;height:84px;font-family:inherit;font-size:13px;border:1px solid var(--line);
+    border-radius:7px;padding:7px 9px;resize:vertical;background:#fff}
+  .paste .row{display:flex;gap:6px;margin-top:6px;align-items:center}
+  .paste .hint{font-size:12px;color:var(--muted);flex:1}
+
+  .list{list-style:none;margin:0;padding:6px;max-height:calc(100vh - 300px);overflow-y:auto;min-height:120px}
+  .it{display:grid;grid-template-columns:16px 30px 1fr auto;align-items:center;gap:6px;padding:3px 4px;border-radius:7px}
+  .it.dragging{opacity:.4}
+  .it.before{box-shadow:inset 0 2px 0 var(--ink)}
+  .it.after{box-shadow:inset 0 -2px 0 var(--ink)}
+  .it .hd{cursor:grab;color:#b9b7b1;font-size:13px;user-select:none;text-align:center}
+  .it .no{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
+  .it input{width:100%;font-family:inherit;font-size:14px;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:#fff}
+  .it input:focus{outline:2px solid var(--ink);outline-offset:-1px}
+  .it .act{display:flex;gap:1px}
+  .it .act button{border:0;background:none;cursor:pointer;color:#a5a39d;font-size:12px;padding:3px 5px;border-radius:4px}
+  .it .act button:hover{color:var(--ink);background:#f0efea}
+  .foot{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--line)}
+
+  .prev .bh label{font-size:13px;display:flex;align-items:center;gap:5px}
+  .prev .bh select{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:#fff}
+  .canvas-wrap{padding:14px;overflow:auto;max-height:calc(100vh - 150px);background:#f4f3ef;border-radius:0 0 10px 10px}
+  canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .size{font-size:12px;color:var(--muted)}
+  .tip{font-size:12.5px;color:var(--muted);line-height:1.75;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+  button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>키워드 기획표</h1>
+    <span class="by">만든 사람 <a href="https://litt.ly/1qssam" target="_blank" rel="noopener">원큐쌤(@1qssam)</a></span>
+  </header>
+
+  <div class="layout">
+    <!-- 왼쪽: 키워드 입력 -->
+    <section class="box" aria-label="키워드 입력">
+      <div class="bh">
+        <h2>키워드<span class="n" id="cnt"></span></h2>
+        <button class="btn" id="clear">비우기</button>
+      </div>
+      <div class="paste">
+        <textarea id="bulk" placeholder="여러 줄을 한꺼번에 붙여넣으세요.&#10;한 줄이 한 칸이 됩니다.&#10;(앞의 번호는 알아서 지웁니다)"></textarea>
+        <div class="row">
+          <span class="hint">붙여넣은 내용을</span>
+          <button class="btn" id="bulkAdd">뒤에 추가</button>
+          <button class="btn" id="bulkSet">전부 바꾸기</button>
+        </div>
+      </div>
+      <ol class="list" id="list"></ol>
+      <div class="foot">
+        <button class="btn" id="add">+ 칸 추가</button>
+      </div>
+    </section>
+
+    <!-- 오른쪽: 미리보기 -->
+    <section class="box prev" aria-label="미리보기">
+      <div class="bh">
+        <h2>미리보기</h2>
+        <label>한 줄에
+          <select id="cols">
+            <option value="4">4칸</option>
+            <option value="5">5칸</option>
+            <option value="6" selected>6칸</option>
+            <option value="8">8칸</option>
+          </select>
+        </label>
+        <span class="size" id="size"></span>
+        <button class="btn solid" id="png">PNG 받기</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="cv"></canvas></div>
+    </section>
+  </div>
+
+  <p class="tip">
+    칸마다 안쪽이 <b>640×640px</b>이고 선은 <b>1px</b>입니다. 받은 이미지를 그림 프로그램에 불러와 칸 안에 스케치하시면 됩니다.<br>
+    손잡이(⋮⋮)를 끌거나 ↑↓로 순서를 바꿀 수 있고, 번호는 알아서 다시 붙습니다.
+    한 칸에서 Enter를 누르면 아래에 새 칸이 생깁니다.<br>
+    적은 내용은 이 브라우저에만 저장되며 어디로도 전송되지 않습니다.
+  </p>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ── 그림 크기 (px) — 여기 값만 바꾸면 기획표 모양이 바뀝니다 ── */
+const G = {
+  inner: 640,       // 칸 안쪽 크기
+  line: 1,          // 선 굵기
+  gapX: 40,         // 칸 사이 가로 간격
+  gapY: 70,         // 줄 사이 세로 간격 (위 칸 아래 ~ 다음 번호 위)
+  margin: 40,       // 바깥 여백
+  label: 56,        // 번호·키워드 글자 크기
+  labelGap: 22,     // 글자와 칸 사이
+  font: "'Paperozi', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif",
+};
+
+/* ── 입력 목록 (브라우저에 저장) ── */
+const KEY = "plan-items";
+let ITEMS = [];
+try { ITEMS = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { ITEMS = []; }
+if (!ITEMS.length) ITEMS = [""];
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(ITEMS)); } catch (e) {} };
+try { const c = localStorage.getItem(KEY + "-cols"); if (c) $("cols").value = c; } catch (e) {}
+
+/* 붙여넣은 글 → 줄마다 한 칸. 'expr'에서 복사한 '1[탭]브이, 선글라스'나 '1. 브이' 앞 번호는 지웁니다 */
+const splitLines = t => t.replace(/\r/g, "").split("\n")
+  .map(l => l.replace(/^\s*\d+\s*(\t|[.)]\s*)/, "").trim())
+  .filter(l => l);
+
+function drawList(focusAt){
+  $("cnt").textContent = `${ITEMS.filter(x => x.trim()).length}개`;
+  $("list").innerHTML = ITEMS.map((v, i) => `<li class="it" data-i="${i}">
+      <span class="hd" draggable="true" title="끌어서 순서 바꾸기">⋮⋮</span>
+      <span class="no">${i + 1}.</span>
+      <input value="${esc(v)}" data-i="${i}" aria-label="${i + 1}번 키워드">
+      <span class="act">
+        <button data-up="${i}" title="위로">↑</button>
+        <button data-down="${i}" title="아래로">↓</button>
+        <button data-del="${i}" title="이 칸 지우기">×</button>
+      </span>
+    </li>`).join("");
+
+  $("list").querySelectorAll("input").forEach(inp => {
+    const i = +inp.dataset.i;
+    inp.oninput = () => { ITEMS[i] = inp.value; save(); drawCanvas(); $("cnt").textContent = `${ITEMS.filter(x => x.trim()).length}개`; };
+    inp.onkeydown = e => {
+      if (e.key === "Enter"){ e.preventDefault(); ITEMS.splice(i + 1, 0, ""); save(); drawList(i + 1); drawCanvas(); }
+      if (e.key === "Backspace" && !inp.value && ITEMS.length > 1){ e.preventDefault(); ITEMS.splice(i, 1); save(); drawList(Math.max(0, i - 1)); drawCanvas(); }
+    };
+    /* 여러 줄을 한 칸에 붙여넣으면 그 자리부터 나눠서 채웁니다 */
+    inp.onpaste = e => {
+      const t = (e.clipboardData || window.clipboardData).getData("text");
+      const lines = splitLines(t);
+      if (lines.length < 2) return;
+      e.preventDefault();
+      ITEMS.splice(i, ITEMS[i].trim() ? 0 : 1, ...lines);
+      save(); drawList(i + lines.length - 1); drawCanvas();
+    };
+  });
+  $("list").querySelectorAll("[data-up]").forEach(b => b.onclick = () => move(+b.dataset.up, +b.dataset.up - 1));
+  $("list").querySelectorAll("[data-down]").forEach(b => b.onclick = () => move(+b.dataset.down, +b.dataset.down + 1));
+  $("list").querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+    ITEMS.splice(+b.dataset.del, 1); if (!ITEMS.length) ITEMS = [""]; save(); drawList(); drawCanvas();
+  });
+  $("list").querySelectorAll(".hd").forEach(h => {
+    const li = h.closest(".it");
+    h.ondragstart = e => { e.dataTransfer.setData("text/x-plan", li.dataset.i); e.dataTransfer.effectAllowed = "move"; li.classList.add("dragging"); };
+    h.ondragend = () => li.classList.remove("dragging");
+  });
+  if (focusAt !== undefined){
+    const el = $("list").querySelector(`input[data-i="${focusAt}"]`);
+    if (el){ el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  }
+}
+function move(from, to){
+  if (to < 0 || to >= ITEMS.length) return;
+  const [v] = ITEMS.splice(from, 1); ITEMS.splice(to, 0, v);
+  save(); drawList(); drawCanvas();
+}
+
+/* 끌어서 순서 바꾸기: 가리킨 줄의 위쪽 절반이면 앞, 아래쪽 절반이면 뒤 */
+function dropAt(e){
+  const rows = [...$("list").querySelectorAll(".it")];
+  for (let i = 0; i < rows.length; i++){
+    const b = rows[i].getBoundingClientRect();
+    if (e.clientY < b.top + b.height / 2) return i;
+  }
+  return rows.length;
+}
+const clearMarks = () => $("list").querySelectorAll(".it").forEach(li => li.classList.remove("before", "after"));
+$("list").addEventListener("dragover", e => {
+  if (!e.dataTransfer.types.includes("text/x-plan")) return;
+  e.preventDefault(); clearMarks();
+  const at = dropAt(e), rows = $("list").querySelectorAll(".it");
+  if (at < rows.length) rows[at].classList.add("before"); else if (rows.length) rows[rows.length - 1].classList.add("after");
+});
+$("list").addEventListener("dragleave", e => { if (!$("list").contains(e.relatedTarget)) clearMarks(); });
+$("list").addEventListener("drop", e => {
+  const f = e.dataTransfer.getData("text/x-plan");
+  if (f === "") return;
+  e.preventDefault(); clearMarks();
+  const from = +f, at = dropAt(e);
+  const to = from < at ? at - 1 : at;
+  if (to !== from){ const [v] = ITEMS.splice(from, 1); ITEMS.splice(to, 0, v); save(); drawList(); drawCanvas(); }
+});
+
+/* 붙여넣기 칸 */
+$("bulkAdd").onclick = () => {
+  const lines = splitLines($("bulk").value);
+  if (!lines.length) return;
+  ITEMS = ITEMS.filter(x => x.trim()).concat(lines);
+  $("bulk").value = ""; save(); drawList(); drawCanvas();
+};
+$("bulkSet").onclick = () => {
+  const lines = splitLines($("bulk").value);
+  if (!lines.length) return;
+  if (ITEMS.some(x => x.trim()) && !confirm(`지금 적힌 ${ITEMS.filter(x => x.trim()).length}개를 지우고 붙여넣은 ${lines.length}개로 바꿀까요?`)) return;
+  ITEMS = lines; $("bulk").value = ""; save(); drawList(); drawCanvas();
+};
+$("add").onclick = () => { ITEMS.push(""); save(); drawList(ITEMS.length - 1); drawCanvas(); };
+$("clear").onclick = () => {
+  if (!ITEMS.some(x => x.trim()) || !confirm("적은 키워드를 모두 지울까요?")) return;
+  ITEMS = [""]; save(); drawList(0); drawCanvas();
+};
+
+/* ── 그리기 ── */
+function layout(n, cols){
+  const cell = G.inner + G.line * 2;                 // 선 포함 칸 크기
+  const head = G.label + G.labelGap;                 // 번호 줄 높이
+  const rows = Math.max(1, Math.ceil(n / cols));
+  const width = G.margin * 2 + cols * cell + (cols - 1) * G.gapX;
+  const height = G.margin * 2 + rows * (head + cell) + (rows - 1) * G.gapY;
+  return { cell, head, rows, width, height };
+}
+
+function fitText(ctx, text, max){
+  let size = G.label;
+  ctx.font = `600 ${size}px ${G.font}`;
+  while (ctx.measureText(text).width > max && size > 20){ size -= 2; ctx.font = `600 ${size}px ${G.font}`; }
+  if (ctx.measureText(text).width <= max) return text;
+  let t = text;                                       // 그래도 길면 끝을 줄입니다
+  while (t.length > 1 && ctx.measureText(t + "…").width > max) t = t.slice(0, -1);
+  return t + "…";
+}
+
+function drawCanvas(){
+  const cols = +$("cols").value;
+  const list = ITEMS.slice();
+  while (list.length > 1 && !list[list.length - 1].trim()) list.pop();   // 끝의 빈칸은 그리지 않음
+  const n = Math.max(1, list.length);
+  const L = layout(n, cols);
+  const cv = $("cv"), ctx = cv.getContext("2d");
+  cv.width = L.width; cv.height = L.height;
+  ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, L.width, L.height);
+  ctx.textBaseline = "alphabetic";
+
+  for (let i = 0; i < n; i++){
+    const c = i % cols, r = Math.floor(i / cols);
+    const x = G.margin + c * (L.cell + G.gapX);
+    const y = G.margin + r * (L.head + L.cell + G.gapY);
+    /* 번호 + 키워드 */
+    const word = (list[i] || "").trim();
+    const text = fitText(ctx, `${i + 1}. ${word}`, L.cell);
+    ctx.fillStyle = "#111";
+    ctx.fillText(text, x, y + G.label * 0.86);
+    /* 칸: 선 1px, 안쪽 640 */
+    ctx.strokeStyle = "#111"; ctx.lineWidth = G.line;
+    ctx.strokeRect(x + G.line / 2, y + L.head + G.line / 2, G.inner + G.line, G.inner + G.line);
+  }
+  $("size").textContent = `${L.width.toLocaleString()} × ${L.height.toLocaleString()}px`;
+}
+$("cols").onchange = () => { try { localStorage.setItem(KEY + "-cols", $("cols").value); } catch (e) {} drawCanvas(); };
+
+/* PNG 받기 */
+$("png").onclick = () => {
+  drawCanvas();
+  const d = new Date(), p = n => String(n).padStart(2, "0");
+  const name = `키워드기획표-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}.png`;
+  $("cv").toBlob(blob => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    const b = $("png"); b.textContent = "받았어요"; b.classList.add("done");
+    setTimeout(() => { b.textContent = "PNG 받기"; b.classList.remove("done"); }, 1500);
+  }, "image/png");
+};
+
+drawList();
+drawCanvas();
+/* 글꼴이 늦게 도착하면 다시 그립니다 */
+if (document.fonts){
+  document.fonts.load(`600 ${G.label}px Paperozi`).then(drawCanvas).catch(() => {});
+  document.fonts.ready.then(drawCanvas);
+}
+</script>
+</body>
+</html>
