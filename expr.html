@@ -32,18 +32,24 @@
   .plist{list-style:none;margin:0;padding:6px;overflow-y:auto;flex:1;min-height:120px}
   .plist.over{background:#fbf8ee}
   .plist .empty{padding:26px 10px;text-align:center;color:var(--muted);font-size:12.5px;line-height:1.6}
-  .pi{display:grid;grid-template-columns:16px 26px 1fr auto;align-items:center;gap:6px;
-    padding:5px 6px;border-radius:7px;font-size:13.5px}
-  .pi:hover{background:#faf9f6}
-  .pi.dragging{opacity:.4}
-  .pi.before{box-shadow:inset 0 2px 0 var(--ink)}
-  .pi .hd{cursor:grab;color:#b9b7b1;font-size:13px;line-height:1;user-select:none;text-align:center}
-  .pi .no{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
-  .pi .w{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .pi .w small{color:var(--muted);font-size:11.5px;margin-left:5px}
-  .pi .act{display:flex;gap:1px}
-  .pi .act button{border:0;background:none;cursor:pointer;color:#a5a39d;font-size:12px;padding:2px 4px;border-radius:4px}
-  .pi .act button:hover{color:var(--ink);background:#f0efea}
+  .prow{display:grid;grid-template-columns:16px 24px 1fr auto;align-items:center;gap:6px;
+    padding:5px 6px;border-radius:8px;border:1px solid transparent}
+  .prow:hover{background:#faf9f6}
+  .prow.dragging{opacity:.4}
+  .prow.before{box-shadow:inset 0 2px 0 var(--ink)}
+  .prow.after{box-shadow:inset 0 -2px 0 var(--ink)}
+  .prow.merge{background:#fff6c7;border-color:#e8d98a}
+  .prow .hd{cursor:grab;color:#b9b7b1;font-size:13px;line-height:1;user-select:none;text-align:center}
+  .prow .no{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
+  .prow .chips{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+  .prow .act{display:flex;gap:1px}
+  .prow .act button{border:0;background:none;cursor:pointer;color:#a5a39d;font-size:12px;padding:2px 4px;border-radius:4px}
+  .prow .act button:hover{color:var(--ink);background:#f0efea}
+  .plist.endline{box-shadow:inset 0 -2px 0 var(--ink)}
+  /* 키워드 블록 안의 체크박스 */
+  .kw .ck{width:13px;height:13px;margin:0 6px 0 0;vertical-align:-2px;cursor:pointer}
+  .kw.on{border-color:var(--ink)}
+  .pk{padding:3px 9px 3px 7px;font-size:12.5px}
   .kw[draggable=true]{cursor:grab}
   .panel .addpick{float:right;margin-right:6px}
   header{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;flex-wrap:wrap}
@@ -177,9 +183,11 @@
     예: 10대 순위에만 주로 보인 세트는 10대 비율이 높고, 전 연령에 고루 든 세트는 어느 연령도 높지 않습니다.
     연령대를 고르면 순위 기록이 없는 세트는 빠집니다.<br>
     <b>스타일 태그·유형·연령대</b>는 함께 걸리며, 걸러진 세트의 키워드만 셉니다.<br>
-    <b>모은 키워드</b>: 키워드 블록을 오른쪽으로 끌어다 놓거나, 키워드를 눌러 연 뒤 '담기'를 누르면 담깁니다.
-    손잡이(⋮⋮)를 끌거나 ↑↓로 순서를 바꿀 수 있고, 복사하면 '번호 탭 키워드'로 줄마다 하나씩 복사됩니다.
-    담은 목록은 이 브라우저에 저장됩니다.
+    <b>모은 키워드</b>: 블록의 체크박스를 누르면 오른쪽 맨 아래 새 번호로 담깁니다. 왼쪽에서 체크를 풀면 패널 전체에서 빠지고,
+    패널 안에서 체크를 풀면 그 한 개만 빠집니다.
+    블록을 다른 번호 <b>한가운데</b>에 놓으면 그 번호에 붙고(노란 표시), 번호 <b>사이</b>에 놓으면 새 번호로 끼워집니다(검은 선).
+    <b>Alt</b>를 누른 채 끌면 옮기지 않고 복제됩니다. 손잡이(⋮⋮)나 ↑↓로 번호 순서를 바꿉니다.
+    복사하면 '번호 탭 키워드, 키워드'로 줄마다 복사되고, 담은 목록은 이 브라우저에 저장됩니다.
   </p>
 </div>
 
@@ -323,8 +331,10 @@ function visible(){
 
 const chip = (w, small) => {
   const v = STAT[w];
-  return `<button class="kw${CHARS.has(w) ? " chr" : ""}" data-w="${esc(w)}" draggable="true"
-    aria-pressed="${picked === w}"><b>${esc(w)}</b><span class="n">${v.expr} · ${v.sets.size}종</span></button>`;
+  const on = isPicked(w);
+  return `<span class="kw${CHARS.has(w) ? " chr" : ""}${on ? " on" : ""}" data-w="${esc(w)}" draggable="true"
+    role="button" tabindex="0" aria-pressed="${picked === w}"><input type="checkbox" class="ck" ${on ? "checked" : ""}
+    aria-label="${esc(w)} 담기"><b>${esc(w)}</b><span class="n">${v.expr} · ${v.sets.size}종</span></span>`;
 };
 
 /* 고른 키워드와 같은 표현에 함께 있던 키워드 */
@@ -358,7 +368,7 @@ function drawDetail(){
 
   $("detail").innerHTML = `<div class="panel">
     <button class="close" id="closeDetail">닫기</button>
-    <button class="close addpick" id="addPick">${PICKS.includes(picked) ? "담김" : "담기"}</button>
+    <button class="close addpick" id="addPick">${isPicked(picked) ? "담김" : "담기"}</button>
     <h2>${esc(picked)}</h2>
     <p class="sub">표현 ${v.expr}개 · ${v.sets.size}종에서 사용 (조건에 맞는 ${SETS.length}종 ${EXPR_ACTIVE}표현 중)</p>
     <h3>쓰인 곳</h3>
@@ -367,21 +377,28 @@ function drawDetail(){
     <div class="co">${coHtml}</div>
   </div>`;
   $("closeDetail").onclick = () => { picked = null; render(); };
-  $("addPick").onclick = () => addPick(picked);
+  $("addPick").onclick = () => { if (!isPicked(picked)) addRow(picked); };
   bind($("detail"));
 }
 
 function bind(host){
-  host.querySelectorAll("button[data-w]").forEach(b => b.ondragstart = e => {
-    e.dataTransfer.setData("text/x-kw", b.dataset.w);
-    e.dataTransfer.setData("text/plain", b.dataset.w);
-    e.dataTransfer.effectAllowed = "copy";
-  });
-  host.querySelectorAll("button[data-w]").forEach(b => b.onclick = () => {
+  host.querySelectorAll("[data-w]").forEach(b => {
     const w = b.dataset.w;
-    picked = (picked === w) ? null : w;
-    render();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    b.ondragstart = e => {
+      e.dataTransfer.setData("text/x-kw", w);
+      e.dataTransfer.setData("text/plain", w);
+      e.dataTransfer.effectAllowed = "copyMove";
+    };
+    const ck = b.querySelector(".ck");
+    if (ck){
+      ck.onclick = e => e.stopPropagation();
+      ck.onchange = () => ck.checked ? addRow(w) : removeWord(w);
+    }
+    b.onclick = () => {
+      picked = (picked === w) ? null : w;
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
   });
 }
 
@@ -399,114 +416,169 @@ function render(){
   drawPicks();
 }
 
-/* ── 모은 키워드 (오른쪽 목록) ────────────────────
-   끌어다 놓거나 '담기'로 추가, 손잡이로 끌거나 ↑↓로 순서 변경.
-   복사할 때는 '번호 탭 키워드'만 (표현 수·종 수는 화면에서만 보입니다) */
-const PICK_KEY = "expr-picks";
-let PICKS = [];
-try { PICKS = JSON.parse(localStorage.getItem(PICK_KEY) || "[]"); } catch (e) { PICKS = []; }
-const savePicks = () => { try { localStorage.setItem(PICK_KEY, JSON.stringify(PICKS)); } catch (e) {} };
-
-function addPick(w, at){
-  if (!w) return;
-  const old = PICKS.indexOf(w);
-  if (old >= 0){                                   // 이미 있으면 그 자리로 옮기기만
-    if (at === undefined) return flashPick(old);
-    PICKS.splice(old, 1);
-    if (old < at) at--;
+/* ── 모은 키워드 (오른쪽 목록) ─────────────────────────────
+   ROWS = [ ["브이", "선글라스"], ["ㅠㅠ"], ... ]  — 줄 하나가 번호 하나(표현 하나)
+   · 왼쪽 체크: 맨 아래 새 번호로 담기 / 해제하면 패널 전체에서 그 키워드를 뺌
+   · 패널 블록의 체크 해제: 그 한 개만 뺌
+   · 끌어다 놓기: 줄 한가운데 → 그 줄에 붙이기 / 줄 사이 → 새 번호로 끼우기
+   · Alt를 누른 채 끌면 옮기지 않고 복제 (같은 키워드를 여러 번호에 붙일 때)
+   · 복사: '번호 탭 키워드, 키워드' — 표현 수·종 수는 화면에서만 */
+const PICK_KEY = "expr-picks2";
+let ROWS = [];
+try {
+  ROWS = JSON.parse(localStorage.getItem(PICK_KEY) || "null");
+  if (!ROWS){                                       // 예전 목록(한 줄에 하나)이 있으면 옮겨옵니다
+    const old = JSON.parse(localStorage.getItem("expr-picks") || "[]");
+    ROWS = old.map(w => [w]);
   }
-  if (at === undefined || at > PICKS.length) at = PICKS.length;
-  PICKS.splice(at, 0, w);
-  savePicks(); render();
+} catch (e) { ROWS = []; }
+const savePicks = () => { try { localStorage.setItem(PICK_KEY, JSON.stringify(ROWS)); } catch (e) {} };
+const isPicked = w => ROWS.some(r => r.includes(w));
+const done = () => { ROWS = ROWS.filter(r => r.length); savePicks(); render(); };
+
+function addRow(w, at){
+  if (!w) return;
+  if (at === undefined || at > ROWS.length) at = ROWS.length;
+  ROWS.splice(at, 0, [w]);
+  done();
 }
-function movePick(from, to){
-  if (to < 0 || to >= PICKS.length || from === to) return;
-  const [w] = PICKS.splice(from, 1);
-  PICKS.splice(to, 0, w);
-  savePicks(); drawPicks();
+function removeWord(w){ ROWS = ROWS.map(r => r.filter(x => x !== w)); done(); }
+
+/* 끌려 온 것 한 가지를 꺼냅니다(복제면 그대로 두고 값만) → [키워드들, 원래 줄 번호가 지워졌는지] */
+function take(src, copy){
+  if (src.type === "kw") return { words: [src.w], gone: -1 };
+  if (src.type === "row"){
+    const words = ROWS[src.r].slice();
+    if (!copy) ROWS[src.r] = [];
+    return { words, gone: copy ? -1 : src.r };
+  }
+  /* 패널 안 블록 하나 */
+  const w = ROWS[src.r][src.c];
+  if (!copy) ROWS[src.r].splice(src.c, 1);
+  return { words: [w], gone: (!copy && !ROWS[src.r].length) ? src.r : -1 };
 }
-function flashPick(i){
-  const li = $("plist").children[i];
-  if (li){ li.style.background = "#fee500"; setTimeout(() => li.style.background = "", 600); }
+
+function dropOn(target, src, copy){
+  // 왼쪽에서 끌어온 키워드가 이미 담겨 있으면(Alt 아니면) 새로 넣지 않습니다
+  if (src.type === "kw" && !copy && isPicked(src.w)) return flashWord(src.w);
+  if (src.type === "row" && target.kind === "merge") target = { kind: "insert", at: target.r + 1 };
+  const { words } = take(src, copy);
+  if (target.kind === "merge"){
+    const row = ROWS[target.r];
+    words.forEach(w => { if (!row.includes(w)) row.push(w); });
+  } else {
+    ROWS.splice(target.at, 0, words);
+  }
+  done();                                           // 빈 줄은 여기서 정리됩니다
+}
+
+function flashWord(w){
+  $("plist").querySelectorAll(".pk").forEach(el => {
+    if (el.dataset.pw === w){ el.style.background = "#fee500"; setTimeout(() => el.style.background = "", 700); }
+  });
+}
+function moveRow(from, to){
+  if (to < 0 || to >= ROWS.length) return;
+  const [r] = ROWS.splice(from, 1); ROWS.splice(to, 0, r); done();
 }
 
 function drawPicks(){
-  $("pickCnt").textContent = PICKS.length ? `${PICKS.length}개` : "";
-  if (!PICKS.length){
-    $("plist").innerHTML = `<li class="empty">키워드 블록을 여기로 끌어다 놓으세요.<br>순서대로 번호가 붙습니다.</li>`;
+  $("pickCnt").textContent = ROWS.length ? `${ROWS.length}개` : "";
+  if (!ROWS.length){
+    $("plist").innerHTML = `<li class="empty">왼쪽 키워드의 체크박스를 누르거나<br>블록을 여기로 끌어다 놓으세요.<br>
+      줄 한가운데에 놓으면 그 번호에 붙습니다.</li>`;
     return;
   }
-  $("plist").innerHTML = PICKS.map((w, i) => {
-    const v = STAT[w];
-    const n = v ? `${v.expr} · ${v.sets.size}종` : "–";
-    return `<li class="pi" draggable="true" data-i="${i}">
-      <span class="hd" title="끌어서 순서 바꾸기">⋮⋮</span>
-      <span class="no">${i + 1}.</span>
-      <span class="w">${esc(w)}<small>${n}</small></span>
+  $("plist").innerHTML = ROWS.map((row, r) => `<li class="prow" data-r="${r}">
+      <span class="hd" draggable="true" data-r="${r}" title="끌어서 순서 바꾸기 (Alt: 복제)">⋮⋮</span>
+      <span class="no">${r + 1}.</span>
+      <span class="chips">${row.map((w, c) => {
+        const v = STAT[w];
+        return `<span class="kw pk${CHARS.has(w) ? " chr" : ""}" draggable="true" data-r="${r}" data-c="${c}" data-pw="${esc(w)}"
+          title="${v ? `표현 ${v.expr} · ${v.sets.size}종` : "지금 조건에는 없음"} — 끌어서 옮기기 (Alt: 복제)"><input type="checkbox" class="ck" checked
+          aria-label="${esc(w)} 빼기"><b>${esc(w)}</b></span>`;
+      }).join("")}</span>
       <span class="act">
-        <button data-up="${i}" title="위로">↑</button>
-        <button data-down="${i}" title="아래로">↓</button>
-        <button data-del="${i}" title="빼기">×</button>
+        <button data-up="${r}" title="위로">↑</button>
+        <button data-down="${r}" title="아래로">↓</button>
       </span>
-    </li>`;
-  }).join("");
-  $("plist").querySelectorAll("[data-up]").forEach(b => b.onclick = () => movePick(+b.dataset.up, +b.dataset.up - 1));
-  $("plist").querySelectorAll("[data-down]").forEach(b => b.onclick = () => movePick(+b.dataset.down, +b.dataset.down + 1));
-  $("plist").querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
-    PICKS.splice(+b.dataset.del, 1); savePicks(); render();
-  });
-  $("plist").querySelectorAll(".pi").forEach(li => {
-    li.ondragstart = e => {
-      e.dataTransfer.setData("text/x-pick", li.dataset.i);
-      e.dataTransfer.effectAllowed = "move";
-      li.classList.add("dragging");
+    </li>`).join("");
+
+  $("plist").querySelectorAll("[data-up]").forEach(b => b.onclick = () => moveRow(+b.dataset.up, +b.dataset.up - 1));
+  $("plist").querySelectorAll("[data-down]").forEach(b => b.onclick = () => moveRow(+b.dataset.down, +b.dataset.down + 1));
+  $("plist").querySelectorAll(".pk").forEach(el => {
+    const r = +el.dataset.r, c = +el.dataset.c;
+    el.querySelector(".ck").onchange = () => { ROWS[r].splice(c, 1); done(); };   // 이 한 개만 빼기
+    el.ondragstart = e => {
+      e.stopPropagation();
+      e.dataTransfer.setData("text/x-pc", `${r},${c}`);
+      e.dataTransfer.effectAllowed = "copyMove";
     };
-    li.ondragend = () => li.classList.remove("dragging");
+  });
+  $("plist").querySelectorAll(".hd").forEach(h => {
+    h.ondragstart = e => {
+      e.dataTransfer.setData("text/x-row", h.dataset.r);
+      e.dataTransfer.effectAllowed = "copyMove";
+      h.closest(".prow").classList.add("dragging");
+    };
+    h.ondragend = () => h.closest(".prow").classList.remove("dragging");
   });
 }
 
-/* 놓는 자리: 가리킨 줄의 위쪽 절반이면 그 앞, 아래쪽 절반이면 그 뒤 */
-function dropIndex(e){
-  const items = [...$("plist").querySelectorAll(".pi")];
-  for (let i = 0; i < items.length; i++){
-    const r = items[i].getBoundingClientRect();
-    if (e.clientY < r.top + r.height / 2) return i;
+/* 가리킨 곳 → 붙이기(줄 가운데) / 끼우기(줄 위·아래 가장자리, 빈 곳) */
+function targetOf(e){
+  const rows = [...$("plist").querySelectorAll(".prow")];
+  for (let i = 0; i < rows.length; i++){
+    const b = rows[i].getBoundingClientRect();
+    if (e.clientY < b.top) return { kind: "insert", at: i, mark: [i, "before"] };
+    if (e.clientY <= b.bottom){
+      const edge = Math.min(10, b.height * 0.28);
+      if (e.clientY < b.top + edge) return { kind: "insert", at: i, mark: [i, "before"] };
+      if (e.clientY > b.bottom - edge) return { kind: "insert", at: i + 1, mark: [i, "after"] };
+      return { kind: "merge", r: i, mark: [i, "merge"] };
+    }
   }
-  return items.length;
+  return { kind: "insert", at: rows.length, mark: [-1, "end"] };
 }
-function markDrop(i){
-  $("plist").querySelectorAll(".pi").forEach((li, k) => li.classList.toggle("before", k === i));
+function clearMarks(){
+  $("plist").classList.remove("over", "endline");
+  $("plist").querySelectorAll(".prow").forEach(li => li.classList.remove("before", "after", "merge"));
+}
+function sourceOf(dt){
+  const pc = dt.getData("text/x-pc");
+  if (pc){ const [r, c] = pc.split(",").map(Number); return { type: "pc", r, c }; }
+  const row = dt.getData("text/x-row");
+  if (row !== "") return { type: "row", r: +row };
+  const w = (dt.getData("text/x-kw") || dt.getData("text/plain")).trim();
+  return w ? { type: "kw", w } : null;
 }
 $("plist").addEventListener("dragover", e => {
   e.preventDefault();
+  e.dataTransfer.dropEffect = e.altKey ? "copy" : "move";
+  clearMarks();
   $("plist").classList.add("over");
-  markDrop(dropIndex(e));
+  const t = targetOf(e), [i, how] = t.mark;
+  if (how === "end") $("plist").classList.add("endline");
+  else $("plist").querySelectorAll(".prow")[i].classList.add(how);
 });
-$("plist").addEventListener("dragleave", e => {
-  if (!$("plist").contains(e.relatedTarget)){ $("plist").classList.remove("over"); markDrop(-1); }
-});
+$("plist").addEventListener("dragleave", e => { if (!$("plist").contains(e.relatedTarget)) clearMarks(); });
 $("plist").addEventListener("drop", e => {
   e.preventDefault();
-  $("plist").classList.remove("over"); markDrop(-1);
-  const at = dropIndex(e);
-  const from = e.dataTransfer.getData("text/x-pick");
-  if (from !== ""){                                // 목록 안에서 옮기기
-    const f = +from;
-    movePick(f, f < at ? at - 1 : at);
-    return;
-  }
-  addPick(e.dataTransfer.getData("text/x-kw") || e.dataTransfer.getData("text/plain").trim(), at);
+  clearMarks();
+  const src = sourceOf(e.dataTransfer);
+  if (!src) return;
+  dropOn(targetOf(e), src, e.altKey);
 });
 
 $("pickCopy").onclick = async () => {
-  if (!PICKS.length) return;
-  await navigator.clipboard.writeText(PICKS.map((w, i) => `${i + 1}\t${w}`).join("\n"));
+  if (!ROWS.length) return;
+  await navigator.clipboard.writeText(ROWS.map((r, i) => `${i + 1}\t${r.join(", ")}`).join("\n"));
   const b = $("pickCopy"); b.textContent = "복사됨"; b.classList.add("done");
   setTimeout(() => { b.textContent = "복사"; b.classList.remove("done"); }, 1500);
 };
 $("pickClear").onclick = () => {
-  if (!PICKS.length || !confirm(`모은 키워드 ${PICKS.length}개를 모두 비울까요?`)) return;
-  PICKS = []; savePicks(); render();
+  if (!ROWS.length || !confirm(`모은 키워드 ${ROWS.length}개 번호를 모두 비울까요?`)) return;
+  ROWS = []; done();
 };
 
 ["hideChr", "multi", "sort", "share", "from", "to", "tag", "kind"].forEach(id => $(id).onchange = render);
