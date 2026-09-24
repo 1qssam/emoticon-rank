@@ -84,6 +84,7 @@
     <label>태그 <select id="tag"><option value="">전체</option></select></label>
     <label><input type="checkbox" id="onlyNew"> 수집 이후 출시분만</label>
     <label><input type="checkbox" id="onlyFree"> 월요무료만</label>
+    <label><input type="checkbox" id="noMini"> 미니 제외</label>
     <label>키워드
       <select id="kwFilter">
         <option value="">전체</option>
@@ -103,6 +104,7 @@
     <span style="color:#b6b4ae">–</span>
     <label><input type="date" id="dto" disabled></label>
     <label><input type="checkbox" id="withhead" checked> 제목 줄 포함</label>
+    <label><input type="number" id="maxrows" min="1" placeholder="전체" style="width:64px"> 행</label>
     <button class="btn" id="copy">시트로 복사</button>
     <button class="btn" id="resort">기본 정렬</button>
     <span class="cnt" id="cnt"></span>
@@ -301,6 +303,7 @@ function apply(){
   const tag = $("tag").value;
   const onlyNew = $("onlyNew").checked;
   const onlyFree = $("onlyFree").checked;
+  const noMini = $("noMini").checked;
   const kwFilter = $("kwFilter").value;   // "" 전체 / has 있는 것만 / none 없는 것만
 
   const basis = $("basis").value;
@@ -323,6 +326,7 @@ function apply(){
     if (tag && !r.tags.includes(tag)) return false;
     if (onlyNew && !r.released) return false;
     if (onlyFree && !r.free) return false;
+    if (noMini && r.kind.startsWith("미니")) return false;
     if (kwFilter === "has" && !r.kw) return false;
     if (kwFilter === "none" && r.kw) return false;
     if (q && !(r.title.toLowerCase().includes(q) || r.creator.toLowerCase().includes(q)
@@ -376,7 +380,10 @@ function render(){
 $("copy").onclick = async () => {
   const head = ["상품명","작가","시리즈","유형","소리","태그","개수","가격",
                 "출시일","순번","일건","최고순위","최고순위일","연령대최고","첫등장","마지막등장",...DAY_COLS.map(c => c.label),"slug","링크","MD","월요무료","키워드표현수"];
-  const rows = filtered.map(r => [
+  // 행 수를 적으면 위에서부터 그만큼만(제목 줄 제외). 비우면 전부
+  const max = parseInt($("maxrows").value, 10);
+  const pick = max > 0 ? filtered.slice(0, max) : filtered;
+  const rows = pick.map(r => [
     r.title, r.creator, r.series, r.kind, r.sound, r.tags.join(", "),
     r.count ?? "", r.price ?? "", r.released ?? "", r.no ?? "", r.dayCount ?? "",
     rankText(r), r.bestDate ?? r.miniDate ?? "",
@@ -389,7 +396,7 @@ $("copy").onclick = async () => {
   setTimeout(() => { $("copy").textContent = "시트로 복사"; $("copy").classList.remove("done"); }, 1500);
 };
 
-["q","kind","tag","onlyNew","onlyFree","kwFilter","basis","dfrom","dto"].forEach(id => {
+["q","kind","tag","onlyNew","onlyFree","noMini","kwFilter","basis","dfrom","dto"].forEach(id => {
   $(id).oninput = apply; $(id).onchange = apply;
 });
 $("resort").onclick = () => { sortKey = "order"; asc = true; apply(); };
