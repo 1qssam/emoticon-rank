@@ -123,6 +123,7 @@
   <div class="opts">
     <label><input type="checkbox" id="hideChr" checked> 캐릭터 빼기</label>
     <label><input type="checkbox" id="multi"> 두 종 이상에서 나온 것만</label>
+    <label><input type="checkbox" id="onlyPicked"> 체크된 것만</label>
     <label>정렬
       <select id="sort">
         <option value="expr" selected>표현 수</option>
@@ -315,9 +316,11 @@ function visible(){
   const q = $("q").value.trim().toLowerCase();
   const hideChr = $("hideChr").checked;
   const multi = $("multi").checked;
+  const onlyPicked = $("onlyPicked").checked;   // 오른쪽 패널에 담긴 키워드만
   let list = KEYS.filter(w => {
     if (hideChr && CHARS.has(w)) return false;
     if (multi && STAT[w].sets.size < 2) return false;
+    if (onlyPicked && !isPicked(w)) return false;
     if (q && !w.toLowerCase().includes(q)) return false;
     return true;
   });
@@ -581,7 +584,7 @@ $("pickClear").onclick = () => {
   ROWS = []; done();
 };
 
-["hideChr", "multi", "sort", "share", "from", "to", "tag", "kind"].forEach(id => $(id).onchange = render);
+["hideChr", "multi", "onlyPicked", "sort", "share", "from", "to", "tag", "kind"].forEach(id => $(id).onchange = render);
 document.querySelectorAll("#ageGrp input").forEach(x => x.onchange = render);
 $("q").oninput = render;
 
