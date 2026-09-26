@@ -81,6 +81,10 @@
   .chrbtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;font-size:12.5px;
     cursor:pointer;font-family:inherit;color:var(--muted)}
   .chrbtn[aria-pressed="true"]{background:#2f6fd0;border-color:#2f6fd0;color:#fff}
+  .clrbtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;font-size:12.5px;
+    cursor:pointer;font-family:inherit;color:var(--muted)}
+  .clrbtn:hover{border-color:var(--ink);color:var(--ink)}
+  .kwbar label .cn{font-size:11px;color:var(--muted);margin-left:2px;font-variant-numeric:tabular-nums}
   .cnt{font-size:12.5px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
   .opts .grp{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .opts .grp b{font-size:12.5px;font-weight:600;color:var(--muted)}
@@ -487,6 +491,7 @@ function render(){
   collect();
   $("setcnt").textContent = `조건에 맞는 세트 ${SETS.length} / ${SET_TOTAL}종`;
   const list = visible(chrOn() ? STAT : NOCHAR);    // 분류를 안 고르면 이 목록 (캐릭터 토글 반영)
+  updateCatCounts();
   let secs = chosenCats();
   if (secs.length && chrOn()) secs = ["캐릭터"].concat(secs);   // 분류를 골랐을 때 캐릭터는 맨 위 단
   if (!secs.length){                                // 아무것도 안 고르면 전체를 한 덩어리로
@@ -744,9 +749,10 @@ const CAT_ORDER = KC.cats.filter(c => c !== "캐릭터");
   const rows = [[]];
   CAT_ORDER.forEach(c => { if (c === "") rows.push([]); else rows[rows.length - 1].push(c); });
   $("catChecks").innerHTML =
-    `<div class="ck-row"><button type="button" class="chrbtn" id="chrBtn" aria-pressed="false">캐릭터 보기</button></div>` +
+    `<div class="ck-row"><button type="button" class="chrbtn" id="chrBtn" aria-pressed="false">캐릭터 보기</button>` +
+    `<button type="button" class="clrbtn" id="clrBtn">분류 모두 해제</button></div>` +
     rows.filter(r => r.length).map(r => `<div class="ck-row">${
-      r.map(c => `<label><input type="checkbox" data-cat="${esc(c)}"> ${esc(c)}</label>`).join("")}</div>`).join("");
+      r.map(c => `<label data-cat="${esc(c)}"><input type="checkbox" data-cat="${esc(c)}"> ${esc(c)}<span class="cn"></span></label>`).join("")}</div>`).join("");
 })();
 const chrOn = () => $("chrBtn").getAttribute("aria-pressed") === "true";
 function chosenCats(){
@@ -764,6 +770,20 @@ function saveBar(){
   $("chrBtn").setAttribute("aria-pressed", st.chr ? "true" : "false");
 })();
 $("catChecks").querySelectorAll("input").forEach(x => x.addEventListener("change", () => { saveBar(); render(); }));
+/* 분류 체크만 모두 끕니다 (캐릭터 보기는 그대로) */
+$("clrBtn").onclick = () => {
+  $("catChecks").querySelectorAll("input:checked").forEach(x => { x.checked = false; });
+  saveBar(); render();
+};
+/* 체크박스 옆 숫자 = 지금 조건에서 그 분류에 든 키워드 수.
+   '미분류'는 분류표 어디에도 없는 키워드를 페이지가 직접 세는 칸이라, 0개면 숨깁니다. */
+function updateCatCounts(){
+  $("catChecks").querySelectorAll("label[data-cat]").forEach(l => {
+    const c = l.dataset.cat, n = Object.keys(CAT[c] || {}).length;
+    l.querySelector(".cn").textContent = n;
+    if (c === "미분류") l.hidden = !n && !l.querySelector("input").checked;
+  });
+}
 $("chrBtn").onclick = () => {
   $("chrBtn").setAttribute("aria-pressed", chrOn() ? "false" : "true");
   saveBar(); render();
