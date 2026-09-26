@@ -353,6 +353,7 @@ function collect(){
    CAT[분류][키워드] = { expr, sets: Set(slug) } */
 const CHAR_SET = 0.6, CHAR_WORD = 0.1;
 let CAT = {}, NOCHAR = {};
+let CHR_ROLE = new Set();                            // "slug\t키워드" — 그 세트에서 캐릭터로 쓰인 경우
 function catsFor(w, setShare, wordShare){
   const base = (window.KWCLASS && window.KWCLASS.map[w]) || [];
   if (CHARS.has(w)){
@@ -363,7 +364,7 @@ function catsFor(w, setShare, wordShare){
   return base.length ? base : ["미분류"];
 }
 function collectCats(){
-  CAT = {}; NOCHAR = {};
+  CAT = {}; NOCHAR = {}; CHR_ROLE = new Set();
   SETS.forEach(slug => {
     const ex = E[slug], n = ex.length;
     if (!n) return;
@@ -382,7 +383,8 @@ function collectCats(){
         const v = byW[w] || (byW[w] = { expr: 0, sets: new Set() });
         v.expr++; v.sets.add(slug);
       });
-      if (!(cats.length === 1 && cats[0] === "캐릭터")){  // 캐릭터로 쓰인 것만 뺀 전체
+      if (cats.length === 1 && cats[0] === "캐릭터") CHR_ROLE.add(slug + "\t" + w);
+      else {                                           // 캐릭터로 쓰인 것만 뺀 전체
         const v = NOCHAR[w] || (NOCHAR[w] = { expr: 0, sets: new Set() });
         v.expr++; v.sets.add(slug);
       }
@@ -427,6 +429,7 @@ function together(w){
   const c = {};
   SETS.forEach(slug => E[slug].forEach(words => {
     if (!words.includes(w)) return;
+    if (!chrOn() && CHR_ROLE.has(slug + "\t" + w)) return;   // 캐릭터로 쓰인 세트는 빼고
     new Set(words).forEach(x => { if (x !== w) c[x] = (c[x] || 0) + 1; });
   }));
   return Object.keys(c).sort((a, b) => c[b] - c[a] || a.localeCompare(b, "ko"))
@@ -436,10 +439,14 @@ function together(w){
 function drawDetail(){
   if (!picked){ $("detail").innerHTML = ""; return; }
   const v = STAT[picked];
+  // 캐릭터를 꺼두면 그 키워드가 캐릭터로 쓰인 이모티콘은 '쓰인 곳'에서 뺍니다
+  const useList = chrOn() ? v.use : v.use.filter(([slug]) => !CHR_ROLE.has(slug + "\t" + picked));
+  const cnt = chrOn() ? v : (NOCHAR[picked] || { expr: 0, sets: new Set() });
+  const hiddenSets = v.sets.size - cnt.sets.size;
 
   /* 이모티콘별로 표현 번호를 모읍니다 */
   const bySlug = {};
-  v.use.forEach(([slug, n]) => (bySlug[slug] = bySlug[slug] || []).push(n));
+  useList.forEach(([slug, n]) => (bySlug[slug] = bySlug[slug] || []).push(n));
   const uses = Object.entries(bySlug).map(([slug, nos]) =>
     `<span class="t"><a href="https://e.kakao.com/t/${slug}" target="_blank" rel="noopener">${esc(titleOf(slug))}</a></span>` +
     `<span class="no">${esc(creatorOf(slug))} · ${nos.join(", ")}번</span>` +
@@ -455,9 +462,10 @@ function drawDetail(){
     <button class="close" id="closeDetail">닫기</button>
     <button class="close addpick" id="addPick">${isPicked(picked) ? "담김" : "담기"}</button>
     <h2>${esc(picked)}</h2>
-    <p class="sub">표현 ${v.expr}개 · ${v.sets.size}종에서 사용 (조건에 맞는 ${SETS.length}종 ${EXPR_ACTIVE}표현 중)</p>
+    <p class="sub">표현 ${cnt.expr}개 · ${cnt.sets.size}종에서 사용 (조건에 맞는 ${SETS.length}종 ${EXPR_ACTIVE}표현 중)${
+      hiddenSets ? ` · 캐릭터로 쓰인 ${hiddenSets}종 숨김` : ""}</p>
     <h3>쓰인 곳</h3>
-    <p class="use">${uses}</p>
+    <p class="use">${uses || `<span class="sub">캐릭터로만 쓰였습니다. 캐릭터 보기를 켜면 보입니다.</span>`}</p>
     <h3>같은 표현에 함께 있던 키워드 ${co.length}개</h3>
     <div class="co">${coHtml}</div>
   </div>`;
