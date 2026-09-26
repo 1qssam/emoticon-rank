@@ -94,7 +94,9 @@
   .seccopy:hover{border-color:var(--ink);color:var(--ink)}
   .seccopy.done{background:var(--mark);color:#3a3400;border-color:var(--mark)}
   .kwbar{margin-top:-6px}
-  .kwbar .ck-list{display:flex;flex-wrap:wrap;gap:4px 12px}
+  .kwbar .ck-list{display:flex;flex-direction:column;gap:7px;width:100%}
+  .kwbar .ck-row{display:flex;flex-wrap:wrap;gap:4px 12px}
+  .kwbar .ck-row + .ck-row{padding-top:7px;border-top:1px dashed var(--line)}
   .kw{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 13px;
     font-size:13.5px;cursor:pointer;font-family:inherit;color:var(--ink);line-height:1.3}
   .kw:hover{border-color:var(--ink)}
@@ -142,7 +144,6 @@
   </header>
 
   <div class="opts">
-    <label><input type="checkbox" id="hideChr" checked> 캐릭터 빼기</label>
     <label><input type="checkbox" id="multi"> 두 종 이상에서 나온 것만</label>
     <label><input type="checkbox" id="onlyPicked"> 체크된 것만</label>
     <label>정렬
@@ -183,8 +184,6 @@
   </div>
 
   <div class="opts kwbar" id="kwbar">
-    <label>감정 <select id="emoSel"><option value="">선택 안 함</option></select></label>
-    <label>표현 <select id="expSel"><option value="">선택 안 함</option></select></label>
     <span class="ck-list" id="catChecks"></span>
   </div>
 
@@ -208,7 +207,9 @@
   <p class="tip">
     괄호 안은 <b>표현 수</b>이고, 그 옆은 <b>몇 종에서 나왔는지</b>입니다. 예: 12 · 5종<br>
     키워드를 누르면 그 키워드를 쓴 이모티콘과, 같은 표현에 함께 있던 키워드를 볼 수 있습니다.<br>
-    캐릭터 이름(강아지·고양이 등)은 한 세트 안에서 계속 반복되어 수가 부풀기 때문에 기본으로 숨깁니다.<br>
+    분류 체크박스는 캐릭터만 빼고 모두 켜진 채로 시작하며, 고른 분류마다 단을 나눠 보여줍니다. 모두 끄면 전체가 한 덩어리로 보입니다.<br>
+    캐릭터 키워드는 세트에 따라 다르게 셉니다. 캐릭터가 나오는 표현이 세트의 60% 이상이고 그 키워드가 세트 안에서 10% 이상 나오면 <b>캐릭터</b>로,
+    아니면 소품처럼 쓰인 것으로 보고 분류표의 다른 칸(없으면 <b>기타요소</b>)으로 셉니다. 블록 숫자는 그 단에서 쓰인 횟수입니다.<br>
     <b>연령대</b>는 기간 안에 10대~50대 순위(200위)에 든 날 중 그 연령대가 차지한 비율로 나눕니다.
     예: 10대 순위에만 주로 보인 세트는 10대 비율이 높고, 전 연령에 고루 든 세트는 어느 연령도 높지 않습니다.
     연령대를 고르면 순위 기록이 없는 세트는 빠집니다.<br>
@@ -231,7 +232,6 @@ const E = window.EXPR || {};
 
 /* ── 캐릭터 이름 ────────────────────────────────
    분류표(data/keyword_class.csv)의 '캐릭터' 열에 적힌 키워드입니다.
-   '캐릭터 빼기'를 켜면 이 키워드들이 목록에서 빠집니다.
    새 캐릭터가 나오면 분류표의 '캐릭터' 열 아래에 적어 올리면 됩니다. */
 const CHARS = new Set(Object.entries((window.KWCLASS || {}).map || {})
   .filter(([w, cats]) => cats.includes("캐릭터")).map(([w]) => w));
@@ -333,20 +333,61 @@ function collect(){
   });
   KEYS = Object.keys(STAT);
   if (picked && !STAT[picked]) picked = null;       // 걸러져서 사라진 키워드는 닫습니다
+  collectCats();
+}
+
+/* ── 분류(단)별 집계 ─────────────────────────────
+   캐릭터 칸에 있는 키워드는 세트마다 역할을 따져서 셉니다.
+   · 그 세트에서 캐릭터 키워드가 들어간 표현이 CHAR_SET 이상이고
+   · 그 키워드가 그 세트 안에서 CHAR_WORD 이상 나오면 → 캐릭터
+   · 아니면 소품처럼 쓰인 것 → 분류표의 다른 칸, 없으면 기타요소
+   CAT[분류][키워드] = { expr, sets: Set(slug) } */
+const CHAR_SET = 0.6, CHAR_WORD = 0.1;
+let CAT = {};
+function catsFor(w, setShare, wordShare){
+  const base = (window.KWCLASS && window.KWCLASS.map[w]) || [];
+  if (CHARS.has(w)){
+    if (setShare >= CHAR_SET && wordShare >= CHAR_WORD) return ["캐릭터"];
+    const other = base.filter(c => c !== "캐릭터");
+    return other.length ? other : ["기타요소"];
+  }
+  return base.length ? base : ["미분류"];
+}
+function collectCats(){
+  CAT = {};
+  SETS.forEach(slug => {
+    const ex = E[slug], n = ex.length;
+    if (!n) return;
+    const inSet = {};
+    let charExpr = 0;
+    ex.forEach(words => {
+      const u = new Set(words);
+      if ([...u].some(w => CHARS.has(w))) charExpr++;
+      u.forEach(w => { inSet[w] = (inSet[w] || 0) + 1; });
+    });
+    const setShare = charExpr / n;
+    ex.forEach(words => new Set(words).forEach(w => {
+      catsFor(w, setShare, inSet[w] / n).forEach(c => {
+        const byW = CAT[c] || (CAT[c] = {});
+        const v = byW[w] || (byW[w] = { expr: 0, sets: new Set() });
+        v.expr++; v.sets.add(slug);
+      });
+    }));
+  });
 }
 const SET_TOTAL = Object.keys(E).length;
 
 let picked = null;
 let SEC_LISTS = {};                                  // 단마다 보이는 키워드 (목록 복사용)
 
-function visible(keepChr){
+/* 거르고 정렬합니다. src = { 키워드: {expr, sets} } (기본은 전체 STAT) */
+function visible(src){
+  src = src || STAT;
   const q = $("q").value.trim().toLowerCase();
-  const hideChr = $("hideChr").checked && !keepChr;
   const multi = $("multi").checked;
   const onlyPicked = $("onlyPicked").checked;   // 오른쪽 패널에 담긴 키워드만
-  let list = KEYS.filter(w => {
-    if (hideChr && CHARS.has(w)) return false;
-    if (multi && STAT[w].sets.size < 2) return false;
+  let list = Object.keys(src).filter(w => {
+    if (multi && src[w].sets.size < 2) return false;
     if (onlyPicked && !isPicked(w)) return false;
     if (q && !w.toLowerCase().includes(q)) return false;
     return true;
@@ -354,15 +395,15 @@ function visible(keepChr){
   const by = $("sort").value;
   list.sort((a, b) =>
     by === "name" ? a.localeCompare(b, "ko")
-    : by === "set" ? STAT[b].sets.size - STAT[a].sets.size || STAT[b].expr - STAT[a].expr || a.localeCompare(b, "ko")
-    : STAT[b].expr - STAT[a].expr || STAT[b].sets.size - STAT[a].sets.size || a.localeCompare(b, "ko"));
+    : by === "set" ? src[b].sets.size - src[a].sets.size || src[b].expr - src[a].expr || a.localeCompare(b, "ko")
+    : src[b].expr - src[a].expr || src[b].sets.size - src[a].sets.size || a.localeCompare(b, "ko"));
   return list;
 }
 
-const chip = (w, small) => {
-  const v = STAT[w];
+const chip = (w, v, asChr) => {
+  v = v || STAT[w];
   const on = isPicked(w);
-  return `<span class="kw${CHARS.has(w) ? " chr" : ""}${on ? " on" : ""}" data-w="${esc(w)}" draggable="true"
+  return `<span class="kw${asChr ? " chr" : ""}${on ? " on" : ""}" data-w="${esc(w)}" draggable="true"
     role="button" tabindex="0" aria-pressed="${picked === w}"><input type="checkbox" class="ck" ${on ? "checked" : ""}
     aria-label="${esc(w)} 담기"><b>${esc(w)}</b><span class="n">${v.expr} · ${v.sets.size}종</span></span>`;
 };
@@ -390,8 +431,8 @@ function drawDetail(){
     `<span class="no">${esc(creatorOf(slug))} · ${nos.join(", ")}번</span>` +
     ageNote(SH[slug])).join("<br>");
 
-  // '캐릭터 빼기'를 켜면 함께 있던 키워드에서도 캐릭터를 뺍니다
-  const co = together(picked).filter(([x]) => !($("hideChr").checked && CHARS.has(x)));
+  // 캐릭터 체크박스가 꺼져 있으면 함께 있던 키워드에서도 캐릭터 이름을 뺍니다
+  const co = together(picked).filter(([x]) => !(!catOn("캐릭터") && CHARS.has(x)));
   const coHtml = co.length
     ? co.map(([x, n]) => `<button class="kw" data-w="${esc(x)}"><b>${esc(x)}</b><span class="n">${n}</span></button>`).join("")
     : `<span class="sub">함께 쓰인 키워드가 없습니다.</span>`;
@@ -442,20 +483,20 @@ function render(){
     $("cnt").textContent =
       `키워드 ${list.length.toLocaleString()}개 · 전체 ${KEYS.length.toLocaleString()}개 / ${EXPR_ACTIVE}표현`;
     $("blocks").innerHTML = list.length
-      ? list.map(w => chip(w)).join("")
+      ? list.map(w => chip(w, null, CHARS.has(w))).join("")
       : `<div class="empty">맞는 키워드가 없습니다.</div>`;
   } else {                                          // 고른 분류마다 단을 나눠서
     $("blocks").className = "secs";
-    const withChr = secs.includes("캐릭터") ? visible(true) : list;
     const shown = new Set();
     SEC_LISTS = {};
     $("blocks").innerHTML = secs.map(cat => {
-      const ws = (cat === "캐릭터" ? withChr : list).filter(w => inCat(w, cat));
+      const src = CAT[cat] || {};
+      const ws = visible(src);
       ws.forEach(w => shown.add(w));
       SEC_LISTS[cat] = ws;
       return `<div class="sec"><h3>${esc(cat)}<small>${ws.length}개</small>
         ${ws.length ? `<button class="seccopy" data-cat="${esc(cat)}" title="한 줄에 하나씩 복사합니다. 시트의 한 열에 그대로 붙여넣을 수 있습니다">목록 복사</button>` : ""}</h3>
-        <div class="blocks">${ws.length ? ws.map(w => chip(w)).join("") : `<span class="empty" style="padding:6px 0">없음</span>`}</div></div>`;
+        <div class="blocks">${ws.length ? ws.map(w => chip(w, src[w], cat === "캐릭터")).join("") : `<span class="empty" style="padding:6px 0">없음</span>`}</div></div>`;
     }).join("");
     $("cnt").textContent = `키워드 ${shown.size.toLocaleString()}개 · 전체 ${KEYS.length.toLocaleString()}개 / ${EXPR_ACTIVE}표현`;
     /* 단 목록 복사 — 지금 보이는 순서대로, 한 줄에 하나씩 */
@@ -679,46 +720,38 @@ $("pickClear").onclick = () => {
   }, { passive: false });
 })();
 
-/* ── 키워드 분류 (kwclass.js — data/keyword_class.csv 에서 만들어짐) ──
-   '감정-'·'표현-'으로 시작하는 분류는 드롭다운, 나머지는 체크박스.
-   '캐릭터'는 위 CHARS 목록, '미분류'는 분류표 어디에도 없는 키워드입니다. */
+/* ── 키워드 분류 체크박스 (kwclass.js — data/keyword_class.csv 에서 만들어짐) ──
+   분류표의 열마다 체크박스 하나. 이름 없는 빈 열("")에서 줄이 바뀝니다.
+   처음에는 캐릭터만 빼고 모두 켜진 상태입니다. */
 const KC = window.KWCLASS || { cats: [], map: {} };
-const EMO_CATS = KC.cats.filter(c => c.startsWith("감정-"));
-const EXP_CATS = KC.cats.filter(c => c.startsWith("표현-"));
-const CHECK_CATS = KC.cats.filter(c => !c.startsWith("감정-") && !c.startsWith("표현-"))
-  .concat(KC.cats.includes("캐릭터") ? [] : ["캐릭터"], ["미분류"]);
-EMO_CATS.forEach(c => $("emoSel").insertAdjacentHTML("beforeend", `<option value="${esc(c)}">${esc(c.slice(3))}</option>`));
-EXP_CATS.forEach(c => $("expSel").insertAdjacentHTML("beforeend", `<option value="${esc(c)}">${esc(c.slice(3))}</option>`));
-$("catChecks").innerHTML = CHECK_CATS.map(c =>
-  `<label><input type="checkbox" data-cat="${esc(c)}"> ${esc(c)}</label>`).join("");
-
-function inCat(w, cat){
-  if (cat === "캐릭터") return CHARS.has(w) || (KC.map[w] || []).includes("캐릭터");
-  if (cat === "미분류") return !KC.map[w] && !CHARS.has(w);
-  return (KC.map[w] || []).includes(cat);
-}
+const CAT_ORDER = KC.cats.slice();
+["기타요소", "캐릭터", "미분류"].forEach(c => { if (!CAT_ORDER.includes(c)) CAT_ORDER.push(c); });
+(function(){
+  const rows = [[]];
+  CAT_ORDER.forEach(c => { if (c === "") rows.push([]); else rows[rows.length - 1].push(c); });
+  $("catChecks").innerHTML = rows.filter(r => r.length).map(r => `<div class="ck-row">${
+    r.map(c => `<label><input type="checkbox" data-cat="${esc(c)}"> ${esc(c)}</label>`).join("")}</div>`).join("");
+})();
+const catBox = c => $("catChecks").querySelector(`input[data-cat="${CSS.escape(c)}"]`);
+const catOn = c => { const b = catBox(c); return b ? b.checked : false; };
 function chosenCats(){
-  return [$("emoSel").value, $("expSel").value].filter(Boolean)
-    .concat([...$("catChecks").querySelectorAll("input:checked")].map(x => x.dataset.cat));
+  return [...$("catChecks").querySelectorAll("input:checked")].map(x => x.dataset.cat);
 }
-/* 고른 상태는 이 브라우저에 기억합니다 */
-const KW_KEY = "expr-kwbar";
+/* 끈 분류만 기억합니다 — 분류표에 새 칸이 생기면 켜진 채로 나옵니다 */
+const KW_KEY = "expr-kwbar2";
 function saveBar(){
-  try { localStorage.setItem(KW_KEY, JSON.stringify(chosenCats())); } catch (e) {}
+  const off = [...$("catChecks").querySelectorAll("input:not(:checked)")].map(x => x.dataset.cat);
+  try { localStorage.setItem(KW_KEY, JSON.stringify(off)); } catch (e) {}
 }
-try {
-  const was = JSON.parse(localStorage.getItem(KW_KEY) || "[]");
-  was.forEach(c => {
-    if (EMO_CATS.includes(c)) $("emoSel").value = c;
-    else if (EXP_CATS.includes(c)) $("expSel").value = c;
-    else { const el = $("catChecks").querySelector(`input[data-cat="${CSS.escape(c)}"]`); if (el) el.checked = true; }
-  });
-} catch (e) {}
-["emoSel", "expSel"].forEach(id => $(id).addEventListener("change", () => { saveBar(); render(); }));
+(function(){
+  let off = ["캐릭터"];
+  try { const v = localStorage.getItem(KW_KEY); if (v) off = JSON.parse(v); } catch (e) {}
+  $("catChecks").querySelectorAll("input").forEach(x => { x.checked = !off.includes(x.dataset.cat); });
+})();
 $("catChecks").querySelectorAll("input").forEach(x => x.addEventListener("change", () => { saveBar(); render(); }));
 if (!KC.cats.length) $("kwbar").hidden = true;       // 분류표가 아직 없으면 줄을 숨깁니다
 
-["hideChr", "multi", "onlyPicked", "sort", "share", "from", "to", "tag", "kind"].forEach(id => $(id).onchange = render);
+["multi", "onlyPicked", "sort", "share", "from", "to", "tag", "kind"].forEach(id => $(id).onchange = render);
 document.querySelectorAll("#ageGrp input").forEach(x => x.onchange = render);
 $("q").oninput = render;
 
