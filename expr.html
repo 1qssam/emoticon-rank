@@ -88,6 +88,11 @@
   .secs .sec{margin-bottom:18px}
   .secs .sec h3{font-size:13px;font-weight:600;margin:0 0 8px;padding-bottom:5px;border-bottom:1px solid var(--line)}
   .secs .sec h3 small{font-weight:400;color:var(--muted);margin-left:5px}
+  .secs .sec h3{display:flex;align-items:baseline;gap:0}
+  .seccopy{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:6px;padding:2px 9px;
+    font-size:12px;cursor:pointer;font-family:inherit;color:var(--muted)}
+  .seccopy:hover{border-color:var(--ink);color:var(--ink)}
+  .seccopy.done{background:var(--mark);color:#3a3400;border-color:var(--mark)}
   .kwbar{margin-top:-6px}
   .kwbar .ck-list{display:flex;flex-wrap:wrap;gap:4px 12px}
   .kw{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 13px;
@@ -225,15 +230,11 @@ const D = window.DATA;
 const E = window.EXPR || {};
 
 /* ── 캐릭터 이름 ────────────────────────────────
-   '캐릭터 빼기'를 켜면 여기 적힌 키워드가 목록에서 빠집니다.
-   새 동물이 나오면 여기에 한 줄 더하면 됩니다. */
-const CHARS = new Set([
-  "강아지", "고양이", "토끼", "쥐", "햄스터", "병아리", "닭", "곰", "돼지", "원숭이",// 10
-  "펭귄", "여우", "너구리", "오리", "양", "기린", "두더지", "나무늘보", "요정", "원시인",// 10
-  "비버", "고라니", "비숑", "한복", "리트리버", "말티즈", "물개", "개구리", "천사", "호랑이",// 10
-  "푸들", "거북이", "나비", "벌", "우파루파", "늑대", "오리너구리", "갈매기", "공룡", "요크셔 테리어",// 10
-  "포메라니안", "치와와", "새", "비둘기", "다람쥐", "외계인", "앵무새", "쿼카", "도마뱀",// 9
-]);
+   분류표(data/keyword_class.csv)의 '캐릭터' 열에 적힌 키워드입니다.
+   '캐릭터 빼기'를 켜면 이 키워드들이 목록에서 빠집니다.
+   새 캐릭터가 나오면 분류표의 '캐릭터' 열 아래에 적어 올리면 됩니다. */
+const CHARS = new Set(Object.entries((window.KWCLASS || {}).map || {})
+  .filter(([w, cats]) => cats.includes("캐릭터")).map(([w]) => w));
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -336,6 +337,7 @@ function collect(){
 const SET_TOTAL = Object.keys(E).length;
 
 let picked = null;
+let SEC_LISTS = {};                                  // 단마다 보이는 키워드 (목록 복사용)
 
 function visible(keepChr){
   const q = $("q").value.trim().toLowerCase();
@@ -446,13 +448,23 @@ function render(){
     $("blocks").className = "secs";
     const withChr = secs.includes("캐릭터") ? visible(true) : list;
     const shown = new Set();
+    SEC_LISTS = {};
     $("blocks").innerHTML = secs.map(cat => {
       const ws = (cat === "캐릭터" ? withChr : list).filter(w => inCat(w, cat));
       ws.forEach(w => shown.add(w));
-      return `<div class="sec"><h3>${esc(cat)}<small>${ws.length}개</small></h3>
+      SEC_LISTS[cat] = ws;
+      return `<div class="sec"><h3>${esc(cat)}<small>${ws.length}개</small>
+        ${ws.length ? `<button class="seccopy" data-cat="${esc(cat)}" title="한 줄에 하나씩 복사합니다. 시트의 한 열에 그대로 붙여넣을 수 있습니다">목록 복사</button>` : ""}</h3>
         <div class="blocks">${ws.length ? ws.map(w => chip(w)).join("") : `<span class="empty" style="padding:6px 0">없음</span>`}</div></div>`;
     }).join("");
     $("cnt").textContent = `키워드 ${shown.size.toLocaleString()}개 · 전체 ${KEYS.length.toLocaleString()}개 / ${EXPR_ACTIVE}표현`;
+    /* 단 목록 복사 — 지금 보이는 순서대로, 한 줄에 하나씩 */
+    $("blocks").querySelectorAll(".seccopy").forEach(b => b.onclick = async e => {
+      e.stopPropagation();
+      await navigator.clipboard.writeText((SEC_LISTS[b.dataset.cat] || []).join("\n"));
+      b.textContent = "복사됨"; b.classList.add("done");
+      setTimeout(() => { b.textContent = "목록 복사"; b.classList.remove("done"); }, 1500);
+    });
   }
   bind($("blocks"));
   drawDetail();
