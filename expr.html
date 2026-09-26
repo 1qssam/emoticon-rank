@@ -81,6 +81,8 @@
   .chrbtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;font-size:12.5px;
     cursor:pointer;font-family:inherit;color:var(--muted)}
   .chrbtn[aria-pressed="true"]{background:#2f6fd0;border-color:#2f6fd0;color:#fff}
+  a.exno{color:inherit;text-decoration:underline;text-decoration-color:#c9c7c0;text-underline-offset:2px}
+  a.exno:hover{color:#2f6fd0;text-decoration-color:#2f6fd0}
   .clrbtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;font-size:12.5px;
     cursor:pointer;font-family:inherit;color:var(--muted)}
   .clrbtn:hover{border-color:var(--ink);color:var(--ink)}
@@ -459,7 +461,8 @@ function drawDetail(){
   useList.forEach(([slug, n]) => (bySlug[slug] = bySlug[slug] || []).push(n));
   const uses = Object.entries(bySlug).map(([slug, nos]) =>
     `<span class="t"><a href="https://e.kakao.com/t/${slug}" target="_blank" rel="noopener">${esc(titleOf(slug))}</a></span>` +
-    `<span class="no">${esc(creatorOf(slug))} · ${nos.join(", ")}번</span>` +
+    `<span class="no">${esc(creatorOf(slug))} · ${nos.map(n =>
+      `<a class="exno" href="https://e.kakao.com/t/${slug}?n=${n}" target="_blank" rel="noopener" title="${n}번 표현 보기">${n}</a>`).join(", ")}번</span>` +
     ageNote(SH[slug])).join("<br>");
 
   // 캐릭터를 꺼두면 함께 있던 키워드에서도 캐릭터 이름을 뺍니다
