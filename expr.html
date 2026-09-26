@@ -221,6 +221,7 @@
     아니면 소품처럼 쓰인 것으로 보고 분류표의 다른 칸(없으면 <b>기타요소</b>)으로 셉니다. 블록 숫자는 그 단에서 쓰인 횟수입니다.<br>
     <b>연령대</b>는 기간 안에 10대~50대 순위(200위)에 든 날 중 그 연령대가 차지한 비율로 나눕니다.
     예: 10대 순위에만 주로 보인 세트는 10대 비율이 높고, 전 연령에 고루 든 세트는 어느 연령도 높지 않습니다.
+    <b>전체</b>는 10대~50대 다섯 연령 모두 10% 이상인 세트입니다 (비율 선택과 상관없음). 여러 개를 고르면 하나라도 맞으면 보입니다.
     연령대를 고르면 순위 기록이 없는 세트는 빠집니다.<br>
     <b>스타일 태그·유형·연령대</b>는 함께 걸리며, 걸러진 세트의 키워드만 셉니다.<br>
     <b>모은 키워드</b>: 블록의 체크박스를 누르면 오른쪽 맨 아래 새 번호로 담깁니다. 왼쪽에서 체크를 풀면 패널 전체에서 빠지고,
@@ -294,6 +295,15 @@ AGES.forEach(a => {
   l.innerHTML = `<input type="checkbox" data-age="${a}"> ${AGE(a)}`;
   $("ageGrp").appendChild(l);
 });
+/* '전체' = 다섯 연령 모두 ALL_MIN 이상 (비율 선택과 상관없이 고정) */
+const ALL_MIN = 0.1;
+{
+  const l = document.createElement("label");
+  l.title = "10대~50대 모두 10% 이상";
+  l.innerHTML = `<input type="checkbox" data-age="전체"> 전체`;
+  $("ageGrp").appendChild(l);
+}
+const ageHit = (sh, a, min) => a === "전체" ? AGES.every(x => sh[x] >= ALL_MIN) : sh[a] >= min;
 D.dates.forEach((d, i) => ["from","to"].forEach(id => {
   const o = document.createElement("option"); o.value = i; o.textContent = d; $(id).appendChild(o);
 }));
@@ -320,7 +330,7 @@ function activeSets(){
     if (kind && kindOf(slug) !== kind) return false;
     if (ages.length){
       const sh = SH[slug];
-      if (!sh || !ages.some(a => sh[a] >= min)) return false;
+      if (!sh || !ages.some(a => ageHit(sh, a, min))) return false;
     }
     return true;
   });
