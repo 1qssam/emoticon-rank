@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://1qssam.github.io/emoticon-rank/sitemap.xml

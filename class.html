@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>강의 일정 · 원큐쌤의 이모티콘 클래스</title>
+<link rel="icon" type="image/png" sizes="32x32" href="1qssam-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="1qssam-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="1qssam-180.png">
+<meta name="description" content="원큐쌤의 오프라인 이모티콘 강의 일정입니다. 회차별 날짜와 장소를 보고 신청할 수 있습니다.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="이모티콘 순위">
+<meta property="og:title" content="강의 일정 · 원큐쌤의 이모티콘 클래스">
+<meta property="og:description" content="원큐쌤의 오프라인 이모티콘 강의 일정입니다. 회차별 날짜와 장소를 보고 신청할 수 있습니다.">
+<meta property="og:image" content="https://1qssam.github.io/emoticon-rank/1qssam-share.png">
+<meta property="og:url" content="https://1qssam.github.io/emoticon-rank/class.html">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  :root{--paper:#fcfcfb;--ink:#17181a;--muted:#83878c;--line:#e7e6e1;--panel:#f5f4f0;--mark:#fee500}
+  *{box-sizing:border-box}
+  html{overflow-y:scroll}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 20px 80px}
+  header{display:flex;align-items:baseline;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+  h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
+  .since{font-size:12px;color:var(--muted)}
+  .since a{color:var(--muted);text-decoration:none}
+  .since a:hover{color:var(--ink);text-decoration:underline}
+  .nav{margin-left:auto;display:flex;gap:14px}
+  .nav a{font-size:13px;color:var(--muted);text-decoration:none}
+  .nav a:hover{color:var(--ink);text-decoration:underline}
+  .nav a[aria-current]{color:var(--ink);font-weight:600}
+  .nav .s{display:none}                       /* 좁은 화면에서 쓰는 짧은 이름 */
+  @media (max-width:560px){
+    .nav{gap:11px}
+    .nav .l{display:none}
+    .nav .s{display:inline}
+  }
+
+  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .monthnav{display:flex;align-items:center;gap:8px}
+  .daynav{width:30px;height:30px;border:1px solid var(--line);background:#fff;border-radius:7px;
+    cursor:pointer;font-size:14px;color:var(--ink);line-height:1}
+  .daynav:disabled{color:#cfcdc7;cursor:default}
+  .month{font-size:16px;font-weight:600;letter-spacing:-.01em;min-width:104px;text-align:center}
+  .today{border:1px solid var(--line);background:#fff;border-radius:7px;padding:5px 11px;
+    font-size:12.5px;font-family:inherit;color:var(--ink);cursor:pointer}
+  .today:hover{border-color:var(--ink)}
+  /* ── 달력 ── */
+  .cal{border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}
+  .dows{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--panel);
+    border-bottom:1px solid var(--line)}
+  .dows span{font-size:12px;color:var(--muted);text-align:center;padding:7px 0}
+  .dows span:first-child{color:#c2564b}
+  .dows span:last-child{color:#3a6fb0}
+  .weeks{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+  /* 일정 두 개까지는 같은 높이, 세 개부터 늘어납니다 */
+  .day{min-height:100px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+    padding:6px 5px;display:flex;flex-direction:column;gap:3px}
+  .day:nth-child(7n){border-right:0}
+  .day.off{background:#fbfaf7}
+  .day .d{font-size:11.5px;color:#5c6064;padding:0 2px 1px;
+    display:flex;align-items:baseline;gap:4px;min-width:0}
+  .day .hol{font-size:11px;color:#c2564b;white-space:nowrap;overflow:hidden;min-width:0}
+  .day.off .d{color:#c2c0ba}
+  .day.sun .d .n{color:#c2564b}
+  .day.sat .d .n{color:#3a6fb0}
+  .day.hd .d .n{color:#c2564b}          /* 공휴일은 토요일보다 먼저 */
+  .day.now .d .n{color:#fff}
+  .day.now .d .n{background:var(--ink);color:#fff;border-radius:999px;padding:1px 6px;font-weight:600}
+  .chip{border:0;border-left:3px solid;background:none;font-family:inherit;text-align:left;cursor:pointer;
+    padding:3px 5px 3px 6px;border-radius:0 5px 5px 0;font-size:11.5px;line-height:1.35;
+    display:flex;gap:5px;align-items:baseline;width:100%;color:var(--ink)}
+  .chip:hover{filter:brightness(.96)}
+  .chip .t{color:#4c5054;flex:none;font-size:11px}
+  .chip .n{min-width:0;overflow:hidden;white-space:nowrap;font-weight:500}
+  .chip.past{opacity:.45}
+  .chip .mk{font-size:10px;font-weight:400;color:#4c5054;margin-left:4px}
+
+  .hint{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;padding:12px 2px 0}
+  .legend button{border:0;background:none;font-family:inherit;font-size:12.5px;color:#4c5054;
+    cursor:pointer;display:flex;align-items:center;gap:6px;padding:2px 0}
+  .legend button:hover{color:var(--ink);text-decoration:underline}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+
+  /* ── 강의 상세 ── */
+  dialog{border:0;border-radius:12px;padding:0;max-width:400px;width:calc(100% - 32px);
+    box-shadow:0 14px 44px rgba(0,0,0,.18);color:var(--ink)}
+  dialog::backdrop{background:rgba(23,24,26,.34)}
+  .sheet{padding:20px 20px 18px;position:relative}
+  .x{position:absolute;top:10px;right:10px;width:30px;height:30px;border:0;background:none;
+    border-radius:8px;font-size:17px;line-height:1;color:var(--muted);cursor:pointer;font-family:inherit}
+  .x:hover{background:var(--panel);color:var(--ink)}
+  .sheet .band{height:4px;border-radius:999px;width:38px;margin-bottom:13px}
+  .sheet h2{font-size:17px;margin:0 0 3px;font-weight:600;letter-spacing:-.01em}
+  .sheet .info{font-size:13.5px;color:#4c5054;line-height:1.7;margin:4px 0 14px}
+  .sheet .info .off{color:#c2564b}
+  .mapbox{border:1px solid var(--line);border-radius:9px;padding:11px 12px;margin:0 0 14px;
+    background:#fafaf8;display:flex;flex-direction:column;gap:8px}
+  .mapbox .top{display:flex;gap:10px;align-items:center}
+  .mapbox .pin{width:17px;height:17px;flex:none}
+  .mapbox b{display:block;font-size:13.5px;font-weight:600}
+  .mapbox .ad{font-size:12.5px;color:var(--muted);user-select:all;cursor:text}
+  .mapbox .row{display:flex;gap:6px}
+  .mini{flex:1;text-align:center;border:1px solid var(--line);background:#fff;border-radius:7px;
+    padding:6px 9px;font-size:12.5px;color:var(--ink);text-decoration:none;font-family:inherit;cursor:pointer}
+  .mini:hover{border-color:var(--ink)}
+  .mini.copied{background:var(--mark);border-color:var(--mark);color:#3a3400}
+  .rounds{list-style:none;margin:0 0 16px;padding:0;border-top:1px solid var(--line)}
+  .rounds li{display:flex;gap:9px;align-items:baseline;padding:7px 2px;
+    border-bottom:1px solid var(--line);font-size:13.5px}
+  .rounds .no{color:var(--muted);font-size:12.5px;width:28px;flex:none}
+  .rounds .mark{font-size:11.5px;color:var(--muted);border:1px solid var(--line);
+    border-radius:4px;padding:1px 5px;margin-left:auto;white-space:nowrap}
+  .rounds .done{opacity:.42}
+  .rounds .done .rdate::after{content:" 종료";font-size:11.5px;color:var(--muted)}
+  .btns{display:flex;gap:8px}
+  .btn{flex:1;text-align:center;font-family:inherit;font-size:13.5px;padding:9px 0;border-radius:8px;
+    border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;text-decoration:none}
+  .btn:hover{border-color:var(--ink)}
+  .btn.solid{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .foot{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--muted);line-height:1.7}
+  .foot p{margin:0 0 4px}
+  .foot .slot{margin-top:8px}
+  .foot .slot a{color:var(--ink);text-decoration:none;font-weight:500;border-bottom:1px solid var(--line)}
+  .foot .slot a:hover{border-color:var(--ink)}
+  button:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+  @media (max-width:640px){
+    .wrap{padding:20px 0 60px}
+    header,.topbar,.hint,.legend,.foot{padding-left:12px;padding-right:12px}
+    .cal{border-left:0;border-right:0;border-radius:0}
+    .day{min-height:94px;padding:4px 3px;gap:2px}   /* 일정 두 개 기준 */
+    .day .d{font-size:10.5px;gap:3px}
+    .day .hol{font-size:10px}
+    .chip{display:block;overflow:hidden;padding:2px 3px 2px 4px;font-size:10.5px}
+    .chip .t{display:block;font-size:10px}
+    .chip .n{display:block}
+    .chip .mk{display:none}      /* 좁은 화면에서는 칸을 넘겨서 뺍니다 */
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>강의 일정</h1>
+    <span class="since">원큐쌤의 이모티콘 클래스</span>
+    <nav class="nav">
+      <a href="index.html"><span class="l">인기 순위</span><span class="s">인기순위</span></a>
+      <a href="new.html"><span class="l">신규 이모티콘</span><span class="s">신규출시</span></a>
+      <a href="class.html" aria-current="page"><span class="l">강의 일정</span><span class="s">강의일정</span></a>
+      <a href="archive.html"><span class="l">날짜별 기록</span><span class="s">일별기록</span></a>
+    </nav>
+  </header>
+
+  <div class="topbar">
+    <div class="monthnav">
+      <button class="daynav" id="prev" aria-label="이전 달">‹</button>
+      <span class="month" id="month"></span>
+      <button class="daynav" id="next" aria-label="다음 달">›</button>
+    </div>
+    <button class="today" id="todaybtn">오늘</button>
+  </div>
+
+  <p class="hint">일정을 누르면 그 강의의 전체 회차와 신청 링크를 볼 수 있습니다.</p>
+
+  <div id="view"></div>
+
+  <dialog id="sheet"><div class="sheet" id="sheetbody"></div></dialog>
+
+  <footer class="foot">
+    <p>오프라인 강의 일정입니다. 일정은 사정에 따라 바뀔 수 있습니다.</p>
+    <p class="slot"><a href="https://litt.ly/1qssam" target="_blank" rel="noopener">원큐클래스 박원규(원큐쌤)</a></p>
+  </footer>
+</div>
+
+<script src="holidays.js" onerror="window.HOLIDAYS={}"></script>
+<script src="classes.js"></script>
+<script src="class-format.js"></script>
+<script>
+const C = (window.CLASSES || []);
+const H = (window.HOLIDAYS || {});
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const DOW = "일월화수목금토";
+const pad = n => String(n).padStart(2, "0");
+
+/* 오늘 (한국 기준) */
+const todayStr = new Date(Date.now() + 9*3600*1000).toISOString().slice(0, 10);
+
+/* 모든 회차를 한 줄씩 펼칩니다 */
+const ROUNDS = [];
+C.forEach((c, ci) => {
+  (c.sessions || []).slice().sort().forEach((s, n) => {
+    const [date, time] = String(s).split(" ");
+    const [t1, t2] = String(time || "").split("-");
+    ROUNDS.push({ ci, date, time: t1 || "", end: t2 || "", n: n + 1, of: c.sessions.length });
+  });
+});
+ROUNDS.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+
+const byDate = {};
+ROUNDS.forEach(r => (byDate[r.date] = byDate[r.date] || []).push(r));
+
+/* 보이는 달: 다음 일정이 있는 달, 없으면 이번 달 */
+const upcoming = ROUNDS.find(r => r.date >= todayStr);
+let cursor = (upcoming ? upcoming.date : todayStr).slice(0, 7);
+
+$("prev").onclick = () => { cursor = shift(cursor, -1); render(); };
+$("next").onclick = () => { cursor = shift(cursor, +1); render(); };
+$("todaybtn").onclick = () => { cursor = todayStr.slice(0, 7); render(); };
+
+function shift(ym, by){
+  let [y, m] = ym.split("-").map(Number);
+  m += by;
+  if (m < 1){ m = 12; y--; }
+  if (m > 12){ m = 1; y++; }
+  return `${y}-${pad(m)}`;
+}
+
+function fmtDay(date){
+  const [y, m, d] = date.split("-").map(Number);
+  return `${m}월 ${d}일 ${DOW[new Date(y, m-1, d).getDay()]}`;
+}
+
+/* ── 달력 ── */
+function calendar(){
+  const [y, m] = cursor.split("-").map(Number);
+  const first = new Date(y, m-1, 1);
+  const start = new Date(y, m-1, 1 - first.getDay());     // 그 주 일요일부터
+  const last = new Date(y, m, 0).getDate();
+  const weeks = Math.ceil((first.getDay() + last) / 7);
+
+  let cells = "";
+  for (let i = 0; i < weeks * 7; i++){
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    const date = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const cls = ["day"];
+    if (date.slice(0, 7) !== cursor) cls.push("off");
+    if (d.getDay() === 0) cls.push("sun");
+    if (d.getDay() === 6) cls.push("sat");
+    if (H[date]) cls.push("hd");
+    if (date === todayStr) cls.push("now");
+
+    const chips = (byDate[date] || []).map(r => {
+      const c = C[r.ci];
+      const mark = r.n === 1 ? "시작" : r.n === r.of && r.of > 1 ? "종료" : "";
+      return `<button class="chip${date < todayStr ? " past" : ""}" data-c="${r.ci}"
+        style="background:${esc(c.color)}1a;border-left-color:${esc(c.color)}"
+        title="${esc(ClassText.title(c) + (mark ? " " + mark : ""))}">
+        <span class="t">${esc(r.time)}</span><span class="n">${esc(c.short || c.place)}${
+          mark ? `<span class="mk">${mark}</span>` : ""}</span></button>`;
+    }).join("");
+
+    cells += `<div class="${cls.join(" ")}"><span class="d"><span class="n">${d.getDate()}</span>${
+      H[date] ? `<span class="hol">${esc(H[date])}</span>` : ""}</span>${chips}</div>`;
+  }
+
+  // 이 달에 회차가 있는 강의만 아래에 색으로 알려줍니다
+  const shown = [...new Set(ROUNDS.filter(r => r.date.slice(0, 7) === cursor).map(r => r.ci))];
+  const legend = shown.length ? `<div class="legend">` + shown.map(ci =>
+    `<button data-c="${ci}"><span class="dot" style="background:${esc(C[ci].color)}"></span>${esc(C[ci].short ? C[ci].short + " · " + ClassText.title(C[ci]) : ClassText.title(C[ci]))}</button>`
+  ).join("") + `</div>` : "";
+
+  return `<div class="cal">
+    <div class="dows">${[..."일월화수목금토"].map(x => `<span>${x}</span>`).join("")}</div>
+    <div class="weeks">${cells}</div>
+  </div>${legend}`;
+}
+
+/* ── 강의 상세 ── */
+function openSheet(ci){
+  const c = C[ci];
+  const list = (c.sessions || []).slice().sort();
+  const rounds = list.map((s, i) => {
+    const [date, time] = String(s).split(" ");
+    const when = String(time || "").replace("-", "–");
+    const mark = i === 0 ? `<span class="mark">시작</span>`
+      : i === list.length - 1 && list.length > 1 ? `<span class="mark">종료</span>` : "";
+    return `<li class="${date < todayStr ? "done" : ""}">
+      <span class="no">${i + 1}회</span>
+      <span class="rdate">${esc(fmtDay(date))} ${esc(when)}</span>${mark}</li>`;
+  }).join("");
+
+  const info = ClassText.summary(c).lines
+    .map(l => `<div class="${l.off ? "off" : ""}">${esc(l.text)}</div>`).join("");
+
+  const hasMap = c.map || c.addr;
+  const mapbox = hasMap ? `
+    <div class="mapbox">
+      <div class="top">
+        <svg class="pin" viewBox="0 0 24 24" fill="#03c75a" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+        <span><b>${esc(c.place)}</b>${c.addr ? `<span class="ad">${esc(c.addr)}</span>` : ""}</span>
+      </div>
+      <div class="row">
+        ${c.map ? `<a class="mini" href="${esc(c.map)}" target="_blank" rel="noopener">지도로 보기</a>` : ""}
+        ${c.addr ? `<button class="mini" id="copyaddr">주소 복사</button>` : ""}
+      </div>
+    </div>` : "";
+
+  $("sheetbody").innerHTML = `
+    <button class="x" id="xbtn" aria-label="닫기">✕</button>
+    <div class="band" style="background:${esc(c.color)}"></div>
+    <h2>${esc(c.place)}</h2>
+    <div class="info">${info}</div>
+    ${mapbox}
+    <ul class="rounds">${rounds}</ul>
+    <div class="btns">
+      <button class="btn" id="closebtn">닫기</button>
+      ${c.link ? `<a class="btn solid" href="${esc(c.link)}" target="_blank" rel="noopener">신청하기</a>` : ""}
+    </div>`;
+  $("closebtn").onclick = () => $("sheet").close();
+  $("xbtn").onclick = () => $("sheet").close();
+  if ($("copyaddr")) $("copyaddr").onclick = async () => {
+    await navigator.clipboard.writeText(c.addr);
+    const b = $("copyaddr");
+    b.textContent = "복사됨"; b.classList.add("copied");
+    setTimeout(() => { b.textContent = "주소 복사"; b.classList.remove("copied"); }, 1400);
+  };
+  $("sheet").showModal();
+}
+
+/* 바깥을 누르면 닫습니다 */
+$("sheet").onclick = e => { if (e.target === $("sheet")) $("sheet").close(); };
+
+function render(){
+  const [y, m] = cursor.split("-").map(Number);
+  $("month").textContent = `${y}년 ${m}월`;
+  $("view").innerHTML = calendar();
+  $("view").querySelectorAll("[data-c]").forEach(b => b.onclick = () => openSheet(+b.dataset.c));
+}
+
+render();
+</script>
+<script data-goatcounter="https://emoticon-rank.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
