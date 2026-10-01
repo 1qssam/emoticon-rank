@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>이모티콘 시장 둘러보기 · 원큐쌤</title>
+<meta name="description" content="카카오 이모티콘샵 순위·신규에 나온 이모티콘을 스타일과 연령대로 골라 보는 페이지입니다.">
+<link rel="icon" type="image/png" sizes="32x32" href="1qssam-32.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<style>
+/* 글꼴: Pretendard (SIL 오픈폰트 라이선스). 큰 글씨 (주 사용자 50대 이상) */
+  :root{--paper:#fcfcfb;--ink:#17181a;--muted:#62666b;--line:#e2e0da;--panel:#f5f4f0;--mark:#fee500}
+  *{box-sizing:border-box}
+  html{overflow-y:scroll}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);
+    font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{padding:22px 28px 60px;min-width:1100px}
+  header{display:flex;align-items:baseline;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+  h1{font-size:26px;font-weight:700;margin:0}
+  header .by{font-size:16px;color:var(--muted);margin-left:auto}
+  header .by a{color:var(--muted)}
+
+  .opts{display:flex;flex-direction:column;gap:14px;margin-bottom:14px;
+    padding:18px 20px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+  .opts .row{display:flex;gap:14px 20px;align-items:center;flex-wrap:wrap}
+  .opts .lab{font-weight:700;min-width:70px}
+  .opts label{display:flex;align-items:center;gap:6px}
+  .opts input[type=search]{font-family:inherit;font-size:17px;border:1.5px solid #d6d4cd;border-radius:10px;padding:8px 12px;width:300px;background:#fff}
+  .opts select{font-family:inherit;font-size:17px;border:1.5px solid #d6d4cd;border-radius:10px;padding:7px 10px;background:#fff}
+  .opts input[type=checkbox]{width:20px;height:20px;accent-color:#17181a;cursor:pointer}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;flex:1}
+  .chip{border:1.5px solid #d6d4cd;background:#fff;border-radius:999px;padding:6px 15px;font-size:16px;cursor:pointer;color:var(--ink);font-family:inherit}
+  .chip:hover{border-color:var(--ink)}
+  .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+  .btn{border:1.5px solid #d6d4cd;background:#fff;color:var(--ink);border-radius:10px;padding:8px 16px;font-size:16px;cursor:pointer;font-family:inherit}
+  .btn:hover{border-color:var(--ink)}
+  .cnt{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
+  .sortnote{color:var(--muted);font-size:15px}
+
+  .note{font-size:15.5px;color:var(--muted);margin:0 0 12px;line-height:1.7}
+  .tablewrap{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:auto}
+  table{border-collapse:collapse;width:100%;font-size:16px}
+  th,td{border-bottom:1px solid var(--line);padding:9px 12px;text-align:left;white-space:nowrap;vertical-align:middle}
+  th{position:sticky;top:0;background:var(--panel);font-weight:700;z-index:1;cursor:pointer;user-select:none}
+  th:hover{color:#000}
+  th .ar{color:#9c9a94;font-size:12px;margin-left:4px}
+  td.num{font-variant-numeric:tabular-nums;color:#45484c;text-align:right}
+  td.title{white-space:normal;min-width:200px;max-width:380px;font-weight:600;word-break:keep-all}
+  td a{color:inherit;text-decoration:none}
+  td a:hover{text-decoration:underline}
+  .thumb{width:64px;height:64px;background:#f0efea;display:block;border-radius:6px}
+  td.rn,th.rn{color:#9c9a94;text-align:right;font-variant-numeric:tabular-nums;cursor:default;width:1%}
+  td.md{font-weight:700;color:#b45309}
+  .empty{padding:50px 0;text-align:center;color:var(--muted)}
+  button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>이모티콘 시장 둘러보기</h1>
+    <span class="by">만든 사람 <a href="https://litt.ly/1qssam" target="_blank" rel="noopener">원큐쌤(@1qssam)</a></span>
+  </header>
+
+  <div class="opts">
+    <div class="row">
+      <input id="q" type="search" placeholder="상품명 · 작가명 · 시리즈 찾기" autocomplete="off" aria-label="찾기">
+      <label>유형
+        <select id="kind">
+          <option value="">전체</option>
+          <option>멈티</option><option>움티</option><option>큰티</option>
+        </select>
+      </label>
+      <span class="lab" style="min-width:0;margin-left:10px">연령대</span>
+      <span class="row" id="ageGrp" style="gap:14px"></span>
+      <button class="btn" id="reset">필터 초기화</button>
+      <span class="cnt" id="cnt"></span>
+    </div>
+    <div class="row" style="align-items:flex-start">
+      <span class="lab" style="padding-top:6px">스타일</span>
+      <span class="chips" id="tags"></span>
+    </div>
+  </div>
+
+  <p class="note" id="note"></p>
+
+  <div class="tablewrap"><table id="tbl"></table></div>
+</div>
+
+<script src="data.js"></script>
+<script src="tags.js"></script>
+<script>
+/* ════════════════════════════════════════════════
+   이모티콘 시장 둘러보기 (공개)
+   · 원큐쌤 전용 db.html을 줄인 공개판입니다. 키워드 파일(expr.js)은 읽지 않습니다.
+   · 미니 이모티콘은 늘 뺍니다.
+   · 정렬: 아무것도 안 고르면 최근 출시순, 스타일이나 연령대를 고르면 200위 안에 오래 머문 순.
+   · 주소로 미리 고를 수 있습니다: market.html?age=20대,30대&tag=직장인에게,커플에게
+   ════════════════════════════════════════════════ */
+
+/* 스타일 태그 — 뺄 것, 이름만 바꿔 보여줄 것
+   (emoticon-class의 make/config.js에도 같은 설정이 있습니다. 바꾸면 둘 다 바꾸세요) */
+const TAG_HIDE = ["다람쥐와_찍찍이", "다른_동물들", "댕댕이", "짹짹이", "냐옹이", "곰돌이", "토깽이", "펭귄"];
+const TAG_HIDE_PREFIX = ["미니_"];
+const TAG_RENAME = { "커플에게": "커플용", "직장인에게": "직장인용", "학생에게": "학생용", "군인에게": "군인용",
+                     "엄마_아빠에게": "엄마·아빠용", "딸_아들에게": "딸·아들용" };
+const SHARE_MIN = 0.3;          // 연령대를 고르면: 그 연령이 차지한 비율이 30% 이상인 것
+const BEFORE = "260820이전";     // 출시일을 모르는 것 (수집 시작 전에 나온 것)
+const SHOW_MAX = 500;           // 표에 그리는 최대 줄 수
+
+const D = window.DATA;
+const T = (window.TAGS || { items: {} });
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const tagLabel = t => TAG_RENAME[t] || String(t).replace(/_/g, " ");
+const tagHidden = t => TAG_HIDE.includes(t) || TAG_HIDE_PREFIX.some(p => String(t).startsWith(p));
+const AGE = a => a === "50대이상" ? "50대 이상" : a;
+
+function kindOf(flags){
+  if (flags & 2) return "큰티";
+  if (flags & 1) return (flags & 8) ? "미니움티" : "미니멈티";
+  return (flags & 8) ? "움티" : "멈티";
+}
+
+/* 연령대별 최고 순위, 200위 안에 든 날 수 */
+const best = {}, DAYS = {};
+D.ages.forEach(a => {
+  best[a] = {}; DAYS[a] = {};
+  D.hot[a].forEach((row, k) => row.forEach((it, i) => {
+    if (!best[a][it] || i + 1 < best[a][it][0]) best[a][it] = [i + 1, k];
+    DAYS[a][it] = (DAYS[a][it] || 0) + 1;
+  }));
+});
+const AGES5 = D.ages.slice(1);                       // 10대~50대이상
+function sharesOf(i){
+  let total = 0;
+  AGES5.forEach(a => total += DAYS[a][i] || 0);
+  if (!total) return null;
+  const out = {};
+  AGES5.forEach(a => out[a] = (DAYS[a][i] || 0) / total);
+  return out;
+}
+/* 순위에 처음 보인 날 (출시일 모르는 것 정렬용) */
+const firstSeen = {};
+D.dates.forEach((_, day) => D.ages.forEach(a => (D.hot[a][day] || []).forEach(it => {
+  if (firstSeen[it] === undefined) firstSeen[it] = day;
+})));
+
+/* 한 줄 — 미니는 처음부터 뺍니다 */
+const ROWS = D.items.map((m, i) => {
+  const [slug, title, creator, cid, flags, thumb, series] = m;
+  const v = T.items[slug] || null;
+  const b = best["전체"][i];
+  let ageBest = null;
+  AGES5.forEach(a => { const r = best[a][i]; if (r && (!ageBest || r[0] < ageBest[1])) ageBest = [a, r[0]]; });
+  return {
+    i, slug, title, creator, cid, series: series || "", thumb,
+    kind: kindOf(flags), sound: !!(flags & 4),
+    tags: v ? v.t.map(x => x[0]) : [],
+    released: D.release[i] >= 0 ? D.dates[D.release[i]] : null,
+    no: D.release[i] >= 0 && (D.releaseNo || [])[i] ? D.releaseNo[i] : null,
+    first: firstSeen[i] !== undefined ? firstSeen[i] : -1,
+    bestRank: b ? b[0] : null,
+    ageBest,
+    md: !v || v.b === undefined ? "" : (v.b ? "MD추천" : ""),
+    sh: sharesOf(i),
+  };
+}).filter(r => !r.kind.startsWith("미니"));
+
+/* 연령대 체크박스 */
+AGES5.forEach(a => {
+  const l = document.createElement("label");
+  l.innerHTML = `<input type="checkbox" data-age="${a}"> ${AGE(a)}`;
+  $("ageGrp").appendChild(l);
+});
+$("ageGrp").title = `그 연령대 순위(200위)에 든 날이 10대~50대 전체의 ${Math.round(SHARE_MIN * 100)}% 이상인 이모티콘`;
+
+/* 스타일 태그 (많이 쓰인 순) */
+const tagCount = {};
+ROWS.forEach(r => r.tags.forEach(t => { tagCount[t] = (tagCount[t] || 0) + 1; }));
+const TAG_LIST = Object.keys(tagCount).filter(t => !tagHidden(t)).sort((a, b) => tagCount[b] - tagCount[a]);
+let TAGS_ON = [];
+function drawTags(){
+  $("tags").innerHTML = TAG_LIST.map(t =>
+    `<button class="chip" data-tag="${esc(t)}" aria-pressed="${TAGS_ON.includes(t)}">${esc(tagLabel(t))}</button>`).join("");
+  $("tags").querySelectorAll("[data-tag]").forEach(b => b.onclick = () => {
+    const t = b.dataset.tag;
+    TAGS_ON = TAGS_ON.includes(t) ? TAGS_ON.filter(x => x !== t) : TAGS_ON.concat(t);
+    sortKey = null; drawTags(); apply();
+  });
+}
+
+/* ── 정렬 ──
+   sortKey가 null이면 자동: 스타일·연령대를 골랐으면 오래 머문 순, 아니면 최근 출시순.
+   열 제목을 누르면 그 열로 (필터를 바꾸면 다시 자동) */
+let sortKey = null, asc = true, filtered = [], ages = [];
+const recent = (a, b) => {                              // 최근 출시순. 출시일 모르는 것은 뒤에(순위에 늦게 보인 것부터)
+  if (a.released && b.released){
+    if (a.released !== b.released) return a.released < b.released ? 1 : -1;
+    return (a.no ?? 1e9) - (b.no ?? 1e9);
+  }
+  if (a.released) return -1;
+  if (b.released) return 1;
+  return b.first - a.first;
+};
+const stayDays = r => (ages.length ? ages : ["전체"]).reduce((s, a) => s + (DAYS[a][r.i] || 0), 0);
+const longest = (a, b) => (stayDays(b) - stayDays(a)) || recent(a, b);
+
+const COLS = [
+  { k: "thumb", label: "", nosort: true,
+    cell: r => `<a href="https://e.kakao.com/t/${r.slug}" target="_blank" rel="noopener"><img class="thumb" loading="lazy" alt="" src="${D.thumbBase}${r.thumb}"></a>` },
+  { k: "title", label: "상품명", cls: "title", cell: r => `<a href="https://e.kakao.com/t/${r.slug}" target="_blank" rel="noopener">${esc(r.title)}</a>` },
+  { k: "creator", label: "작가", cell: r => `<a href="https://e.kakao.com/creator/${r.cid}" target="_blank" rel="noopener">${esc(r.creator)}</a>` },
+  { k: "series", label: "시리즈", cell: r => esc(r.series) },
+  { k: "kind", label: "유형", cell: r => esc(r.kind) + (r.sound ? " · 소리" : "") },
+  { k: "released", label: "출시일", cls: "num", cell: r => r.released ?? BEFORE },
+  { k: "bestRank", label: "최고순위", cls: "num", cell: r => r.bestRank ?? "" },
+  { k: "ageBest", label: "연령대 최고", cell: r => r.ageBest ? `${AGE(r.ageBest[0])} ${r.ageBest[1]}위` : "" },
+  { k: "md", label: "MD추천", cls: "md", cell: r => r.md },
+];
+function value(r, k){
+  if (k === "ageBest") return r.ageBest ? r.ageBest[1] : null;
+  if (k === "released") return r.released ? r.released + String(r.no ?? 999).padStart(3, "0") : null;
+  if (k === "md") return r.md ? 0 : 1;
+  return r[k];
+}
+
+function apply(){
+  const q = $("q").value.trim().toLowerCase(), kind = $("kind").value;
+  ages = [...document.querySelectorAll("#ageGrp input:checked")].map(x => x.dataset.age);
+  filtered = ROWS.filter(r => {
+    if (kind && r.kind !== kind) return false;
+    if (TAGS_ON.length && !TAGS_ON.some(t => r.tags.includes(t))) return false;             // 하나라도 맞으면
+    if (ages.length && (!r.sh || !ages.some(a => r.sh[a] >= SHARE_MIN))) return false;    // 하나라도 맞으면
+    if (q && !(r.title.toLowerCase().includes(q) || r.creator.toLowerCase().includes(q)
+               || r.series.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  const auto = ages.length || TAGS_ON.length ? "long" : "recent";
+  if (!sortKey) filtered.sort(auto === "long" ? longest : recent);
+  else filtered.sort((a, b) => {
+    const x = value(a, sortKey), y = value(b, sortKey);
+    if (x === null || x === undefined || x === "") return 1;                              // 빈 값은 늘 뒤로
+    if (y === null || y === undefined || y === "") return -1;
+    if (x === y) return 0;
+    return (x < y ? -1 : 1) * (asc ? 1 : -1);
+  });
+  render(auto);
+}
+
+function render(auto){
+  const head = `<th class="rn">#</th>` + COLS.map(c =>
+    `<th data-k="${c.k}">${c.label}${sortKey === c.k ? `<span class="ar">${asc ? "▲" : "▼"}</span>` : ""}</th>`).join("");
+  const body = filtered.slice(0, SHOW_MAX).map((r, n) =>
+    `<tr><td class="rn">${n + 1}</td>` + COLS.map(c => `<td class="${c.cls || ""}">${c.cell(r)}</td>`).join("") + "</tr>").join("");
+  $("tbl").innerHTML = `<thead><tr>${head}</tr></thead><tbody>${body}</tbody>` +
+    (filtered.length ? "" : `<tbody><tr><td colspan="${COLS.length + 1}" class="empty">맞는 이모티콘이 없습니다.</td></tr></tbody>`);
+  const how = sortKey ? "" : (auto === "long" ? " · 200위 안에 오래 머문 순" : " · 최근 출시순");
+  $("cnt").textContent = `${filtered.length.toLocaleString()}개${how}` + (filtered.length > SHOW_MAX ? ` (표에는 ${SHOW_MAX}개까지)` : "");
+  $("tbl").querySelectorAll("th[data-k]").forEach(th => th.onclick = () => {
+    const k = th.dataset.k, col = COLS.find(c => c.k === k);
+    if (col.nosort) return;
+    if (sortKey === k) asc = !asc; else { sortKey = k; asc = !(k === "released" || k === "md"); }   // 출시일은 최근부터
+    if (k === "md") asc = true;
+    apply();
+  });
+}
+
+/* 주소로 미리 고르기: ?age=20대,30대&tag=직장인에게 */
+(function(){
+  const p = new URLSearchParams(location.search);
+  const ag = (p.get("age") || "").split(",").map(s => s.trim()).filter(Boolean);
+  document.querySelectorAll("#ageGrp input").forEach(x => { x.checked = ag.includes(x.dataset.age); });
+  TAGS_ON = (p.get("tag") || "").split(",").map(s => s.trim()).filter(t => TAG_LIST.includes(t));
+})();
+
+document.querySelectorAll("#ageGrp input").forEach(x => x.onchange = () => { sortKey = null; apply(); });
+$("kind").onchange = () => { sortKey = null; apply(); };
+$("q").oninput = apply;                                          // 찾기는 정렬을 바꾸지 않습니다
+$("reset").onclick = () => {
+  $("q").value = ""; $("kind").value = "";
+  document.querySelectorAll("#ageGrp input").forEach(x => { x.checked = false; });
+  TAGS_ON = []; sortKey = null; asc = true;
+  drawTags(); apply();
+};
+
+const krDate = d => { const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[1]}년 ${+m[2]}월 ${+m[3]}일` : d; };
+$("note").innerHTML =
+  `수집일 ${krDate(D.dates[0])} 이후 순위·신규 목록에 나온 이모티콘입니다 (미니 이모티콘은 뺐습니다). ` +
+  `대표이미지나 상품명을 누르면 이모티콘샵 상품 페이지로 연결됩니다.<br>` +
+  `아무것도 고르지 않으면 최근 출시순, 스타일이나 연령대를 고르면 순위 200위 안에 오래 머문 순으로 보여줍니다. ` +
+  `연령대는 그 연령 순위에 든 날이 ${Math.round(SHARE_MIN * 100)}% 이상인 것만 나옵니다. 출시일이 '${BEFORE}'인 것은 수집을 시작하기 전에 나온 것입니다.`;
+
+drawTags();
+apply();
+</script>
+</body>
+</html>
