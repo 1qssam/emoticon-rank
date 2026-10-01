@@ -47,6 +47,10 @@
   th:hover{color:#000}
   th .ar{color:#9c9a94;font-size:12px;margin-left:4px}
   td.num{font-variant-numeric:tabular-nums;color:#45484c;text-align:right}
+  th.num{text-align:right}
+  td.tags{white-space:normal;min-width:180px;max-width:280px}
+  .tg{display:inline-block;font-size:13.5px;border:1px solid var(--line);border-radius:999px;padding:1px 9px;margin:2px 4px 2px 0;cursor:pointer;background:#fff;white-space:nowrap}
+  .tg:hover{border-color:var(--ink)}
   td.title{white-space:normal;min-width:200px;max-width:380px;font-weight:600;word-break:keep-all}
   td a{color:inherit;text-decoration:none}
   td a:hover{text-decoration:underline}
@@ -67,7 +71,7 @@
   <div class="opts">
     <div class="row">
       <input id="q" type="search" placeholder="상품명 · 작가명 · 시리즈 찾기" autocomplete="off" aria-label="찾기">
-      <label>유형
+      <label>이모티콘 유형
         <select id="kind">
           <option value="">전체</option>
           <option>멈티</option><option>움티</option><option>큰티</option>
@@ -96,7 +100,7 @@
    이모티콘 시장 둘러보기 (공개)
    · 원큐쌤 전용 db.html을 줄인 공개판입니다. 키워드 파일(expr.js)은 읽지 않습니다.
    · 미니 이모티콘은 늘 뺍니다.
-   · 정렬: 아무것도 안 고르면 최근 출시순, 스타일이나 연령대를 고르면 200위 안에 오래 머문 순.
+   · 정렬: 기본은 최근 출시순, 연령대를 고르면 그 연령대 최고 순위순 (스타일만 고르면 최근 출시순 그대로).
    · 주소로 미리 고를 수 있습니다: market.html?age=20대,30대&tag=직장인에게,커플에게
    ════════════════════════════════════════════════ */
 
@@ -107,7 +111,7 @@ const TAG_HIDE_PREFIX = ["미니_"];
 const TAG_RENAME = { "커플에게": "커플용", "직장인에게": "직장인용", "학생에게": "학생용", "군인에게": "군인용",
                      "엄마_아빠에게": "엄마·아빠용", "딸_아들에게": "딸·아들용" };
 const SHARE_MIN = 0.3;          // 연령대를 고르면: 그 연령이 차지한 비율이 30% 이상인 것
-const BEFORE = "260820이전";     // 출시일을 모르는 것 (수집 시작 전에 나온 것)
+const BEFORE = "-";             // 출시일을 모르는 것 (수집 시작 전에 나온 것)
 const SHOW_MAX = 500;           // 표에 그리는 최대 줄 수
 
 const D = window.DATA;
@@ -193,7 +197,7 @@ function drawTags(){
 }
 
 /* ── 정렬 ──
-   sortKey가 null이면 자동: 스타일·연령대를 골랐으면 오래 머문 순, 아니면 최근 출시순.
+   sortKey가 null이면 자동: 연령대를 골랐으면 그 연령대 최고 순위순, 아니면 최근 출시순.
    열 제목을 누르면 그 열로 (필터를 바꾸면 다시 자동) */
 let sortKey = null, asc = true, filtered = [], ages = [];
 const recent = (a, b) => {                              // 최근 출시순. 출시일 모르는 것은 뒤에(순위에 늦게 보인 것부터)
@@ -205,8 +209,17 @@ const recent = (a, b) => {                              // 최근 출시순. 출
   if (b.released) return 1;
   return b.first - a.first;
 };
-const stayDays = r => (ages.length ? ages : ["전체"]).reduce((s, a) => s + (DAYS[a][r.i] || 0), 0);
-const longest = (a, b) => (stayDays(b) - stayDays(a)) || recent(a, b);
+/* 연령대 최고 순위 — 연령대를 골랐으면 고른 연령대 안에서만, 아니면 10대~50대 전체에서 [연령, 순위] */
+const ageBestOf = r => {
+  let out = null;
+  (ages.length ? ages : AGES5).forEach(a => { const v = best[a][r.i]; if (v && (!out || v[0] < out[1])) out = [a, v[0]]; });
+  return out;
+};
+const byAgeBest = (a, b) => {
+  const x = ageBestOf(a), y = ageBestOf(b);
+  if (!x || !y) return x ? -1 : y ? 1 : recent(a, b);
+  return (x[1] - y[1]) || recent(a, b);
+};
 
 const COLS = [
   { k: "thumb", label: "", nosort: true,
@@ -217,11 +230,13 @@ const COLS = [
   { k: "kind", label: "유형", cell: r => esc(r.kind) + (r.sound ? " · 소리" : "") },
   { k: "released", label: "출시일", cls: "num", cell: r => r.released ?? BEFORE },
   { k: "bestRank", label: "최고순위", cls: "num", cell: r => r.bestRank ?? "" },
-  { k: "ageBest", label: "연령대 최고", cell: r => r.ageBest ? `${AGE(r.ageBest[0])} ${r.ageBest[1]}위` : "" },
+  { k: "ageBest", label: "연령대 최고", cell: r => { const v = ageBestOf(r); return v ? `${AGE(v[0])} ${v[1]}위` : ""; } },
+  { k: "tags", label: "태그", cls: "tags", nosort: true,
+    cell: r => r.tags.filter(t => !tagHidden(t)).map(t => `<span class="tg" data-tg="${esc(t)}" title="이 스타일로 보기">${esc(tagLabel(t))}</span>`).join("") },
   { k: "md", label: "MD추천", cls: "md", cell: r => r.md },
 ];
 function value(r, k){
-  if (k === "ageBest") return r.ageBest ? r.ageBest[1] : null;
+  if (k === "ageBest"){ const v = ageBestOf(r); return v ? v[1] : null; }
   if (k === "released") return r.released ? r.released + String(r.no ?? 999).padStart(3, "0") : null;
   if (k === "md") return r.md ? 0 : 1;
   return r[k];
@@ -238,8 +253,7 @@ function apply(){
                || r.series.toLowerCase().includes(q))) return false;
     return true;
   });
-  const auto = ages.length || TAGS_ON.length ? "long" : "recent";
-  if (!sortKey) filtered.sort(auto === "long" ? longest : recent);
+  if (!sortKey) filtered.sort(ages.length ? byAgeBest : recent);
   else filtered.sort((a, b) => {
     const x = value(a, sortKey), y = value(b, sortKey);
     if (x === null || x === undefined || x === "") return 1;                              // 빈 값은 늘 뒤로
@@ -247,24 +261,29 @@ function apply(){
     if (x === y) return 0;
     return (x < y ? -1 : 1) * (asc ? 1 : -1);
   });
-  render(auto);
+  render();
 }
 
-function render(auto){
+function render(){
   const head = `<th class="rn">#</th>` + COLS.map(c =>
-    `<th data-k="${c.k}">${c.label}${sortKey === c.k ? `<span class="ar">${asc ? "▲" : "▼"}</span>` : ""}</th>`).join("");
+    `<th data-k="${c.k}" class="${c.cls || ""}">${c.label}${sortKey === c.k ? `<span class="ar">${asc ? "▲" : "▼"}</span>` : ""}</th>`).join("");
   const body = filtered.slice(0, SHOW_MAX).map((r, n) =>
     `<tr><td class="rn">${n + 1}</td>` + COLS.map(c => `<td class="${c.cls || ""}">${c.cell(r)}</td>`).join("") + "</tr>").join("");
   $("tbl").innerHTML = `<thead><tr>${head}</tr></thead><tbody>${body}</tbody>` +
     (filtered.length ? "" : `<tbody><tr><td colspan="${COLS.length + 1}" class="empty">맞는 이모티콘이 없습니다.</td></tr></tbody>`);
-  const how = sortKey ? "" : (auto === "long" ? " · 200위 안에 오래 머문 순" : " · 최근 출시순");
-  $("cnt").textContent = `${filtered.length.toLocaleString()}개${how}` + (filtered.length > SHOW_MAX ? ` (표에는 ${SHOW_MAX}개까지)` : "");
+  $("cnt").textContent = `${filtered.length.toLocaleString()}개` + (filtered.length > SHOW_MAX ? ` (표에는 ${SHOW_MAX}개까지)` : "");
   $("tbl").querySelectorAll("th[data-k]").forEach(th => th.onclick = () => {
     const k = th.dataset.k, col = COLS.find(c => c.k === k);
     if (col.nosort) return;
     if (sortKey === k) asc = !asc; else { sortKey = k; asc = !(k === "released" || k === "md"); }   // 출시일은 최근부터
     if (k === "md") asc = true;
     apply();
+  });
+  /* 표 안의 태그를 누르면 그 스타일을 켜고 끕니다 */
+  $("tbl").querySelectorAll("[data-tg]").forEach(el => el.onclick = () => {
+    const t = el.dataset.tg;
+    TAGS_ON = TAGS_ON.includes(t) ? TAGS_ON.filter(x => x !== t) : TAGS_ON.concat(t);
+    sortKey = null; drawTags(); apply();
   });
 }
 
@@ -288,10 +307,10 @@ $("reset").onclick = () => {
 
 const krDate = d => { const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[1]}년 ${+m[2]}월 ${+m[3]}일` : d; };
 $("note").innerHTML =
-  `수집일 ${krDate(D.dates[0])} 이후 순위·신규 목록에 나온 이모티콘입니다 (미니 이모티콘은 뺐습니다). ` +
+  `수집일 ${krDate(D.dates[0])} 이후 순위·신규 목록에 나온 이모티콘입니다 (미니 이모티콘 제외). ` +
   `대표이미지나 상품명을 누르면 이모티콘샵 상품 페이지로 연결됩니다.<br>` +
-  `아무것도 고르지 않으면 최근 출시순, 스타일이나 연령대를 고르면 순위 200위 안에 오래 머문 순으로 보여줍니다. ` +
-  `연령대는 그 연령 순위에 든 날이 ${Math.round(SHARE_MIN * 100)}% 이상인 것만 나옵니다. 출시일이 '${BEFORE}'인 것은 수집을 시작하기 전에 나온 것입니다.`;
+  `아무것도 고르지 않으면 신규이모티콘이 최근 출시순으로 정렬되고, 연령대를 선택하면 다른 연령대 대비 해당 연령대에 많이 판매된 이모티콘을 연령대별 최고 순위 순으로 보여줍니다. ` +
+  `출시일이 '${BEFORE}'인 것은 수집을 시작하기 전에 나온 것입니다.`;
 
 drawTags();
 apply();
