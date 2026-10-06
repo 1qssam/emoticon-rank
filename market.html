@@ -106,10 +106,21 @@
 
 /* 스타일 태그 — 뺄 것, 이름만 바꿔 보여줄 것
    (emoticon-class의 make/config.js에도 같은 설정이 있습니다. 바꾸면 둘 다 바꾸세요) */
-const TAG_HIDE = ["다람쥐와_찍찍이", "다른_동물들", "댕댕이", "짹짹이", "냐옹이", "곰돌이", "토깽이", "펭귄"];
+const TAG_HIDE = ["다람쥐와_찍찍이", "다른_동물들", "댕댕이", "짹짹이", "냐옹이", "곰돌이", "토깽이", "펭귄", "큰이모티콘"];
 const TAG_HIDE_PREFIX = ["미니_"];
 const TAG_RENAME = { "커플에게": "커플용", "직장인에게": "직장인용", "학생에게": "학생용", "군인에게": "군인용",
-                     "엄마_아빠에게": "엄마·아빠용", "딸_아들에게": "딸·아들용" };
+                     "엄마_아빠에게": "엄마·아빠용", "딸_아들에게": "딸·아들용", "취미모임_회원에게": "취미모임 회원용" };
+/* 태그 순서 — 묶음 순서대로, 묶음 안에서는 많이 쓰인 순. 여기 없는 새 태그는 TAG_NEW_AT번째 묶음 바로 앞에 */
+const TAG_GROUPS = [
+    ["까불거리는", "상냥한", "애교많은", "시크한", "정겨운", "드립치는"],                                   // 성격
+    ["동글동글한", "길쭉길쭉한", "단순하게_생긴", "표정이_살아있는", "찌글찌글_짤감성", "샤방샤방한", "하찮아서_귀여워"],   // 외형
+    ["뼈때리는", "말장난", "보기만해도_웃긴", "이거_완전_나잖아", "다정한_메시지", "색다른_메시지"],         // 표현 방식
+    ["커플에게", "직장인에게", "취미모임_회원에게", "엄마_아빠에게", "딸_아들에게", "학생에게", "군인에게"],   // 용도
+    ["내_취향을_찾아서", "매일매일_쓰기좋은"],
+    ["애니메이션", "웹툰", "캐릭터", "스타"],
+    ["파스텔", "비비드", "흑과백"],
+  ];
+const TAG_NEW_AT = 5;
 const SHARE_MIN = 0.3;          // 연령대를 고르면: 그 연령이 차지한 비율이 30% 이상인 것
 const BEFORE = "-";             // 출시일을 모르는 것 (수집 시작 전에 나온 것)
 const SHOW_MAX = 500;           // 표에 그리는 최대 줄 수
@@ -119,6 +130,7 @@ const T = (window.TAGS || { items: {} });
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const tagLabel = t => TAG_RENAME[t] || String(t).replace(/_/g, " ");
+const tagRank = t => { const g = TAG_GROUPS.findIndex(l => l.includes(t)); return g < 0 ? TAG_NEW_AT : g < TAG_NEW_AT ? g : g + 1; };
 const tagHidden = t => TAG_HIDE.includes(t) || TAG_HIDE_PREFIX.some(p => String(t).startsWith(p));
 const AGE = a => a === "50대이상" ? "50대 이상" : a;
 
@@ -181,10 +193,10 @@ AGES5.forEach(a => {
 });
 $("ageGrp").title = `그 연령대 순위(200위)에 든 날이 10대~50대 전체의 ${Math.round(SHARE_MIN * 100)}% 이상인 이모티콘`;
 
-/* 스타일 태그 (많이 쓰인 순) */
+/* 스타일 태그 (묶음 순서 → 많이 쓰인 순) */
 const tagCount = {};
 ROWS.forEach(r => r.tags.forEach(t => { tagCount[t] = (tagCount[t] || 0) + 1; }));
-const TAG_LIST = Object.keys(tagCount).filter(t => !tagHidden(t)).sort((a, b) => tagCount[b] - tagCount[a]);
+const TAG_LIST = Object.keys(tagCount).filter(t => !tagHidden(t)).sort((a, b) => tagRank(a) - tagRank(b) || tagCount[b] - tagCount[a]);
 let TAGS_ON = [];
 function drawTags(){
   $("tags").innerHTML = TAG_LIST.map(t =>
