@@ -79,6 +79,14 @@
       </label>
       <span class="lab" style="min-width:0;margin-left:10px">연령대</span>
       <span class="row" id="ageGrp" style="gap:14px"></span>
+      <label title="인기 점수를 셀 기간">기간
+        <select id="days">
+          <option value="7">최근 7일</option><option value="14" selected>최근 14일</option>
+          <option value="30">최근 30일</option><option value="0">전체</option>
+        </select>
+      </label>
+      <label title="유명 캐릭터·연예인·애니메이션·웹툰 원작 이모티콘을 빼고, 일반 작가 작품끼리 봅니다">
+        <input type="checkbox" id="noip" checked> 캐릭터·스타·애니메이션·웹툰 빼기</label>
       <button class="btn" id="reset">필터 초기화</button>
       <span class="cnt" id="cnt"></span>
     </div>
@@ -100,8 +108,13 @@
    이모티콘 시장 둘러보기 (공개)
    · 원큐쌤 전용 db.html을 줄인 공개판입니다. 키워드 파일(expr.js)은 읽지 않습니다.
    · 미니 이모티콘은 늘 뺍니다.
-   · 정렬: 기본은 최근 출시순, 연령대를 고르면 그 연령대 최고 순위순 (스타일만 고르면 최근 출시순 그대로).
-   · 주소로 미리 고를 수 있습니다: market.html?age=20대,30대&tag=직장인에게,커플에게
+   · 정렬: 기본은 최근 출시순, 연령대를 고르면 그 연령대의 최근 인기 점수순 (스타일만 고르면 최근 출시순 그대로).
+     인기 점수 = 기간(기본 14일) 동안 매일 (201 - 순위)를 더해 출시 다음 날부터 센 날 수(최소 3일)로 나눈 하루 평균.
+     1위 200점 ~ 200위 1점, 순위에 없는 날 0점. 신작도 기존작과 같은 기준으로 비교됩니다.
+     연령대를 여러 개 고르면 고른 연령대 점수를 더합니다. 안 고르면 '전체' 순위로 셉니다.
+   · 캐릭터·스타·애니메이션·웹툰(IP_TAGS) 태그가 붙은 것은 처음부터 뺍니다. 체크를 풀면 같이 봅니다.
+     체크를 켜면 그 태그 선택이 풀리고, 그 태그를 고르면 체크가 꺼집니다 (둘 다 켜면 결과가 비므로).
+   · 주소로 미리 고를 수 있습니다: market.html?age=20대,30대&tag=직장인에게,커플에게&days=30  (IP 포함: &noip=0)
    ════════════════════════════════════════════════ */
 
 /* 스타일 태그 — 뺄 것, 이름만 바꿔 보여줄 것
@@ -121,6 +134,7 @@ const TAG_GROUPS = [
     ["파스텔", "비비드", "흑과백"],
   ];
 const TAG_NEW_AT = 5;
+const IP_TAGS = ["캐릭터", "스타", "애니메이션", "웹툰"];   // '빼기' 체크로 뺄 태그
 const SHARE_MIN = 0.3;          // 연령대를 고르면: 그 연령이 차지한 비율이 30% 이상인 것
 const BEFORE = "-";             // 출시일을 모르는 것 (수집 시작 전에 나온 것)
 const SHOW_MAX = 500;           // 표에 그리는 최대 줄 수
@@ -157,6 +171,28 @@ function sharesOf(i){
   const out = {};
   AGES5.forEach(a => out[a] = (DAYS[a][i] || 0) / total);
   return out;
+}
+/* 인기 점수 — 날마다 (201 - 순위)를 더해서, 출시 후 지난 날 수로 나눈 하루 평균.
+   기간은 마지막 수집일부터 달력으로 N일 (0 = 전체).
+   · 나누는 날 수 = 기간 안에서 출시 다음 날부터 센 수집일 수 (출시 당일 순위표에는 들어가지 않으므로).
+     출시일을 모르거나 기간 전에 나온 것은 기간 전체.
+   · 최소 MIN_DAYS일로 나눕니다 — 출시 하루 이틀 반짝 1위가 맨 위로 튀지 않게. */
+const DAY_MS = 864e5, toTime = d => Date.parse(d + "T00:00:00Z");
+const MIN_DAYS = 3;
+let SCORE = {};                                      // SCORE[연령][items 번호] = 하루 평균 점수
+function makeScore(n){
+  const from = n ? toTime(D.dates[D.dates.length - 1]) - (n - 1) * DAY_MS : -Infinity;
+  const k0 = Math.max(0, D.dates.findIndex(d => toTime(d) >= from)), last = D.dates.length - 1;
+  const daysOf = it => Math.max(MIN_DAYS, last - Math.max(k0, D.release[it] + 1) + 1);   // 출시일 모름(-1)이면 k0부터
+  SCORE = {};
+  D.ages.forEach(a => {
+    const s = SCORE[a] = {};
+    D.hot[a].forEach((row, k) => {
+      if (k < k0) return;
+      row.forEach((it, i) => { s[it] = (s[it] || 0) + 201 - (i + 1); });
+    });
+    Object.keys(s).forEach(it => { s[it] /= daysOf(+it); });
+  });
 }
 /* 순위에 처음 보인 날 (출시일 모르는 것 정렬용) */
 const firstSeen = {};
@@ -198,14 +234,16 @@ const tagCount = {};
 ROWS.forEach(r => r.tags.forEach(t => { tagCount[t] = (tagCount[t] || 0) + 1; }));
 const TAG_LIST = Object.keys(tagCount).filter(t => !tagHidden(t)).sort((a, b) => tagRank(a) - tagRank(b) || tagCount[b] - tagCount[a]);
 let TAGS_ON = [];
+/* 태그 켜고 끄기 — 빼는 태그(IP_TAGS)를 켜면 '빼기' 체크를 끕니다 */
+function toggleTag(t){
+  if (TAGS_ON.includes(t)) TAGS_ON = TAGS_ON.filter(x => x !== t);
+  else { TAGS_ON = TAGS_ON.concat(t); if (IP_TAGS.includes(t)) $("noip").checked = false; }
+  sortKey = null; drawTags(); apply();
+}
 function drawTags(){
   $("tags").innerHTML = TAG_LIST.map(t =>
     `<button class="chip" data-tag="${esc(t)}" aria-pressed="${TAGS_ON.includes(t)}">${esc(tagLabel(t))}</button>`).join("");
-  $("tags").querySelectorAll("[data-tag]").forEach(b => b.onclick = () => {
-    const t = b.dataset.tag;
-    TAGS_ON = TAGS_ON.includes(t) ? TAGS_ON.filter(x => x !== t) : TAGS_ON.concat(t);
-    sortKey = null; drawTags(); apply();
-  });
+  $("tags").querySelectorAll("[data-tag]").forEach(b => b.onclick = () => toggleTag(b.dataset.tag));
 }
 
 /* ── 정렬 ──
@@ -227,11 +265,9 @@ const ageBestOf = r => {
   (ages.length ? ages : AGES5).forEach(a => { const v = best[a][r.i]; if (v && (!out || v[0] < out[1])) out = [a, v[0]]; });
   return out;
 };
-const byAgeBest = (a, b) => {
-  const x = ageBestOf(a), y = ageBestOf(b);
-  if (!x || !y) return x ? -1 : y ? 1 : recent(a, b);
-  return (x[1] - y[1]) || recent(a, b);
-};
+/* 인기 점수 — 고른 연령대를 더함, 안 골랐으면 '전체' */
+const scoreOf = r => (ages.length ? ages : ["전체"]).reduce((t, a) => t + (SCORE[a][r.i] || 0), 0);
+const byScore = (a, b) => (scoreOf(b) - scoreOf(a)) || recent(a, b);   // 0점(기간 안에 순위에 없던 것)은 뒤로
 
 const COLS = [
   { k: "thumb", label: "", nosort: true,
@@ -241,6 +277,7 @@ const COLS = [
   { k: "series", label: "시리즈", cell: r => esc(r.series) },
   { k: "kind", label: "유형", cell: r => esc(r.kind) + (r.sound ? " · 소리" : "") },
   { k: "released", label: "출시일", cls: "num", cell: r => r.released ?? BEFORE },
+  { k: "score", label: "인기 점수", cls: "num", cell: r => { const v = scoreOf(r); return v ? Math.max(1, Math.round(v)).toLocaleString() : ""; } },
   { k: "bestRank", label: "최고순위", cls: "num", cell: r => r.bestRank ?? "" },
   { k: "ageBest", label: "연령대 최고", cell: r => { const v = ageBestOf(r); return v ? `${AGE(v[0])} ${v[1]}위` : ""; } },
   { k: "tags", label: "태그", cls: "tags", nosort: true,
@@ -249,6 +286,7 @@ const COLS = [
 ];
 function value(r, k){
   if (k === "ageBest"){ const v = ageBestOf(r); return v ? v[1] : null; }
+  if (k === "score") return scoreOf(r) || null;
   if (k === "released") return r.released ? r.released + String(r.no ?? 999).padStart(3, "0") : null;
   if (k === "md") return r.md ? 0 : 1;
   return r[k];
@@ -257,15 +295,17 @@ function value(r, k){
 function apply(){
   const q = $("q").value.trim().toLowerCase(), kind = $("kind").value;
   ages = [...document.querySelectorAll("#ageGrp input:checked")].map(x => x.dataset.age);
+  const noip = $("noip").checked;
   filtered = ROWS.filter(r => {
     if (kind && r.kind !== kind) return false;
+    if (noip && r.tags.some(t => IP_TAGS.includes(t))) return false;
     if (TAGS_ON.length && !TAGS_ON.some(t => r.tags.includes(t))) return false;             // 하나라도 맞으면
     if (ages.length && (!r.sh || !ages.some(a => r.sh[a] >= SHARE_MIN))) return false;    // 하나라도 맞으면
     if (q && !(r.title.toLowerCase().includes(q) || r.creator.toLowerCase().includes(q)
                || r.series.toLowerCase().includes(q))) return false;
     return true;
   });
-  if (!sortKey) filtered.sort(ages.length ? byAgeBest : recent);
+  if (!sortKey) filtered.sort(ages.length ? byScore : recent);
   else filtered.sort((a, b) => {
     const x = value(a, sortKey), y = value(b, sortKey);
     if (x === null || x === undefined || x === "") return 1;                              // 빈 값은 늘 뒤로
@@ -287,16 +327,12 @@ function render(){
   $("tbl").querySelectorAll("th[data-k]").forEach(th => th.onclick = () => {
     const k = th.dataset.k, col = COLS.find(c => c.k === k);
     if (col.nosort) return;
-    if (sortKey === k) asc = !asc; else { sortKey = k; asc = !(k === "released" || k === "md"); }   // 출시일은 최근부터
+    if (sortKey === k) asc = !asc; else { sortKey = k; asc = !(k === "released" || k === "md" || k === "score"); }   // 출시일은 최근부터, 점수는 높은 것부터
     if (k === "md") asc = true;
     apply();
   });
   /* 표 안의 태그를 누르면 그 스타일을 켜고 끕니다 */
-  $("tbl").querySelectorAll("[data-tg]").forEach(el => el.onclick = () => {
-    const t = el.dataset.tg;
-    TAGS_ON = TAGS_ON.includes(t) ? TAGS_ON.filter(x => x !== t) : TAGS_ON.concat(t);
-    sortKey = null; drawTags(); apply();
-  });
+  $("tbl").querySelectorAll("[data-tg]").forEach(el => el.onclick = () => toggleTag(el.dataset.tg));
 }
 
 /* 주소로 미리 고르기: ?age=20대,30대&tag=직장인에게 */
@@ -305,13 +341,22 @@ function render(){
   const ag = (p.get("age") || "").split(",").map(s => s.trim()).filter(Boolean);
   document.querySelectorAll("#ageGrp input").forEach(x => { x.checked = ag.includes(x.dataset.age); });
   TAGS_ON = (p.get("tag") || "").split(",").map(s => s.trim()).filter(t => TAG_LIST.includes(t));
+  const dy = p.get("days");
+  if (dy !== null && [...$("days").options].some(o => o.value === dy)) $("days").value = dy;
+  $("noip").checked = p.get("noip") !== "0" && !TAGS_ON.some(t => IP_TAGS.includes(t));
 })();
+makeScore(+$("days").value);
 
 document.querySelectorAll("#ageGrp input").forEach(x => x.onchange = () => { sortKey = null; apply(); });
 $("kind").onchange = () => { sortKey = null; apply(); };
+$("noip").onchange = () => {
+  if ($("noip").checked) TAGS_ON = TAGS_ON.filter(t => !IP_TAGS.includes(t));   // 빼는 태그를 골라 뒀으면 풉니다
+  sortKey = null; drawTags(); apply();
+};
+$("days").onchange = () => { makeScore(+$("days").value); apply(); };     // 기간은 정렬을 그대로 두고 점수만 다시
 $("q").oninput = apply;                                          // 찾기는 정렬을 바꾸지 않습니다
 $("reset").onclick = () => {
-  $("q").value = ""; $("kind").value = "";
+  $("q").value = ""; $("kind").value = ""; $("days").value = "14"; makeScore(14); $("noip").checked = true;
   document.querySelectorAll("#ageGrp input").forEach(x => { x.checked = false; });
   TAGS_ON = []; sortKey = null; asc = true;
   drawTags(); apply();
@@ -321,7 +366,10 @@ const krDate = d => { const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/); re
 $("note").innerHTML =
   `수집일 ${krDate(D.dates[0])} 이후 순위·신규 목록에 나온 이모티콘입니다 (미니 이모티콘 제외). ` +
   `대표이미지나 상품명을 누르면 이모티콘샵 상품 페이지로 연결됩니다.<br>` +
-  `아무것도 고르지 않으면 신규이모티콘이 최근 출시순으로 정렬되고, 연령대를 선택하면 다른 연령대 대비 해당 연령대에 많이 판매된 이모티콘을 연령대별 최고 순위 순으로 보여줍니다. ` +
+  `아무것도 고르지 않으면 신규이모티콘이 최근 출시순으로 정렬되고, 연령대를 선택하면 다른 연령대 대비 해당 연령대에 많이 판매된 이모티콘을 <b>인기 점수</b> 순으로 보여줍니다. ` +
+  `인기 점수는 고른 기간 동안 매일 순위를 점수로 바꿔(1위 200점 ~ 200위 1점, 순위에 없는 날 0점) 출시 다음 날부터의 하루 평균으로 낸 값입니다. ` +
+  `그래서 나온 지 얼마 안 된 이모티콘도 기존 이모티콘과 같은 기준으로 비교됩니다.<br>` +
+  `처음에는 캐릭터·스타·애니메이션·웹툰 태그가 붙은 이모티콘(유명 캐릭터·연예인·원작이 있는 것)을 빼고 보여줍니다. 함께 보려면 체크를 푸세요.<br>` +
   `출시일이 '${BEFORE}'인 것은 수집을 시작하기 전에 나온 것입니다.`;
 
 drawTags();
