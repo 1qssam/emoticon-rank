@@ -92,7 +92,7 @@
   .by a:hover{text-decoration:underline}
   .freetag{font-size:11px;padding:2px 6px;border-radius:4px;background:#eaf4ff;
     color:#1d5fa8;font-weight:600;white-space:nowrap;margin-left:4px}
-  .tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  .tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 5px;white-space:nowrap}
   .best{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
   .go{color:#b9b7b1;text-decoration:none;font-size:13px;padding:2px 4px}
   .go:hover{color:var(--ink)}
@@ -141,7 +141,7 @@
       <div class="cal"></div>
     </div>
   </div>
-  <p class="hint">출시 당일에는 인기 순위에 반영되지 않습니다. 오른쪽 순위는 그 뒤 기록된 최고 순위입니다.</p>
+  <p class="hint">출시 당일에는 인기 순위에 반영되지 않습니다. 오른쪽 순위는 그 뒤 기록된 최고 순위입니다. 왼쪽 네모를 누르면 순위 변화를 그래프로 볼 수 있습니다.</p>
 
   <div class="main" id="main">
     <div>
@@ -171,7 +171,9 @@ const releasedOn = k => {
   D.release.forEach((r, i) => { if (r === k) out.push(i); });
   return out.sort((a, b) => (no[a] || 1e9) - (no[b] || 1e9) || a - b);
 };
+/* 처음엔 신규가 있는 가장 최근 날로 열어요 (주말·월요일 아침에 빈 화면이 먼저 보이지 않게) */
 let dateIdx = D.dates.length - 1;
+while (dateIdx > 0 && !releasedOn(dateIdx).length) dateIdx--;
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const dow = s => "일월화수목금토"[new Date(...s.split("-").map((v,i)=>i===1?v-1:+v)).getDay()];
@@ -243,7 +245,7 @@ if (D.generatedAt) $("updated").textContent = `마지막 갱신 ${D.generatedAt}
 
 function render(){
   const date = D.dates[dateIdx];
-  $("todaybtn").innerHTML = `${fmt(date)}<span class="dow">${dow(date)}</span>`;
+  $("todaybtn").innerHTML = `${fmt(date)}<span class="dow">(${dow(date)})</span>`;
   $("prev").disabled = dateIdx === 0;
   $("next").disabled = dateIdx === D.dates.length - 1;
 
