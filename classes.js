@@ -33,6 +33,8 @@ window.CLASSES = [
 
 {"place":"동대문여성인력개발센터","short":"동대문","kind":"내일배움과정","addr":"서울 동대문구 왕산로 60-1 6,7층","map":"https://naver.me/FcmceCWu","lunch":60,"link":"https://www.work24.go.kr/hr/a/a/3100/selectTracseDetl.do?tracseId=AIG20250000508104&tracseTme=9&cstmConsTme=&crseTracseSe=C0061&trainstCstmrId=500020037155&tracseReqstsCd=&focusId=#none","color":"#0072B2","sessions":["2026-11-21 10:00-17:00","2026-11-28 10:00-17:00","2026-12-05 10:00-17:00","2026-12-12 10:00-17:00","2026-12-19 10:00-17:00"]},
 
+{"place":"고양여성인력개발센터","short":"고양","kind":"일반","addr":"경기 고양시 일산서구 강성로 247 명진프라자빌딩 9층","map":"https://naver.me/xbAXuRBm","lunch":0,"link":"https://www.kycenter.or.kr/sub1/course_view.aspx?list=sub11&cop=CO20260287&p=0&ename=&emenu=e4&title=%ec%a0%84%ec%b2%b4%ed%94%84%eb%a1%9c%ea%b7%b8%eb%9e%a8","color":"#009E73","sessions":["2026-11-27 13:30-16:30","2026-12-04 13:30-16:30","2026-12-11 13:30-16:30","2026-12-18 13:30-16:30"]},
+
 {"place":"서부여성발전센터","short":"서울서부","kind":"내일배움과정","addr":"서울 양천구 남부순환로 371","map":"https://naver.me/GBF1CdOQ","lunch":0,"link":"https://www.work24.go.kr/hr/a/a/3100/selectTracseDetl.do?tracseId=AIG20250000529751&tracseTme=3&cstmConsTme=&crseTracseSe=C0061&trainstCstmrId=500020054681&tracseReqstsCd=&focusId=","color":"#D55E00","sessions":["2026-12-02 19:00-22:00","2026-12-04 19:00-22:00","2026-12-07 19:00-22:00","2026-12-09 19:00-22:00","2026-12-11 19:00-22:00","2026-12-14 19:00-22:00","2026-12-16 19:00-22:00","2026-12-18 19:00-22:00","2026-12-21 19:00-22:00","2026-12-23 19:00-22:00","2026-12-28 19:00-22:00","2026-12-30 19:00-22:00"]}
 
 ];
