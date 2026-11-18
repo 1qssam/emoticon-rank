@@ -1,210 +1,41 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>주간 이모티콘 데이터 · 원큐쌤의 이모티콘 클래스</title>
+<title>원큐쌤의 이모티콘 클래스</title>
+<meta name="robots" content="noindex">
 <link rel="icon" type="image/png" sizes="32x32" href="1qssam-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="1qssam-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="1qssam-180.png">
-<meta name="description" content="매주 토요일, 지난주 카카오 이모티콘 순위와 신규 상품 원자료(엑셀)와 AI 프롬프트를 올립니다.">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="원큐쌤의 이모티콘 클래스">
-<meta property="og:title" content="주간 이모티콘 데이터 · 원큐쌤의 이모티콘 클래스">
-<meta property="og:description" content="매주 토요일, 지난주 카카오 이모티콘 순위와 신규 상품 원자료(엑셀)와 AI 프롬프트를 올립니다.">
-<meta property="og:image" content="https://1qssam.github.io/emoticon-rank/1qssam-share.png">
-<meta property="og:url" content="https://1qssam.github.io/emoticon-rank/plan-data.html">
-<meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
-  :root{--paper:#fcfcfb;--ink:#17181a;--muted:#83878c;--line:#e7e6e1;--panel:#f5f4f0}
-  *{box-sizing:border-box}
-  html{overflow-y:scroll}
-  html,body{margin:0;padding:0}
-  body{background:var(--paper);color:var(--ink);
-    font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-    font-size:14.5px;line-height:1.6;word-break:keep-all;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:760px;margin:0 auto;padding:24px 16px 80px}
-  header{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap}
-  h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
-  .nav{margin-left:auto;display:flex;gap:14px}
-  .nav a{font-size:13px;color:var(--muted);text-decoration:none}
-  .nav a:hover{color:var(--ink);text-decoration:underline}
-  .lead{font-size:14.5px;color:var(--muted);margin:0 0 18px}
-
-  .list{list-style:none;margin:0;padding:0;border-top:1px solid var(--ink)}
-  .list li{border-bottom:1px solid var(--line)}
-  .list a{display:flex;align-items:baseline;gap:12px;padding:11px 2px;color:var(--ink);text-decoration:none}
-  .list a:hover .t{text-decoration:underline}
-  .list .t{flex:1;min-width:0;font-size:14.5px}
-  .list .p{font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .list .d{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;width:80px;text-align:right}
-  .empty{padding:24px 2px;color:var(--muted)}
-  @media (max-width:560px){
-    .list a{flex-wrap:wrap;gap:2px 10px}
-    .list .t{flex-basis:100%}
-    .list .d{width:auto;text-align:left}
+  :root { --bg:#fffdf7; --card:#ffffff; --ink:#222; --sub:#666; --line:#eee3c8; --accent:#f5c518; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#17150f; --card:#221f17; --ink:#f2efe6; --sub:#aaa392; --line:#3a3424; }
   }
-
-  h2{font-size:15.5px;font-weight:600;margin:44px 0 12px;letter-spacing:-.01em}
-  h2.first{margin-top:6px}
-  .new{font-size:11px;font-weight:600;color:#fff;background:var(--ink);border-radius:4px;padding:1px 5px;margin-right:6px;vertical-align:1px}
-  .more{margin:8px 0 0;text-align:right}
-  .more a{font-size:12.5px;color:var(--muted)}
-  .hook{margin:72px 0 0;font-size:16px;line-height:1.75}
-  .hook p{margin:0 0 22px}
-  .hook b{font-weight:500;background:linear-gradient(transparent 58%,#fbe2a6 58%,#fbe2a6 92%,transparent 92%);
-    -webkit-box-decoration-break:clone;box-decoration-break:clone}
-  .hook .big{font-size:20px;font-weight:600;line-height:1.45;letter-spacing:-.02em;margin-bottom:26px}
-  .latest{display:block;border:1px solid var(--ink);border-radius:12px;padding:18px 18px 16px;margin:0 0 8px;
-    color:var(--ink);text-decoration:none;background:#fff}
-  .latest:hover .lt{text-decoration:underline}
-  .latest .tag{font-size:12px;color:var(--muted)}
-  .latest .lt{display:block;font-size:16px;font-weight:600;margin:4px 0 10px;letter-spacing:-.01em}
-  .latest .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-  .latest .price{font-size:15px;font-variant-numeric:tabular-nums}
-  .latest .go{font-size:13px;background:var(--ink);color:#fff;border-radius:8px;padding:7px 14px}
-  .note{font-size:12.5px;color:var(--muted);margin:0}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .card{background:var(--panel);border-radius:10px;padding:14px}
-  .card b{display:block;font-size:14.5px;font-weight:600;margin-bottom:3px}
-  .card span{font-size:14px;color:var(--muted)}
-  @media (max-width:560px){.grid{grid-template-columns:1fr}}
-  .steps{margin:0;padding:0;list-style:none;counter-reset:s}
-  .steps li{counter-increment:s;display:flex;gap:10px;padding:11px 0;font-size:16px;border-bottom:1px solid var(--line)}
-  .steps li::before{content:counter(s);flex:none;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;
-    font-size:12px;display:flex;align-items:center;justify-content:center}
-  .qa{background:var(--panel);border-radius:10px;padding:18px 16px;font-size:16px;line-height:1.65}
-  .qa p{margin:0 0 18px}.qa p:last-child{margin:0}
-  .qa .q{font-weight:600}
-  ul.plain{margin:0;padding-left:18px;color:var(--muted);font-size:14px;line-height:1.75}
-
-  .pager{display:flex;justify-content:center;gap:4px;margin-top:22px}
-  .pager button{min-width:30px;height:30px;border:1px solid var(--line);background:#fff;border-radius:7px;
-    font-family:inherit;font-size:13px;color:var(--ink);cursor:pointer;font-variant-numeric:tabular-nums}
-  .pager button[aria-current]{background:var(--ink);border-color:var(--ink);color:#fff}
-  .pager button:disabled{color:#cfcdc7;cursor:default}
-  .pager{flex-wrap:wrap}
-  .pager button.w{padding:0 9px}
-  .sort{display:flex;gap:4px}
-  .sort button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:4px 10px;font-family:inherit;font-size:12.5px;color:var(--muted);cursor:pointer}
-  .sort button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);font-weight:600}
-  .allhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:44px 0 12px}
-  .allhead h2{margin:0}
-  .jump{position:fixed;right:16px;bottom:20px;display:flex;flex-direction:column;gap:6px;z-index:5}
-  .jump button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink);
-    font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-  .jump button:hover{border-color:var(--ink)}
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+    font-family:Pretendard, -apple-system, "Malgun Gothic", sans-serif; line-height:1.6; }
+  main { max-width:480px; margin:0 auto; padding:56px 16px; text-align:center; }
+  img { width:120px; height:auto; }
+  h1 { font-size:22px; margin:20px 0 8px; }
+  p { color:var(--sub); margin:0 0 28px; }
+  nav { display:flex; flex-direction:column; gap:10px; }
+  nav a { display:block; padding:14px; border:1px solid var(--line); border-radius:12px;
+    background:var(--card); color:var(--ink); text-decoration:none; font-weight:600; }
+  nav a:hover { border-color:var(--accent); }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>주간 이모티콘 데이터</h1>
-  </header>
-  <p class="lead">매주 토요일, 지난주 카카오 이모티콘 순위·신규 상품 원자료(엑셀)와 AI 프롬프트를 크티에서 올려요.</p>
-
-  <h2 class="first">구매할 수 있는 자료</h2>
-  <ul class="list" id="topList"></ul>
-  <p class="more"><a href="#all">지난 주차 전부 보기 ↓</a></p>
-
-  <div class="hook">
-    <p class="big">이모티콘,<br>대체 뭘 그리면 좋을까요?</p>
-    <p>그리는 것보다 힘든 건<br><b>뭘 그릴지 정하는 일</b>이에요.</p>
-    <p>막막한 채로 떠오르는 걸 그리다 보면<br>'이게 맞나' 하는 마음이 계속 따라오죠.</p>
-    <p>막막한 이유는 대개<br><b>지금 카카오에서 어떤 이모티콘이<br>출시되고 있는지</b> 모르기 때문이에요.</p>
-    <p>그런데 혼자서 매일 순위를<br>들여다볼 시간은 없죠.</p>
-    <p>그래서 지난 일주일 치<br>카카오 이모티콘 순위와 새로 나온 상품을<br>엑셀 한 파일에 모았어요.</p>
-    <p>내가 쓰는 AI에게 이 파일을 보여 주고,<br>같이 들어 있는 프롬프트를 붙여 넣으면<br><b>요즘 시장에서 뭘 그리면 좋을지</b><br>AI가 데이터를 체크해보고 함께 의논해줘요.</p>
-  </div>
-
-  <h2>이런 걱정이 드신다면</h2>
-  <div class="qa">
-    <p><span class="q">엑셀이나 데이터는 잘 몰라요.</span><br>엑셀을 열어 보지 않아도 돼요. 파일을 AI에게 첨부만 하면 AI가 읽어요.</p>
-    <p><span class="q">AI를 잘 못 써요. 유료 AI도 없어요.</span><br>프롬프트를 복사해서 붙여 넣기만 하면 돼요. 무료 챗GPT·제미나이로 테스트했어요.</p>
-    <p><span class="q">이대로만 하면 승인되나요?</span><br>아니요. 대신 뭘 그릴지를 데이터 바탕으로 정할 수 있어요.</p>
-    <p><span class="q">비싸지 않나요?</span><br>일주일치가 2,000원이고, 구독 상품이 아니에요.</p>
-  </div>
-
-  <h2>들어 있는 것 (엑셀파일 1개 + AI프롬프트)</h2>
-  <div class="grid">
-    <div class="card"><b>상품 정보</b><span>카카오 이모티콘 상품 2천여 개의 기본 정보</span></div>
-    <div class="card"><b>신규 이모티콘 키워드</b><span>새로 나온 이모티콘마다 붙은 키워드 그대로</span></div>
-    <div class="card"><b>신규 이모티콘 첫 7일 순위</b><span>나온 뒤 1~7일째 순위가 어떻게 움직였는지</span></div>
-    <div class="card"><b>지난주 공개 순위 전부</b><span>일요일~토요일, 순위에 오른 상품 전체</span></div>
-  </div>
-
-  <h2>쓰는 법</h2>
-  <ol class="steps">
-    <li>크티에서 구매하고 파일 두 개(엑셀·프롬프트)를 받아요.</li>
-    <li>챗GPT·제미나이·클로드 같은 AI에 엑셀 파일을 첨부해요. 무료 버전으로도 돼요.</li>
-    <li>프롬프트를 복사해 붙여 넣으면, AI가 이번 주 시장을 짧게 요약하고 기획 방향을 물어봐요.</li>
-    <li>답하다 보면 참고할 태그·상품·키워드 목록까지 받아요.</li>
-  </ol>
-
-  <h2>알아 두세요</h2>
-  <ul class="plain">
-    <li>카카오에서 공개된 정보만 담았어요. 판매량은 없어요.</li>
-    <li>인기 순위에는 성별이 없고, 미니 이모티콘은 키워드가 없어요.</li>
-    <li>승인을 보장하지 않아요. 분석은 내 AI가 해요.</li>
-    <li>환불은 크티 규정을 따라요.</li>
-  </ul>
-
-  <div class="allhead" id="all"><h2>모든 주차</h2>
-    <div class="sort" id="sort"><button data-s="new" aria-pressed="true">최신순</button><button data-s="old" aria-pressed="false">오래된순</button></div></div>
-  <ul class="list" id="list"></ul>
-  <div class="pager" id="pager"></div>
-</div>
-<div class="jump"><button id="toTop" aria-label="맨 위로">↑</button><button id="toBottom" aria-label="맨 아래로">↓</button></div>
-<script src="plan-data.js"></script>
-<script>
-const PER = 20, BLOCK = 10;
-const all = (window.WEEKLY || []).filter(r => r.url).sort((a, b) => b.date.localeCompare(a.date));
-const pages = Math.max(1, Math.ceil(all.length / PER));
-const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const item = (r, isNew) => `<li><a href="${esc(r.url)}" target="_blank" rel="noopener">
-     <span class="t">${isNew ? '<span class="new">NEW</span>' : ""}${esc(r.title)}</span>
-     <span class="p">${r.price.toLocaleString()}원</span>
-     <span class="d">${r.date.replace(/-/g, ".")}</span></a></li>`;
-const EMPTY = `<li class="empty">아직 올라온 자료가 없어요.</li>`;
-
-document.getElementById("topList").innerHTML = all.length ? all.slice(0, 5).map((r, i) => item(r, i === 0)).join("") : EMPTY;
-
-const qs = new URLSearchParams(location.search);
-let order = qs.get("sort") === "old" ? "old" : "new";
-let cur = 1;
-
-function show(n){
-  cur = n = Math.min(Math.max(1, n), pages);
-  const rows = order === "new" ? all : [...all].reverse();
-  const part = rows.slice((n - 1) * PER, n * PER);
-  document.getElementById("list").innerHTML = part.length ? part.map(r => item(r, false)).join("") : EMPTY;
-  document.querySelectorAll("#sort button").forEach(b => b.setAttribute("aria-pressed", b.dataset.s === order));
-  const pg = document.getElementById("pager");
-  if (pages < 2) pg.innerHTML = "";
-  else {
-    const start = Math.floor((n - 1) / BLOCK) * BLOCK + 1, end = Math.min(start + BLOCK - 1, pages);
-    const btn = (p, label, off, aria) => `<button class="w" data-p="${p}" ${off ? "disabled" : ""} aria-label="${aria}">${label}</button>`;
-    let h = btn(1, "처음", n === 1, "처음으로") + btn(start - BLOCK, "‹ 10", start === 1, "앞 10쪽") + btn(n - 1, "‹", n === 1, "이전 쪽");
-    for (let i = start; i <= end; i++) h += `<button data-p="${i}" ${i === n ? 'aria-current="page"' : ""}>${i}</button>`;
-    h += btn(n + 1, "›", n === pages, "다음 쪽") + btn(start + BLOCK, "10 ›", end === pages, "뒤 10쪽") + btn(pages, "끝", n === pages, "맨 끝으로");
-    pg.innerHTML = h;
-  }
-  const u = new URL(location);
-  n === 1 ? u.searchParams.delete("page") : u.searchParams.set("page", n);
-  order === "new" ? u.searchParams.delete("sort") : u.searchParams.set("sort", order);
-  history.replaceState(null, "", u);
-}
-const toAll = () => document.getElementById("all").scrollIntoView({behavior: "smooth"});
-document.getElementById("pager").addEventListener("click", e => {
-  const b = e.target.closest("button[data-p]"); if (b && !b.disabled){ show(+b.dataset.p); toAll(); }
-});
-document.getElementById("sort").addEventListener("click", e => {
-  const b = e.target.closest("button[data-s]"); if (b && b.dataset.s !== order){ order = b.dataset.s; show(1); }
-});
-document.getElementById("toTop").onclick = () => scrollTo({top: 0, behavior: "smooth"});
-document.getElementById("toBottom").onclick = () => scrollTo({top: document.documentElement.scrollHeight, behavior: "smooth"});
-show(+qs.get("page") || 1);
-</script>
+<main>
+  <img src="1qssam-character-1.png" alt="원큐쌤 캐릭터">
+  <h1>순위 데이터는 잠시 쉬어요</h1>
+  <p>이모티콘 순위·신규 기록 페이지는 이용 기준을 확인하는 동안 잠시 닫아 두었어요.<br>강의 일정과 GIF 만들기는 그대로 쓸 수 있어요.</p>
+  <nav>
+    <a href="class.html">강의 일정 보기</a>
+    <a href="gif-maker.html">GIF 만들기</a>
+  </nav>
+</main>
 </body>
 </html>
